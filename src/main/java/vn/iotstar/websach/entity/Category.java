@@ -1,0 +1,34 @@
+package vn.iotstar.websach.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "categories")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Category {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 150)
+    private String name;
+
+    @Column(length = 150, unique = true)
+    private String slug;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    private Boolean active;
+
+    @PrePersist
+    protected void onCreate() {
+        if (active == null) active = true;
+    }
+}
