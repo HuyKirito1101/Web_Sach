@@ -57,6 +57,8 @@ public class AuthController {
                     return "redirect:/manager/dashboard";
                 } else if ("ROLE_SHIPPER".equals(role)) {
                     return "redirect:/shipper/dashboard";
+                } else if ("ROLE_VENDOR".equals(role)) {
+                    return "redirect:/vendor/dashboard";
                 }
             }
 

@@ -30,7 +30,7 @@ public class ManagerOrderController {
         Long branchId = (manager != null && manager.getBranch() != null) ? manager.getBranch().getId() : 1L;
 
         List<Order> orders = orderService.findOrdersByBranch(branchId);
-        List<User> shippers = userService.findByRole(RoleName.ROLE_SHIPPER);
+        List<User> shippers = userService.findByRoleAndBranch(RoleName.ROLE_SHIPPER, branchId);
 
         model.addAttribute("orders", orders);
         model.addAttribute("shippers", shippers);
@@ -45,8 +45,8 @@ public class ManagerOrderController {
     }
 
     @PostMapping("/assign-shipper")
-    public String assignShipper(@ModelAttribute("assignForm") AssignShipperRequest request) {
-        orderService.assignShipper(request);
+    public String assignShipper(Authentication authentication, @ModelAttribute("assignForm") AssignShipperRequest request) {
+        orderService.assignShipper(request, authentication.getName());
         return "redirect:/manager/orders?assigned";
     }
 }

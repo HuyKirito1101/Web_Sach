@@ -2,6 +2,7 @@ package vn.iotstar.websach.controller.admin;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import vn.iotstar.websach.dto.AssignShipperRequest;
@@ -39,8 +40,8 @@ public class AdminOrderController {
     }
 
     @PostMapping("/assign-shipper")
-    public String assignShipper(@ModelAttribute("assignForm") AssignShipperRequest request) {
-        orderService.assignShipper(request);
+    public String assignShipper(Authentication authentication, @ModelAttribute("assignForm") AssignShipperRequest request) {
+        orderService.assignShipper(request, authentication.getName());
         return "redirect:/admin/orders?assigned";
     }
 }

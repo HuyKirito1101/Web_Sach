@@ -16,6 +16,7 @@ public interface BookCopyRepository extends JpaRepository<BookCopy, Long> {
     List<BookCopy> findByBranchIdAndStatus(Long branchId, BookCopyStatus status);
     List<BookCopy> findByBookId(Long bookId);
     List<BookCopy> findByBookIdAndBranchId(Long bookId, Long branchId);
+    long countByBranchId(Long branchId);
 
     @Query("SELECT bc FROM BookCopy bc WHERE bc.branch.id = :branchId AND (:conditionRating IS NULL OR bc.conditionRating = :conditionRating)")
     List<BookCopy> filterBranchCopies(@Param("branchId") Long branchId, @Param("conditionRating") BookCondition conditionRating);

@@ -10,7 +10,7 @@ import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.entity.enums.BookCopyStatus;
 import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.entity.enums.RoleName;
-import vn.iotstar.websach.entity.enums.UserStatus;
+import vn.iotstar.websach.entity.enums.*;
 import vn.iotstar.websach.repository.*;
 
 import java.time.LocalDate;
@@ -31,6 +31,11 @@ public class DataInitializer implements CommandLineRunner {
     private final BookCopyRepository bookCopyRepository;
     private final ShippingProviderRepository shippingProviderRepository;
     private final AppDiscountRepository appDiscountRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final PromotionRepository promotionRepository;
+    private final SellRequestRepository sellRequestRepository;
+    private final SellRequestItemRepository sellRequestItemRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -47,6 +52,7 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN).get();
         Role managerRole = roleRepository.findByName(RoleName.ROLE_MANAGER).get();
         Role shipperRole = roleRepository.findByName(RoleName.ROLE_SHIPPER).get();
+        Role vendorRole = roleRepository.findByName(RoleName.ROLE_VENDOR).get();
         Role userRole = roleRepository.findByName(RoleName.ROLE_USER).get();
 
         // 2. Branches
@@ -94,6 +100,23 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
+        User vendor = userRepository.findByEmail("vendor@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Chủ Cửa Hàng Sách Cũ")
+                        .email("vendor@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0933333333")
+                        .role(vendorRole)
+                        .branch(b1)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+        if (b1.getOwner() == null) {
+            b1.setOwner(vendor);
+            b1.setDescription("Cửa hàng chuyên sách cũ, sách xưa và các ấn bản đã qua sử dụng.");
+            branchRepository.save(b1);
+        }
+
         userRepository.findByEmail("shipper@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Nhân Viên Giao Hàng Shipper")
@@ -106,7 +129,7 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("user@websach.com").orElseGet(() ->
+        User customer = userRepository.findByEmail("user@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Khách Hàng Nguyen Van A")
                         .email("user@websach.com")
@@ -152,7 +175,7 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // 7. BookCopies
-        bookCopyRepository.save(BookCopy.builder()
+        BookCopy copy1 = bookCopyRepository.save(BookCopy.builder()
                 .book(book1)
                 .branch(b1)
                 .conditionRating(BookCondition.LIKE_NEW)
@@ -164,7 +187,7 @@ public class DataInitializer implements CommandLineRunner {
                 .imageUrl("https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80")
                 .build());
 
-        bookCopyRepository.save(BookCopy.builder()
+        BookCopy copy2 = bookCopyRepository.save(BookCopy.builder()
                 .book(book2)
                 .branch(b1)
                 .conditionRating(BookCondition.GOOD)
@@ -177,10 +200,37 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // 8. Shipping Providers & App Discounts
-        shippingProviderRepository.save(ShippingProvider.builder().name("Giao Hàng Nhanh (GHN)").phone("19001234").baseFee(25000.0).active(true).build());
+        ShippingProvider ghn = shippingProviderRepository.save(ShippingProvider.builder().name("Giao Hàng Nhanh (GHN)").phone("19001234").baseFee(25000.0).active(true).build());
         shippingProviderRepository.save(ShippingProvider.builder().name("Viettel Post").phone("19005678").baseFee(22000.0).active(true).build());
 
         appDiscountRepository.save(AppDiscount.builder().code("SACHCU10").discountPercent(10.0).maxDiscountAmount(30000.0).minOrderValue(100000.0).startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(3)).active(true).build());
+
+        promotionRepository.save(Promotion.builder()
+                .title("Tuần lễ sách cũ chất lượng")
+                .branch(b1).discountPercent(10.0)
+                .startDate(LocalDate.now()).endDate(LocalDate.now().plusDays(14)).active(true).build());
+
+        if (orderRepository.count() == 0) {
+            Order order = orderRepository.save(Order.builder()
+                    .orderCode("DH-DEMO-001").customer(customer).branch(b1).shippingProvider(ghn)
+                    .receiverName(customer.getFullName()).receiverPhone(customer.getPhone())
+                    .shippingAddress("12 Võ Văn Ngân, Thủ Đức, TP.HCM")
+                    .totalAmount(65000.0).shippingFee(25000.0).discountAmount(0.0)
+                    .appCommissionAmount(6500.0).finalAmount(90000.0)
+                    .paymentMethod(PaymentMethod.COD).paymentStatus(PaymentStatus.PENDING)
+                    .orderStatus(OrderStatus.NEW).note("Gọi trước khi giao").build());
+            orderItemRepository.save(OrderItem.builder().order(order).bookCopy(copy1).quantity(1).price(65000.0).build());
+        }
+
+        if (sellRequestRepository.count() == 0) {
+            SellRequest request = sellRequestRepository.save(SellRequest.builder()
+                    .customer(customer).branch(b1).status(SellRequestStatus.PENDING)
+                    .expectedTotal(50000.0).note("Muốn bán lại một cuốn sách văn học còn đủ trang.").build());
+            sellRequestItemRepository.save(SellRequestItem.builder()
+                    .sellRequest(request).book(book2).bookTitle(book2.getTitle()).isbn(book2.getIsbn())
+                    .conditionDescription("Bìa sờn nhẹ, trang đủ, không rách.")
+                    .expectedPrice(50000.0).imageUrl(book2.getCoverUrl()).build());
+        }
 
         log.info("Khoi tao du lieu mau thanh cong! San sang su dung.");
     }

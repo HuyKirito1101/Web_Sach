@@ -134,6 +134,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<User> findByRoleAndBranch(RoleName roleName, Long branchId) {
+        return userRepository.findByRoleNameAndBranchId(roleName, branchId);
+    }
+
+    @Override
     public User saveUser(User user) {
         return userRepository.save(user);
     }

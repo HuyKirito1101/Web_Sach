@@ -74,6 +74,20 @@
                 </a>
             </li>
         </c:if>
+
+        <c:if test="${pageContext.request.isUserInRole('ROLE_VENDOR') || pageContext.request.isUserInRole('VENDOR')}">
+            <li class="nav-item"><a href="/vendor/dashboard" class="nav-link ${pageContext.request.requestURI.contains('/vendor/dashboard') ? 'active' : ''}"><i class="fa-solid fa-chart-pie"></i> Dashboard Vendor</a></li>
+            <li class="nav-item"><a href="/vendor/shop" class="nav-link ${pageContext.request.requestURI.contains('/vendor/shop') ? 'active' : ''}"><i class="fa-solid fa-store"></i> Hồ Sơ Cửa Hàng</a></li>
+            <li class="nav-item"><a href="/vendor/products" class="nav-link ${pageContext.request.requestURI.contains('/vendor/products') ? 'active' : ''}"><i class="fa-solid fa-book-open"></i> Sản Phẩm Sách Cũ</a></li>
+            <li class="nav-item"><a href="/vendor/orders" class="nav-link ${pageContext.request.requestURI.contains('/vendor/orders') ? 'active' : ''}"><i class="fa-solid fa-box"></i> Đơn Hàng Shop</a></li>
+            <li class="nav-item"><a href="/vendor/promotions" class="nav-link ${pageContext.request.requestURI.contains('/vendor/promotions') ? 'active' : ''}"><i class="fa-solid fa-percent"></i> Khuyến Mãi</a></li>
+            <li class="nav-item"><a href="/vendor/sell-requests" class="nav-link ${pageContext.request.requestURI.contains('/vendor/sell-requests') ? 'active' : ''}"><i class="fa-solid fa-hand-holding-dollar"></i> Thu Mua Sách Cũ</a></li>
+        </c:if>
+
+        <c:if test="${pageContext.request.isUserInRole('ROLE_SHIPPER') || pageContext.request.isUserInRole('SHIPPER')}">
+            <li class="nav-item"><a href="/shipper/dashboard" class="nav-link ${pageContext.request.requestURI.contains('/shipper/dashboard') ? 'active' : ''}"><i class="fa-solid fa-gauge"></i> Dashboard Shipper</a></li>
+            <li class="nav-item"><a href="/shipper/orders" class="nav-link ${pageContext.request.requestURI.contains('/shipper/orders') ? 'active' : ''}"><i class="fa-solid fa-truck-fast"></i> Đơn Được Phân Công</a></li>
+        </c:if>
     </ul>
 
     <div class="mt-auto pt-4 border-top border-secondary">

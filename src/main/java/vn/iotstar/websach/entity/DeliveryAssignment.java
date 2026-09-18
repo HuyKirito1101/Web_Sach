@@ -27,6 +27,10 @@ public class DeliveryAssignment {
     @JoinColumn(name = "shipper_id", nullable = false)
     private User shipper;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_by")
+    private User assignedBy;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
     private DeliveryStatus status;
@@ -35,7 +39,12 @@ public class DeliveryAssignment {
     private String note;
 
     private LocalDateTime assignedAt;
+    private LocalDateTime pickedUpAt;
+    private LocalDateTime deliveredAt;
     private LocalDateTime completedAt;
+
+    @Column(length = 500)
+    private String failureReason;
 
     @PrePersist
     protected void onCreate() {

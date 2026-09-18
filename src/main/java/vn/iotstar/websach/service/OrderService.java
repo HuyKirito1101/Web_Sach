@@ -15,7 +15,5 @@ public interface OrderService {
     Optional<Order> findById(Long id);
     Optional<Order> findByOrderCode(String orderCode);
     Order updateOrderStatus(Long orderId, OrderStatus status);
-    DeliveryAssignment assignShipper(AssignShipperRequest request);
-    List<DeliveryAssignment> findAssignmentsByShipper(Long shipperId);
-    DeliveryAssignment updateDeliveryStatus(Long assignmentId, String deliveryStatus);
+    DeliveryAssignment assignShipper(AssignShipperRequest request, String assignedByEmail);
 }

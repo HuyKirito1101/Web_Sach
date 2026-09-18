@@ -22,6 +22,9 @@ public class Branch {
     @Column(nullable = false, length = 150)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(nullable = false, length = 255)
     private String address;
 
@@ -33,6 +36,13 @@ public class Branch {
 
     @Column(length = 500)
     private String imageUrl;
+
+    @Column(length = 500)
+    private String coverUrl;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendor_id", unique = true)
+    private User owner;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)

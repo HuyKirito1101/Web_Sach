@@ -11,6 +11,8 @@ import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.enums.DeliveryStatus;
 import vn.iotstar.websach.entity.enums.OrderStatus;
 import vn.iotstar.websach.entity.enums.PaymentStatus;
+import vn.iotstar.websach.entity.enums.PaymentMethod;
+import vn.iotstar.websach.entity.enums.RoleName;
 import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.repository.OrderRepository;
 import vn.iotstar.websach.repository.UserRepository;
@@ -61,7 +63,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng id: " + orderId));
 
         order.setOrderStatus(status);
-        if (status == OrderStatus.DELIVERED) {
+        if (status == OrderStatus.DELIVERED && order.getPaymentMethod() == PaymentMethod.COD) {
             order.setPaymentStatus(PaymentStatus.PAID);
         }
 
@@ -77,20 +79,45 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public DeliveryAssignment assignShipper(AssignShipperRequest request) {
+    public DeliveryAssignment assignShipper(AssignShipperRequest request, String assignedByEmail) {
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại id: " + request.getOrderId()));
 
         User shipper = userRepository.findById(request.getShipperId())
                 .orElseThrow(() -> new RuntimeException("Shipper không tồn tại id: " + request.getShipperId()));
 
+        User assignedBy = userRepository.findByEmail(assignedByEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người phân công"));
+        RoleName assignerRole = assignedBy.getRole().getName();
+        if (assignerRole != RoleName.ROLE_MANAGER && assignerRole != RoleName.ROLE_ADMIN) {
+            throw new SecurityException("Chỉ Manager/Admin được phân công Shipper");
+        }
+        if (shipper.getRole() == null || shipper.getRole().getName() != RoleName.ROLE_SHIPPER) {
+            throw new IllegalArgumentException("Tài khoản được chọn không phải Shipper");
+        }
+        if (order.getOrderStatus() != OrderStatus.READY_FOR_PICKUP) {
+            throw new IllegalStateException("Chỉ phân Shipper khi đơn READY_FOR_PICKUP");
+        }
+        if (assignedBy.getBranch() != null && assignerRole == RoleName.ROLE_MANAGER
+                && !assignedBy.getBranch().getId().equals(order.getBranch().getId())) {
+            throw new SecurityException("Manager không được phân công đơn ngoài chi nhánh");
+        }
+        if (shipper.getBranch() == null || !shipper.getBranch().getId().equals(order.getBranch().getId())) {
+            throw new IllegalArgumentException("Shipper phải thuộc cùng chi nhánh với đơn hàng");
+        }
+
         DeliveryAssignment assignment = deliveryAssignmentRepository.findByOrderId(order.getId())
                 .orElse(DeliveryAssignment.builder().order(order).build());
 
         assignment.setShipper(shipper);
+        assignment.setAssignedBy(assignedBy);
         assignment.setStatus(DeliveryStatus.ASSIGNED);
         assignment.setNote(request.getNote());
         assignment.setAssignedAt(LocalDateTime.now());
+        assignment.setPickedUpAt(null);
+        assignment.setDeliveredAt(null);
+        assignment.setCompletedAt(null);
+        assignment.setFailureReason(null);
 
         order.setOrderStatus(OrderStatus.READY_FOR_PICKUP);
         orderRepository.save(order);
@@ -105,34 +132,4 @@ public class OrderServiceImpl implements OrderService {
         return saved;
     }
 
-    @Override
-    public List<DeliveryAssignment> findAssignmentsByShipper(Long shipperId) {
-        return deliveryAssignmentRepository.findByShipperId(shipperId);
-    }
-
-    @Override
-    @Transactional
-    public DeliveryAssignment updateDeliveryStatus(Long assignmentId, String deliveryStatusStr) {
-        DeliveryAssignment assignment = deliveryAssignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phân công giao hàng id: " + assignmentId));
-
-        DeliveryStatus deliveryStatus = DeliveryStatus.valueOf(deliveryStatusStr);
-        assignment.setStatus(deliveryStatus);
-
-        Order order = assignment.getOrder();
-        if (deliveryStatus == DeliveryStatus.PICKED_UP) {
-            order.setOrderStatus(OrderStatus.PICKED_UP);
-        } else if (deliveryStatus == DeliveryStatus.SHIPPING) {
-            order.setOrderStatus(OrderStatus.SHIPPING);
-        } else if (deliveryStatus == DeliveryStatus.DELIVERED) {
-            order.setOrderStatus(OrderStatus.DELIVERED);
-            order.setPaymentStatus(PaymentStatus.PAID);
-            assignment.setCompletedAt(LocalDateTime.now());
-        } else if (deliveryStatus == DeliveryStatus.FAILED) {
-            order.setOrderStatus(OrderStatus.CANCELLED);
-        }
-
-        orderRepository.save(order);
-        return deliveryAssignmentRepository.save(assignment);
-    }
 }

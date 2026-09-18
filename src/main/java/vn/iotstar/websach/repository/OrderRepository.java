@@ -15,8 +15,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByOrderCode(String orderCode);
     List<Order> findByCustomerId(Long customerId);
     List<Order> findByBranchId(Long branchId);
+    List<Order> findByBranchIdOrderByCreatedAtDesc(Long branchId);
     List<Order> findByBranchIdAndOrderStatus(Long branchId, OrderStatus orderStatus);
     List<Order> findByOrderStatus(OrderStatus orderStatus);
+    long countByBranchId(Long branchId);
+    long countByBranchIdAndOrderStatus(Long branchId, OrderStatus orderStatus);
 
     @Query("SELECT SUM(o.finalAmount) FROM Order o WHERE o.orderStatus = 'DELIVERED'")
     Double getTotalSystemRevenue();

@@ -16,6 +16,7 @@ public interface UserService {
     List<User> findAllUsers();
     List<User> searchUsers(String keyword);
     List<User> findByRole(RoleName roleName);
+    List<User> findByRoleAndBranch(RoleName roleName, Long branchId);
     User saveUser(User user);
     User updateUserRoleAndStatus(Long userId, Long roleId, Long branchId, String status);
     User toggleUserLock(Long userId);

@@ -1,0 +1,182 @@
+package vn.iotstar.websach.controller.vendor;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.iotstar.websach.dto.VendorDashboardDTO;
+import vn.iotstar.websach.dto.VendorProductRequest;
+import vn.iotstar.websach.entity.Branch;
+import vn.iotstar.websach.entity.Promotion;
+import vn.iotstar.websach.entity.enums.*;
+import vn.iotstar.websach.service.BookService;
+import vn.iotstar.websach.service.VendorService;
+
+import java.time.LocalDate;
+import java.util.Collections;
+
+@Controller
+@RequestMapping("/vendor")
+@RequiredArgsConstructor
+public class VendorController {
+    private final VendorService vendorService;
+    private final BookService bookService;
+
+    @GetMapping({"", "/dashboard"})
+    public String dashboard(Authentication auth,
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                            Model model) {
+        Branch shop = vendorService.getShop(auth.getName());
+        model.addAttribute("shop", shop);
+        if (shop == null) {
+            model.addAttribute("stats", VendorDashboardDTO.builder().build());
+            model.addAttribute("topProducts", Collections.emptyList());
+        } else {
+            model.addAttribute("stats", vendorService.getDashboard(auth.getName(), from, to));
+            model.addAttribute("topProducts", vendorService.getTopProducts(auth.getName(), from, to));
+        }
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
+        return "vendor/dashboard";
+    }
+
+    @GetMapping("/shop")
+    public String shop(Authentication auth, Model model) {
+        Branch shop = vendorService.getShop(auth.getName());
+        model.addAttribute("shop", shop == null ? new Branch() : shop);
+        model.addAttribute("hasShop", shop != null);
+        return "vendor/shop";
+    }
+
+    @PostMapping("/shop")
+    public String saveShop(Authentication auth, @ModelAttribute Branch shop,
+                           @RequestParam(value = "logoFile", required = false) MultipartFile logo,
+                           @RequestParam(value = "coverFile", required = false) MultipartFile cover,
+                           RedirectAttributes redirect) {
+        try {
+            vendorService.saveShop(auth.getName(), shop, logo, cover);
+            redirect.addFlashAttribute("successMessage", "Đã lưu thông tin cửa hàng");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/shop";
+    }
+
+    @GetMapping("/products")
+    public String products(Authentication auth, Model model) {
+        model.addAttribute("products", vendorService.getProducts(auth.getName()));
+        model.addAttribute("allBooks", bookService.findAllBooks());
+        model.addAttribute("conditions", BookCondition.values());
+        model.addAttribute("statuses", BookCopyStatus.values());
+        model.addAttribute("productForm", new VendorProductRequest());
+        return "vendor/products/list";
+    }
+
+    @PostMapping("/products/save")
+    public String saveProduct(Authentication auth, @ModelAttribute VendorProductRequest request,
+                              @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+                              RedirectAttributes redirect) {
+        try {
+            vendorService.saveProduct(auth.getName(), request, imageFile);
+            redirect.addFlashAttribute("successMessage", "Đã lưu sản phẩm");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/products";
+    }
+
+    @PostMapping("/products/{id}/toggle")
+    public String toggleProduct(Authentication auth, @PathVariable Long id, RedirectAttributes redirect) {
+        try {
+            vendorService.hideProduct(auth.getName(), id);
+            redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái sản phẩm");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/products";
+    }
+
+    @GetMapping("/orders")
+    public String orders(Authentication auth, @RequestParam(required = false) OrderStatus status, Model model) {
+        model.addAttribute("orders", vendorService.getOrders(auth.getName(), status));
+        model.addAttribute("statuses", OrderStatus.values());
+        model.addAttribute("selectedStatus", status);
+        return "vendor/orders/list";
+    }
+
+    @GetMapping("/orders/{id}")
+    public String orderDetail(Authentication auth, @PathVariable Long id, Model model) {
+        model.addAttribute("order", vendorService.getOrder(auth.getName(), id));
+        model.addAttribute("items", vendorService.getOrderItems(auth.getName(), id));
+        return "vendor/orders/detail";
+    }
+
+    @PostMapping("/orders/{id}/status")
+    public String updateOrder(Authentication auth, @PathVariable Long id,
+                              @RequestParam OrderStatus status, RedirectAttributes redirect) {
+        try {
+            vendorService.updateOrderStatus(auth.getName(), id, status);
+            redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái đơn hàng");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/orders";
+    }
+
+    @GetMapping("/promotions")
+    public String promotions(Authentication auth, Model model) {
+        model.addAttribute("promotions", vendorService.getPromotions(auth.getName()));
+        model.addAttribute("promotionForm", new Promotion());
+        return "vendor/promotions/list";
+    }
+
+    @PostMapping("/promotions/save")
+    public String savePromotion(Authentication auth, @ModelAttribute Promotion promotion, RedirectAttributes redirect) {
+        try {
+            vendorService.savePromotion(auth.getName(), promotion);
+            redirect.addFlashAttribute("successMessage", "Đã lưu chương trình khuyến mãi");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/promotions";
+    }
+
+    @PostMapping("/promotions/{id}/delete")
+    public String deletePromotion(Authentication auth, @PathVariable Long id, RedirectAttributes redirect) {
+        try {
+            vendorService.deletePromotion(auth.getName(), id);
+            redirect.addFlashAttribute("successMessage", "Đã xóa chương trình khuyến mãi");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/promotions";
+    }
+
+    @GetMapping("/sell-requests")
+    public String sellRequests(Authentication auth, @RequestParam(required = false) SellRequestStatus status, Model model) {
+        model.addAttribute("requests", vendorService.getSellRequests(auth.getName(), status));
+        model.addAttribute("statuses", SellRequestStatus.values());
+        model.addAttribute("selectedStatus", status);
+        return "vendor/sell-requests/list";
+    }
+
+    @PostMapping("/sell-requests/{id}/status")
+    public String updateSellRequest(Authentication auth, @PathVariable Long id,
+                                    @RequestParam SellRequestStatus status,
+                                    @RequestParam(required = false) Double offeredTotal,
+                                    @RequestParam(required = false) String staffNote,
+                                    RedirectAttributes redirect) {
+        try {
+            vendorService.updateSellRequest(auth.getName(), id, status, offeredTotal, staffNote);
+            redirect.addFlashAttribute("successMessage", "Đã cập nhật yêu cầu thu mua");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/sell-requests";
+    }
+}
