@@ -25,7 +25,7 @@
                                     <th>Họ và Tên</th>
                                     <th>Email</th>
                                     <th>Số Điện Thoại</th>
-                                    <th>Quyền Nạn</th>
+                                    <th>Quyền Hạn</th>
                                     <th>Trạng Thái</th>
                                 </tr>
                             </thead>

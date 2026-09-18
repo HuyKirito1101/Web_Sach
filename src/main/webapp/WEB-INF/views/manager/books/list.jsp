@@ -25,11 +25,22 @@
                         </select>
                     </form>
 
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCopyModal">
+                    <button class="btn btn-success fw-bold" data-bs-toggle="modal" data-bs-target="#createMasterBookModal">
+                        <i class="fa-solid fa-book-medical me-1"></i> Thêm Đầu Sách Mới
+                    </button>
+
+                    <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addCopyModal">
                         <i class="fa-solid fa-plus me-1"></i> Nhập Bản Sách Cũ
                     </button>
                 </div>
             </div>
+
+            <c:if test="${param.bookAdded != null}">
+                <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4">
+                    <i class="fa-solid fa-circle-check me-2"></i><strong>Đã thêm đầu sách mới thành công!</strong> Bây giờ bạn có thể chọn đầu sách này để nhập kho.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
@@ -78,6 +89,64 @@
                 </div>
             </div>
 
+            <!-- Modal Create Master Book -->
+            <div class="modal fade" id="createMasterBookModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <form action="/manager/books/create-master-book" method="post" enctype="multipart/form-data">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title fw-bold"><i class="fa-solid fa-book-medical me-2"></i>Thêm Đầu Sách Mới Vẫn Chưa Có Trực Tiếp Về Hệ Thống</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Tên Đầu Sách *</label>
+                                    <input type="text" name="title" class="form-control" placeholder="Nhập tên sách (ví dụ: Hoàng Tử Bé, Chí Phèo...)" required />
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Mã ISBN</label>
+                                        <input type="text" name="isbn" class="form-control" placeholder="978604xxxxxx" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Tác Giả</label>
+                                        <input type="text" name="authorName" class="form-control" placeholder="Tên tác giả" />
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Nhà Xuất Bản</label>
+                                        <input type="text" name="publisherName" class="form-control" placeholder="NXB Trẻ, Kim Đồng..." />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Năm Xuất Bản</label>
+                                        <input type="number" name="publishYear" class="form-control" placeholder="1995" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold">Danh Mục Sách</label>
+                                        <select name="categoryId" class="form-select">
+                                            <option value="">-- Chọn danh mục --</option>
+                                            <c:forEach var="cat" items="${categories}">
+                                                <option value="${cat.id}">${cat.name}</option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Link Ảnh Bìa / Upload Ảnh Bìa Mẫu</label>
+                                    <input type="text" name="coverUrl" class="form-control mb-2" placeholder="https://..." />
+                                    <input type="file" name="coverFile" class="form-control" accept="image/*" />
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                <button type="submit" class="btn btn-success fw-bold">Lưu Đầu Sách Mới</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal Add Copy -->
             <div class="modal fade" id="addCopyModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -89,17 +158,20 @@
                             </div>
                             <div class="modal-body">
                                 <div class="mb-3">
-                                    <label class="form-label">Chọn Đầu Sách</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="form-label mb-0 fw-bold">Chọn Đầu Sách *</label>
+                                        <small class="text-primary"><i class="fa-solid fa-plus-circle me-1"></i>Chưa thấy đầu sách bạn cần? <a href="#" data-bs-toggle="modal" data-bs-target="#createMasterBookModal" data-bs-dismiss="modal" class="fw-bold">Bấm vào đây để tạo đầu sách mới</a></small>
+                                    </div>
                                     <select name="bookId" class="form-select" required>
                                         <c:forEach var="b" items="${allBooks}">
-                                            <option value="${b.id}">${b.title} (ISBN: ${b.isbn})</option>
+                                            <option value="${b.id}">${b.title} (ISBN: ${b.isbn != null ? b.isbn : 'N/A'})</option>
                                         </c:forEach>
                                     </select>
                                 </div>
 
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">Đánh Giá Tình Trạng Sách</label>
+                                        <label class="form-label fw-bold">Đánh Giá Tình Trạng Sách</label>
                                         <select name="conditionRating" class="form-select" required>
                                             <option value="LIKE_NEW">LIKE_NEW - Như mới (90-99%)</option>
                                             <option value="VERY_GOOD">VERY_GOOD - Rất tốt (80-89%)</option>
@@ -109,35 +181,35 @@
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Số Lượng Nhập Kho</label>
+                                        <label class="form-label fw-bold">Số Lượng Nhập Kho</label>
                                         <input type="number" name="quantity" class="form-control" value="1" min="1" required />
                                     </div>
                                 </div>
 
                                 <div class="row g-3 mb-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">Giá Mua Vào (VNĐ)</label>
+                                        <label class="form-label fw-bold">Giá Mua Vào (VNĐ)</label>
                                         <input type="number" name="purchasePrice" class="form-control" placeholder="30000" required />
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Giá Bán Ra (VNĐ)</label>
+                                        <label class="form-label fw-bold">Giá Bán Ra (VNĐ)</label>
                                         <input type="number" name="sellingPrice" class="form-control" placeholder="50000" required />
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Ghi Chú Về Tình Trạng Thực Tế</label>
+                                    <label class="form-label fw-bold">Ghi Chú Về Tình Trạng Thực Tế</label>
                                     <textarea name="note" class="form-control" rows="2" placeholder="Ví dụ: Bìa hơi ố nhẹ góc trái, gáy sách chắc chắn..."></textarea>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Ảnh Chụp Thực Tế (Upload Cloudinary)</label>
+                                    <label class="form-label fw-bold">Ảnh Chụp Thực Tế (Upload Cloudinary)</label>
                                     <input type="file" name="imageFile" class="form-control" accept="image/*" />
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                <button type="submit" class="btn btn-primary">Lưu Nhập Kho</button>
+                                <button type="submit" class="btn btn-primary fw-bold">Lưu Nhập Kho</button>
                             </div>
                         </form>
                     </div>

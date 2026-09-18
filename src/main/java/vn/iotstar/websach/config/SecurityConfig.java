@@ -48,11 +48,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**", "/ws/**", "/WEB-INF/**").permitAll()
+                        .requestMatchers("/", "/home", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**", "/ws/**", "/WEB-INF/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/vendor/**").hasAnyRole("VENDOR", "ADMIN")
                         .requestMatchers("/shipper/**").hasAnyRole("SHIPPER", "ADMIN")
+                        .requestMatchers("/cart/**", "/checkout/**", "/orders/**", "/profile/**", "/favorites/**", "/viewed-products/**", "/reviews/**").authenticated()
                         .anyRequest().authenticated()
                 );
 

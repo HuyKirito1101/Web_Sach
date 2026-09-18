@@ -40,7 +40,12 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("Dang khoi tao du lieu mau cho WebSachCu...");
+        if (bookRepository.count() > 0) {
+            log.info("Dữ liệu đã tồn tại, bỏ qua khởi tạo lại.");
+            return;
+        }
+
+        log.info("Đang khởi tạo dữ liệu mẫu phong phú cho Web Sách Cũ...");
 
         // 1. Roles
         for (RoleName roleName : RoleName.values()) {
@@ -59,21 +64,23 @@ public class DataInitializer implements CommandLineRunner {
         Branch b1 = branchRepository.findAll().stream().findFirst().orElseGet(() ->
                 branchRepository.save(Branch.builder()
                         .name("Sách Cũ Chi Nhánh Thủ Đức")
-                        .address("1 Vo Van Ngan, Thu Duc, TP.HCM")
+                        .address("1 Võ Văn Ngân, TP. Thủ Đức, TP.HCM")
                         .phone("0901234567")
                         .email("thuduc@websach.com")
                         .status(BranchStatus.ACTIVE)
                         .appDiscountPercent(10.0)
+                        .description("Cửa hàng chuyên sách cũ, sách xưa và các ấn bản đã qua sử dụng.")
                         .build())
         );
 
         Branch b2 = branchRepository.save(Branch.builder()
                 .name("Sách Cũ Chi Nhánh Quận 1")
-                .address("100 Nguyen Hue, Quan 1, TP.HCM")
+                .address("100 Nguyễn Huệ, Quận 1, TP.HCM")
                 .phone("0907654321")
                 .email("quan1@websach.com")
                 .status(BranchStatus.ACTIVE)
                 .appDiscountPercent(12.0)
+                .description("Chi nhánh trung tâm chuyên sách ngoại văn, giáo trình và truyện tranh hiếm.")
                 .build());
 
         // 3. Users
@@ -113,7 +120,6 @@ public class DataInitializer implements CommandLineRunner {
         );
         if (b1.getOwner() == null) {
             b1.setOwner(vendor);
-            b1.setDescription("Cửa hàng chuyên sách cũ, sách xưa và các ấn bản đã qua sử dụng.");
             branchRepository.save(b1);
         }
 
@@ -131,7 +137,7 @@ public class DataInitializer implements CommandLineRunner {
 
         User customer = userRepository.findByEmail("user@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
-                        .fullName("Khách Hàng Nguyen Van A")
+                        .fullName("Khách Hàng Nguyễn Văn A")
                         .email("user@websach.com")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0955555555")
@@ -141,22 +147,32 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         // 4. Categories
-        Category cat1 = categoryRepository.save(Category.builder().name("Văn Học Việt Nam").slug("van-hoc-viet-nam").description("Cac tac phẩm van hoc noi tieng").active(true).build());
-        Category cat2 = categoryRepository.save(Category.builder().name("Sách Trước 1975").slug("sach-truoc-1975").description("Cac ban sach cu, sach xua quy hiem").active(true).build());
-        Category cat3 = categoryRepository.save(Category.builder().name("Kinh Tế - Kỹ Năng").slug("kinh-te-ky-nang").description("Sach kinh doanh ky nang").active(true).build());
+        Category cat1 = categoryRepository.save(Category.builder().name("Văn Học Việt Nam").slug("van-hoc-viet-nam").description("Các tác phẩm văn học nổi tiếng trong nước qua các thời kỳ.").active(true).build());
+        Category cat2 = categoryRepository.save(Category.builder().name("Sách Trước 1975").slug("sach-truoc-1975").description("Các bản sách cũ, ấn bản xưa quý hiếm trước năm 1975.").active(true).build());
+        Category cat3 = categoryRepository.save(Category.builder().name("Kinh Tế - Kỹ Năng").slug("kinh-te-ky-nang").description("Sách kinh doanh, quản trị và phát triển bản thân.").active(true).build());
+        Category cat4 = categoryRepository.save(Category.builder().name("Truyện Tranh & Manga Cũ").slug("truyen-tranh-manga").description("Bộ truyện tranh, manga sưu tầm xưa và cũ.").active(true).build());
+        Category cat5 = categoryRepository.save(Category.builder().name("Giáo Trình & Ngoại Ngữ").slug("giao-trinh-ngoai-ngu").description("Giáo trình đại học, sách học tiếng Anh, Nhật, Trung.").active(true).build());
 
-        // 5. Author & Publisher
-        Author author1 = authorRepository.save(Author.builder().name("Tô Hoài").bio("Nha van noi tieng").build());
-        Publisher pub1 = publisherRepository.save(Publisher.builder().name("NXB Kim Đồng").address("Ha Noi").build());
+        // 5. Authors & Publishers
+        Author a1 = authorRepository.save(Author.builder().name("Tô Hoài").bio("Nhà văn lớn của văn học hiện đại Việt Nam.").build());
+        Author a2 = authorRepository.save(Author.builder().name("Vũ Trọng Phụng").bio("Ông vua văn xuôi trào phúng Việt Nam.").build());
+        Author a3 = authorRepository.save(Author.builder().name("Ngô Tất Tố").bio("Nhà văn, nhà báo, nhà nghiên cứu văn hóa nổi tiếng.").build());
+        Author a4 = authorRepository.save(Author.builder().name("Nguyễn Nhật Ánh").bio("Tác giả của nhiều tựa sách tuổi học trò được yêu thích.").build());
+        Author a5 = authorRepository.save(Author.builder().name("Dale Carnegie").bio("Tác giả hàng đầu thế giới về dắc nhân tâm và giao tiếp.").build());
+
+        Publisher p1 = publisherRepository.save(Publisher.builder().name("NXB Kim Đồng").address("Hà Nội").build());
+        Publisher p2 = publisherRepository.save(Publisher.builder().name("NXB Văn Học").address("Hà Nội").build());
+        Publisher p3 = publisherRepository.save(Publisher.builder().name("NXB Trẻ").address("TP.HCM").build());
+        Publisher p4 = publisherRepository.save(Publisher.builder().name("NXB Cổ Phong (Trước 1975)").address("Sài Gòn").build());
 
         // 6. Books
         Book book1 = bookRepository.save(Book.builder()
                 .isbn("9786042078888")
                 .title("Dế Mèn Phiêu Lưu Ký")
-                .description("Tac pham van hoc kinh dien cho thieu nhi va nguoi lon")
+                .description("Tác phẩm văn học kinh điển dành cho thiếu nhi và người lớn của nhà văn Tô Hoài.")
                 .category(cat1)
-                .author(author1)
-                .publisher(pub1)
+                .author(a1)
+                .publisher(p1)
                 .publishYear(1985)
                 .language("Tiếng Việt")
                 .coverUrl("https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80")
@@ -164,17 +180,65 @@ public class DataInitializer implements CommandLineRunner {
 
         Book book2 = bookRepository.save(Book.builder()
                 .isbn("9786045612345")
-                .title("Số Đỏ (Bản Sách Cũ 1990)")
-                .description("Tieu thuyet truyen hinh cua Vu Trong Phung")
+                .title("Số Đỏ (Ấn Bản Năm 1990)")
+                .description("Tiểu thuyết trào phúng kinh điển của Vũ Trọng Phụng về nhân vật Xuân Tóc Đỏ.")
                 .category(cat2)
-                .author(author1)
-                .publisher(pub1)
+                .author(a2)
+                .publisher(p2)
                 .publishYear(1990)
                 .language("Tiếng Việt")
                 .coverUrl("https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80")
                 .build());
 
-        // 7. BookCopies
+        Book book3 = bookRepository.save(Book.builder()
+                .isbn("9786048991111")
+                .title("Tắt Đèn (Bản Cũ 1988)")
+                .description("Tác phẩm hiện thực xuất sắc tái hiện cuộc sống nông thôn Việt Nam trước Cách mạng.")
+                .category(cat1)
+                .author(a3)
+                .publisher(p2)
+                .publishYear(1988)
+                .language("Tiếng Việt")
+                .coverUrl("https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80")
+                .build());
+
+        Book book4 = bookRepository.save(Book.builder()
+                .isbn("9786047722222")
+                .title("Tôi Thấy Hoa Vàng Trên Cỏ Xanh")
+                .description("Truyện dài cảm động về tuổi thơ nơi làng quê nghèo của Nguyễn Nhật Ánh.")
+                .category(cat1)
+                .author(a4)
+                .publisher(p3)
+                .publishYear(2012)
+                .language("Tiếng Việt")
+                .coverUrl("https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80")
+                .build());
+
+        Book book5 = bookRepository.save(Book.builder()
+                .isbn("9786046633333")
+                .title("Đắc Nhân Tâm (Bản Dịch Nguyễn Hiến Lê 1974)")
+                .description("Bản dịch kinh điển của dịch giả Nguyễn Hiến Lê trước năm 1975, bìa cứng xưa quý hiếm.")
+                .category(cat2)
+                .author(a5)
+                .publisher(p4)
+                .publishYear(1974)
+                .language("Tiếng Việt")
+                .coverUrl("https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80")
+                .build());
+
+        Book book6 = bookRepository.save(Book.builder()
+                .isbn("9786045544444")
+                .title("Doraemon Tập 1 (Bản In Đầu 1996)")
+                .description("Tập 1 bộ truyện tranh Doraemon bản dịch cũ mỏng giấy ngả vàng sưu tầm.")
+                .category(cat4)
+                .author(a1)
+                .publisher(p1)
+                .publishYear(1996)
+                .language("Tiếng Việt")
+                .coverUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
+                .build());
+
+        // 7. BookCopies across Branches
         BookCopy copy1 = bookCopyRepository.save(BookCopy.builder()
                 .book(book1)
                 .branch(b1)
@@ -199,6 +263,54 @@ public class DataInitializer implements CommandLineRunner {
                 .imageUrl("https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80")
                 .build());
 
+        BookCopy copy3 = bookCopyRepository.save(BookCopy.builder()
+                .book(book3)
+                .branch(b2)
+                .conditionRating(BookCondition.VERY_GOOD)
+                .purchasePrice(35000.0)
+                .sellingPrice(55000.0)
+                .quantity(8)
+                .status(BookCopyStatus.AVAILABLE)
+                .note("Giấy giữ màu tốt, không rách gáy")
+                .imageUrl("https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80")
+                .build());
+
+        BookCopy copy4 = bookCopyRepository.save(BookCopy.builder()
+                .book(book4)
+                .branch(b1)
+                .conditionRating(BookCondition.LIKE_NEW)
+                .purchasePrice(50000.0)
+                .sellingPrice(75000.0)
+                .quantity(12)
+                .status(BookCopyStatus.AVAILABLE)
+                .note("Sách như mới 98%, đẹp sạch sẽ")
+                .imageUrl("https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80")
+                .build());
+
+        BookCopy copy5 = bookCopyRepository.save(BookCopy.builder()
+                .book(book5)
+                .branch(b2)
+                .conditionRating(BookCondition.FAIR)
+                .purchasePrice(120000.0)
+                .sellingPrice(180000.0)
+                .quantity(3)
+                .status(BookCopyStatus.AVAILABLE)
+                .note("Ấn bản hiếm 1974, bìa vải ngả màu thời gian, cực kỳ giá trị cho dân sưu tầm")
+                .imageUrl("https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80")
+                .build());
+
+        BookCopy copy6 = bookCopyRepository.save(BookCopy.builder()
+                .book(book6)
+                .branch(b1)
+                .conditionRating(BookCondition.GOOD)
+                .purchasePrice(20000.0)
+                .sellingPrice(35000.0)
+                .quantity(7)
+                .status(BookCopyStatus.AVAILABLE)
+                .note("Truyện tranh cũ 1996, ruột sạch sẽ đủ trang")
+                .imageUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
+                .build());
+
         // 8. Shipping Providers & App Discounts
         ShippingProvider ghn = shippingProviderRepository.save(ShippingProvider.builder().name("Giao Hàng Nhanh (GHN)").phone("19001234").baseFee(25000.0).active(true).build());
         shippingProviderRepository.save(ShippingProvider.builder().name("Viettel Post").phone("19005678").baseFee(22000.0).active(true).build());
@@ -214,7 +326,7 @@ public class DataInitializer implements CommandLineRunner {
             Order order = orderRepository.save(Order.builder()
                     .orderCode("DH-DEMO-001").customer(customer).branch(b1).shippingProvider(ghn)
                     .receiverName(customer.getFullName()).receiverPhone(customer.getPhone())
-                    .shippingAddress("12 Võ Văn Ngân, Thủ Đức, TP.HCM")
+                    .shippingAddress("12 Võ Văn Ngân, TP. Thủ Đức, TP.HCM")
                     .totalAmount(65000.0).shippingFee(25000.0).discountAmount(0.0)
                     .appCommissionAmount(6500.0).finalAmount(90000.0)
                     .paymentMethod(PaymentMethod.COD).paymentStatus(PaymentStatus.PENDING)
@@ -232,6 +344,6 @@ public class DataInitializer implements CommandLineRunner {
                     .expectedPrice(50000.0).imageUrl(book2.getCoverUrl()).build());
         }
 
-        log.info("Khoi tao du lieu mau thanh cong! San sang su dung.");
+        log.info("Khởi tạo dữ liệu mẫu thành công! Sẵn sàng sử dụng.");
     }
 }
