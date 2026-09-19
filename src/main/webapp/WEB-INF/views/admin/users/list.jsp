@@ -20,6 +20,20 @@
                 </form>
             </div>
 
+            <c:if test="${not empty successMessage}">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+
+            <c:if test="${not empty errorMessage}">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>${errorMessage}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -50,16 +64,19 @@
                                         </td>
                                         <td>${u.branch != null ? u.branch.name : '-'}</td>
                                         <td>
-                                            <span class="badge ${u.status == 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">
+                                            <span class="badge ${u.status == 'ACTIVE' ? 'bg-success' : (u.status == 'LOCKED' ? 'bg-danger' : 'bg-secondary')}">
                                                 ${u.status}
                                             </span>
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editModal${u.id}">
+                                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editModal${u.id}" title="Sửa quyền & chi nhánh">
                                                 <i class="fa-solid fa-user-pen"></i> Sửa Role
                                             </button>
-                                            <a href="/admin/users/toggle-lock/${u.id}" class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-danger'}">
+                                            <a href="/admin/users/toggle-lock/${u.id}" class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1" title="${u.status == 'LOCKED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}">
                                                 <i class="fa-solid ${u.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i>
+                                            </a>
+                                            <a href="/admin/users/delete/${u.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng [${u.fullName}] khỏi hệ thống?')" title="Xóa người dùng">
+                                                <i class="fa-solid fa-trash"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -67,11 +84,11 @@
                                     <!-- Edit User Modal -->
                                     <div class="modal fade" id="editModal${u.id}" tabindex="-1">
                                         <div class="modal-dialog">
-                                            <div class="modal-content">
+                                            <div class="modal-content text-start">
                                                 <form action="/admin/users/update-role-status" method="post">
                                                     <input type="hidden" name="userId" value="${u.id}" />
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh cho: ${u.fullName}</h5>
+                                                        <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: ${u.fullName}</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body">
@@ -85,7 +102,7 @@
                                                         </div>
 
                                                         <div class="mb-3">
-                                                            <label class="form-label">Chi Nhánh (Cho Manager/Shipper)</label>
+                                                            <label class="form-label">Chi Nhánh (Cho Manager/Shipper/Vendor)</label>
                                                             <select name="branchId" class="form-select">
                                                                 <option value="">-- Không chọn --</option>
                                                                 <c:forEach var="b" items="${branches}">

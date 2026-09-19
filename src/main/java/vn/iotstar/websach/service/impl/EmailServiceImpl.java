@@ -2,6 +2,7 @@ package vn.iotstar.websach.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,18 +15,22 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
+    @Value("${spring.mail.username:your_email@gmail.com}")
+    private String fromEmail;
+
     @Override
     public void sendOtpEmail(String toEmail, String otpCode) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("[WebSachCu] Ma OTP Kich Hoat / Reset Mat Khau");
-            message.setText("Ma OTP cua ban la: " + otpCode + ". Ma co hieu luc trong 5 phut. Vui long khong chia se ma nay cho ai.");
+            message.setSubject("[WebSachCu] Mã OTP Kích Hoạt Tài Khoản");
+            message.setText("Mã OTP kích hoạt tài khoản của bạn là: " + otpCode + "\n\nMã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho ai.");
             mailSender.send(message);
-            log.info("Gui OTP thanh cong toi email: {}", toEmail);
+            log.info("Đã gửi mã OTP thực tế tới Gmail: {}", toEmail);
         } catch (Exception e) {
-            log.error("Loi khi gui OTP email qua JavaMailSender: {}", e.getMessage());
-            log.info("MOCK OTP MODE - Ma OTP cho email {}: {}", toEmail, otpCode);
+            log.error("Lỗi khi gửi OTP qua SMTP Gmail (Do chưa điền App Password): {}", e.getMessage());
+            log.info("👉 MOCK OTP CONSOLE (Dành cho Dev Test): Mã OTP của email {} là: [{}]", toEmail, otpCode);
         }
     }
 }

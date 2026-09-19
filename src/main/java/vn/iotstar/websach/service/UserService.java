@@ -20,4 +20,5 @@ public interface UserService {
     User saveUser(User user);
     User updateUserRoleAndStatus(Long userId, Long roleId, Long branchId, String status);
     User toggleUserLock(Long userId);
+    void deleteUser(Long userId);
 }

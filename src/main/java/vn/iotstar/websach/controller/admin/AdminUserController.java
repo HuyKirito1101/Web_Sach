@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.repository.RoleRepository;
 import vn.iotstar.websach.service.BranchService;
@@ -43,5 +44,16 @@ public class AdminUserController {
     public String toggleLock(@PathVariable("id") Long userId) {
         userService.toggleUserLock(userId);
         return "redirect:/admin/users?locked";
+    }
+
+    @GetMapping("/delete/{id}")
+    public String deleteUser(@PathVariable("id") Long userId, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(userId);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa thành công người dùng id: " + userId);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa người dùng do đã có dữ liệu đơn hàng / đánh giá. Bạn nên chọn Khóa tài khoản thay thế!");
+        }
+        return "redirect:/admin/users";
     }
 }

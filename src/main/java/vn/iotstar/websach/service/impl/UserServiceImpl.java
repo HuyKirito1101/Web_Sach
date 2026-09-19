@@ -181,4 +181,21 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.save(user);
     }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng id: " + userId));
+
+        // Nếu user đang làm Vendor sở hữu branch, gỡ bỏ liên kết owner trước khi xóa
+        branchRepository.findAll().stream()
+                .filter(b -> b.getOwner() != null && b.getOwner().getId().equals(userId))
+                .forEach(b -> {
+                    b.setOwner(null);
+                    branchRepository.save(b);
+                });
+
+        userRepository.delete(user);
+    }
 }
