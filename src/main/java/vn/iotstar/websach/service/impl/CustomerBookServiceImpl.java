@@ -60,7 +60,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
             boolean matchesCategory = (categoryId == null || (book.getCategory() != null && book.getCategory().getId().equals(categoryId)));
 
             List<BookCopy> copies = bookCopyRepository.findByBookId(book.getId()).stream()
-                    .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE)
+                    .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE && c.getSeller() != null)
                     .collect(Collectors.toList());
 
             boolean matchesBranch = (branchId == null || copies.stream().anyMatch(c -> c.getBranch().getId().equals(branchId)));
@@ -90,7 +90,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
         Book book = bookRepository.findById(bookId).orElse(null);
         if (book == null) return Collections.emptyList();
         return bookCopyRepository.findByBookId(bookId).stream()
-                .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE)
+                .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE && c.getSeller() != null)
                 .collect(Collectors.toList());
     }
 

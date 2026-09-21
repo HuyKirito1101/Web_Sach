@@ -70,7 +70,7 @@
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>Chi Nhánh / Shop</th>
+                                <th>Chi Nhánh & Vendor Bán</th>
                                 <th>Tình Trạng Sách</th>
                                 <th>Ghi Chú Vết Ô/Sờn</th>
                                 <th>Giá Bán</th>
@@ -81,7 +81,12 @@
                         <tbody>
                             <c:forEach var="cp" items="${copies}">
                                 <tr>
-                                    <td class="fw-bold text-primary"><i class="fa-solid fa-store me-2"></i>${cp.branch.name}</td>
+                                    <td>
+                                        <div class="fw-bold text-primary"><i class="fa-solid fa-store me-2"></i>${cp.branch.name}</div>
+                                        <c:if test="${cp.seller != null}">
+                                            <span class="badge bg-secondary font-monospace mt-1"><i class="fa-solid fa-user-tie me-1"></i>${cp.seller.fullName}</span>
+                                        </c:if>
+                                    </td>
                                     <td><span class="badge bg-info text-dark">${cp.conditionRating}</span></td>
                                     <td class="small text-muted">${cp.note != null ? cp.note : 'Không có'}</td>
                                     <td class="fw-bold text-danger">

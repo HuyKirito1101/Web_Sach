@@ -28,6 +28,10 @@ public class BookCopy {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "seller_id")
+    private User seller; // Vendor gian hàng sở hữu cuốn sách này
+
     @Enumerated(EnumType.STRING)
     @Column(length = 30, nullable = false)
     private BookCondition conditionRating; // LIKE_NEW, VERY_GOOD, GOOD, FAIR, POOR

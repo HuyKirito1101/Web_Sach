@@ -15,6 +15,7 @@ import vn.iotstar.websach.repository.*;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -41,7 +42,14 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (bookRepository.count() > 0) {
-            log.info("Dữ liệu đã tồn tại, bỏ qua khởi tạo lại.");
+            log.info("Dữ liệu đã tồn tại, tiến hành dọn dẹp các bản copy sách cũ không thuộc Vendor nào...");
+            List<BookCopy> orphans = bookCopyRepository.findAll().stream()
+                    .filter(c -> c.getSeller() == null)
+                    .toList();
+            if (!orphans.isEmpty()) {
+                log.info("Đã xóa {} bản copy sách không thuộc về Vendor nào.", orphans.size());
+                bookCopyRepository.deleteAll(orphans);
+            }
             return;
         }
 
@@ -146,12 +154,136 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        // 4. Categories
+        // 4. Categories (Khởi tạo trước để gán cho Vendor & Sách)
         Category cat1 = categoryRepository.save(Category.builder().name("Văn Học Việt Nam").slug("van-hoc-viet-nam").description("Các tác phẩm văn học nổi tiếng trong nước qua các thời kỳ.").active(true).build());
         Category cat2 = categoryRepository.save(Category.builder().name("Sách Trước 1975").slug("sach-truoc-1975").description("Các bản sách cũ, ấn bản xưa quý hiếm trước năm 1975.").active(true).build());
         Category cat3 = categoryRepository.save(Category.builder().name("Kinh Tế - Kỹ Năng").slug("kinh-te-ky-nang").description("Sách kinh doanh, quản trị và phát triển bản thân.").active(true).build());
         Category cat4 = categoryRepository.save(Category.builder().name("Truyện Tranh & Manga Cũ").slug("truyen-tranh-manga").description("Bộ truyện tranh, manga sưu tầm xưa và cũ.").active(true).build());
         Category cat5 = categoryRepository.save(Category.builder().name("Giáo Trình & Ngoại Ngữ").slug("giao-trinh-ngoai-ngu").description("Giáo trình đại học, sách học tiếng Anh, Nhật, Trung.").active(true).build());
+        Category cat6 = categoryRepository.save(Category.builder().name("Sách Giáo Khoa & Tham Khảo").slug("sgk-tham-khao").description("Bộ sách giáo khoa các lớp 1-12, sách luyện thi đại học cũ.").active(true).build());
+
+        // Shipping Providers (Đơn vị vận chuyển)
+        ShippingProvider ghn = shippingProviderRepository.save(ShippingProvider.builder()
+                .name("Giao Hàng Nhanh (GHN)")
+                .phone("19006789")
+                .baseFee(25000.0)
+                .active(true)
+                .build());
+
+        ShippingProvider viettelPost = shippingProviderRepository.save(ShippingProvider.builder()
+                .name("Viettel Post")
+                .phone("19008095")
+                .baseFee(22000.0)
+                .active(true)
+                .build());
+
+        // 3.1. Vendors cho Chi Nhánh Thủ Đức (b1) kèm Chuyên Môn Danh Mục
+        User vThuduc1 = userRepository.findByEmail("vendor.thuduc1@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Vendor 1 Thủ Đức - Sách Văn Học & Truyện Tranh")
+                        .email("vendor.thuduc1@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0901111111")
+                        .role(vendorRole)
+                        .branch(b1)
+                        .specializedCategory(cat1)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        User vThuduc2 = userRepository.findByEmail("vendor.thuduc2@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Vendor 2 Thủ Đức - Sách Giáo Khoa & Tham Khảo")
+                        .email("vendor.thuduc2@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0902222222")
+                        .role(vendorRole)
+                        .branch(b1)
+                        .specializedCategory(cat6)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        // 3.2. Shippers cho Chi Nhánh Thủ Đức (b1) chia theo NVC (GHN vs Viettel Post)
+        userRepository.findByEmail("shipper.thuduc1@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Thủ Đức (GHN) - Nguyễn Văn Nam")
+                        .email("shipper.thuduc1@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0961111111")
+                        .role(shipperRole)
+                        .branch(b1)
+                        .shippingProvider(ghn)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        userRepository.findByEmail("shipper.thuduc2@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Thủ Đức (Viettel Post) - Trần Văn Bình")
+                        .email("shipper.thuduc2@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0962222222")
+                        .role(shipperRole)
+                        .branch(b1)
+                        .shippingProvider(viettelPost)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        // 3.3. Vendors cho Chi Nhánh Quận 1 (b2) kèm Chuyên Môn Danh Mục
+        User vQuan1_1 = userRepository.findByEmail("vendor.quan1_1@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Vendor 1 Quận 1 - Sách Kinh Tế & Kỹ Năng")
+                        .email("vendor.quan1_1@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0903333333")
+                        .role(vendorRole)
+                        .branch(b2)
+                        .specializedCategory(cat3)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        User vQuan1_2 = userRepository.findByEmail("vendor.quan1_2@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Vendor 2 Quận 1 - Sách Ngoại Văn & Trước 1975")
+                        .email("vendor.quan1_2@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0904444444")
+                        .role(vendorRole)
+                        .branch(b2)
+                        .specializedCategory(cat2)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        // 3.4. Shippers cho Chi Nhánh Quận 1 (b2) chia theo NVC (GHN vs Viettel Post)
+        userRepository.findByEmail("shipper.quan1_1@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Quận 1 (GHN) - Lê Hoàng Long")
+                        .email("shipper.quan1_1@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0963333333")
+                        .role(shipperRole)
+                        .branch(b2)
+                        .shippingProvider(ghn)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        userRepository.findByEmail("shipper.quan1_2@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Quận 1 (Viettel Post) - Phạm Quốc Huy")
+                        .email("shipper.quan1_2@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0964444444")
+                        .role(shipperRole)
+                        .branch(b2)
+                        .shippingProvider(viettelPost)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
 
         // 5. Authors & Publishers
         Author a1 = authorRepository.save(Author.builder().name("Tô Hoài").bio("Nhà văn lớn của văn học hiện đại Việt Nam.").build());
@@ -159,11 +291,13 @@ public class DataInitializer implements CommandLineRunner {
         Author a3 = authorRepository.save(Author.builder().name("Ngô Tất Tố").bio("Nhà văn, nhà báo, nhà nghiên cứu văn hóa nổi tiếng.").build());
         Author a4 = authorRepository.save(Author.builder().name("Nguyễn Nhật Ánh").bio("Tác giả của nhiều tựa sách tuổi học trò được yêu thích.").build());
         Author a5 = authorRepository.save(Author.builder().name("Dale Carnegie").bio("Tác giả hàng đầu thế giới về dắc nhân tâm và giao tiếp.").build());
+        Author a6 = authorRepository.save(Author.builder().name("Bộ Giáo Dục & Đào Tạo").bio("Tác giả biên soạn SGK phổ thông.").build());
 
         Publisher p1 = publisherRepository.save(Publisher.builder().name("NXB Kim Đồng").address("Hà Nội").build());
         Publisher p2 = publisherRepository.save(Publisher.builder().name("NXB Văn Học").address("Hà Nội").build());
         Publisher p3 = publisherRepository.save(Publisher.builder().name("NXB Trẻ").address("TP.HCM").build());
         Publisher p4 = publisherRepository.save(Publisher.builder().name("NXB Cổ Phong (Trước 1975)").address("Sài Gòn").build());
+        Publisher p5 = publisherRepository.save(Publisher.builder().name("NXB Giáo Dục Việt Nam").address("Hà Nội").build());
 
         // 6. Books
         Book book1 = bookRepository.save(Book.builder()
@@ -218,7 +352,7 @@ public class DataInitializer implements CommandLineRunner {
                 .isbn("9786046633333")
                 .title("Đắc Nhân Tâm (Bản Dịch Nguyễn Hiến Lê 1974)")
                 .description("Bản dịch kinh điển của dịch giả Nguyễn Hiến Lê trước năm 1975, bìa cứng xưa quý hiếm.")
-                .category(cat2)
+                .category(cat3)
                 .author(a5)
                 .publisher(p4)
                 .publishYear(1974)
@@ -238,10 +372,23 @@ public class DataInitializer implements CommandLineRunner {
                 .coverUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
                 .build());
 
-        // 7. BookCopies across Branches
+        Book book7 = bookRepository.save(Book.builder()
+                .isbn("9786040007777")
+                .title("Bộ Sách Giáo Khoa Lớp 12 Cũ (Đầy Đủ 12 Môn)")
+                .description("Bộ SGK lớp 12 cũ dành cho học sinh chuẩn bị ôn thi đại học và tốt nghiệp.")
+                .category(cat6)
+                .author(a6)
+                .publisher(p5)
+                .publishYear(2020)
+                .language("Tiếng Việt")
+                .coverUrl("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80")
+                .build());
+
+        // 7. BookCopies across Branches & Specialized Vendors
         BookCopy copy1 = bookCopyRepository.save(BookCopy.builder()
                 .book(book1)
                 .branch(b1)
+                .seller(vThuduc1)
                 .conditionRating(BookCondition.LIKE_NEW)
                 .purchasePrice(40000.0)
                 .sellingPrice(65000.0)
@@ -253,7 +400,8 @@ public class DataInitializer implements CommandLineRunner {
 
         BookCopy copy2 = bookCopyRepository.save(BookCopy.builder()
                 .book(book2)
-                .branch(b1)
+                .branch(b2)
+                .seller(vQuan1_2)
                 .conditionRating(BookCondition.GOOD)
                 .purchasePrice(30000.0)
                 .sellingPrice(50000.0)
@@ -265,7 +413,8 @@ public class DataInitializer implements CommandLineRunner {
 
         BookCopy copy3 = bookCopyRepository.save(BookCopy.builder()
                 .book(book3)
-                .branch(b2)
+                .branch(b1)
+                .seller(vThuduc1)
                 .conditionRating(BookCondition.VERY_GOOD)
                 .purchasePrice(35000.0)
                 .sellingPrice(55000.0)
@@ -278,6 +427,7 @@ public class DataInitializer implements CommandLineRunner {
         BookCopy copy4 = bookCopyRepository.save(BookCopy.builder()
                 .book(book4)
                 .branch(b1)
+                .seller(vThuduc1)
                 .conditionRating(BookCondition.LIKE_NEW)
                 .purchasePrice(50000.0)
                 .sellingPrice(75000.0)
@@ -290,6 +440,7 @@ public class DataInitializer implements CommandLineRunner {
         BookCopy copy5 = bookCopyRepository.save(BookCopy.builder()
                 .book(book5)
                 .branch(b2)
+                .seller(vQuan1_1)
                 .conditionRating(BookCondition.FAIR)
                 .purchasePrice(120000.0)
                 .sellingPrice(180000.0)
@@ -302,6 +453,7 @@ public class DataInitializer implements CommandLineRunner {
         BookCopy copy6 = bookCopyRepository.save(BookCopy.builder()
                 .book(book6)
                 .branch(b1)
+                .seller(vThuduc1)
                 .conditionRating(BookCondition.GOOD)
                 .purchasePrice(20000.0)
                 .sellingPrice(35000.0)
@@ -311,10 +463,20 @@ public class DataInitializer implements CommandLineRunner {
                 .imageUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
                 .build());
 
-        // 8. Shipping Providers & App Discounts
-        ShippingProvider ghn = shippingProviderRepository.save(ShippingProvider.builder().name("Giao Hàng Nhanh (GHN)").phone("19001234").baseFee(25000.0).active(true).build());
-        shippingProviderRepository.save(ShippingProvider.builder().name("Viettel Post").phone("19005678").baseFee(22000.0).active(true).build());
+        BookCopy copy7 = bookCopyRepository.save(BookCopy.builder()
+                .book(book7)
+                .branch(b1)
+                .seller(vThuduc2)
+                .conditionRating(BookCondition.GOOD)
+                .purchasePrice(45000.0)
+                .sellingPrice(70000.0)
+                .quantity(15)
+                .status(BookCopyStatus.AVAILABLE)
+                .note("Bộ sách giáo khoa 12 môn còn đầy đủ bìa và ruột sạch sẽ")
+                .imageUrl("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80")
+                .build());
 
+        // 8. App Discounts & Promotions
         appDiscountRepository.save(AppDiscount.builder().code("SACHCU10").discountPercent(10.0).maxDiscountAmount(30000.0).minOrderValue(100000.0).startDate(LocalDate.now()).endDate(LocalDate.now().plusMonths(3)).active(true).build());
 
         promotionRepository.save(Promotion.builder()

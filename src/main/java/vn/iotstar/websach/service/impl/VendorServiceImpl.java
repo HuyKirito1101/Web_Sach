@@ -44,7 +44,11 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public Branch getShop(String vendorEmail) {
         User vendor = requireVendor(vendorEmail);
-        return branchRepository.findByOwnerId(vendor.getId()).orElse(null);
+        Branch shop = branchRepository.findByOwnerId(vendor.getId()).orElse(null);
+        if (shop == null && vendor.getBranch() != null) {
+            shop = vendor.getBranch();
+        }
+        return shop;
     }
 
     private Branch requireShop(String email) {
@@ -95,19 +99,20 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public List<BookCopy> getProducts(String vendorEmail) {
-        Branch shop = requireShop(vendorEmail);
-        return bookCopyRepository.findByBranchId(shop.getId());
+        User vendor = requireVendor(vendorEmail);
+        return bookCopyRepository.findBySellerId(vendor.getId());
     }
 
     @Override
     @Transactional
     public BookCopy saveProduct(String vendorEmail, VendorProductRequest request, MultipartFile imageFile) {
+        User vendor = requireVendor(vendorEmail);
         Branch shop = requireActiveShop(vendorEmail);
         BookCopy product;
         if (request.getId() == null) {
             Book book = bookRepository.findById(request.getBookId())
                     .orElseThrow(() -> new IllegalArgumentException("Đầu sách không tồn tại"));
-            product = BookCopy.builder().book(book).branch(shop).build();
+            product = BookCopy.builder().book(book).branch(shop).seller(vendor).build();
         } else {
             product = bookCopyRepository.findById(request.getId())
                     .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại"));
@@ -116,6 +121,7 @@ public class VendorServiceImpl implements VendorService {
                 product.setBook(bookRepository.findById(request.getBookId())
                         .orElseThrow(() -> new IllegalArgumentException("Đầu sách không tồn tại")));
             }
+            product.setSeller(vendor);
         }
         if (request.getSellingPrice() == null || request.getSellingPrice() < 0) {
             throw new IllegalArgumentException("Giá bán không hợp lệ");
@@ -155,9 +161,17 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public List<Order> getOrders(String vendorEmail, OrderStatus status) {
+        User vendor = requireVendor(vendorEmail);
         Branch shop = requireActiveShop(vendorEmail);
-        if (status != null) return orderRepository.findByBranchIdAndOrderStatus(shop.getId(), status);
-        return orderRepository.findByBranchIdOrderByCreatedAtDesc(shop.getId());
+        List<Order> branchOrders = (status != null)
+                ? orderRepository.findByBranchIdAndOrderStatus(shop.getId(), status)
+                : orderRepository.findByBranchIdOrderByCreatedAtDesc(shop.getId());
+
+        return branchOrders.stream()
+                .filter(o -> orderItemRepository.findByOrderId(o.getId()).stream()
+                        .anyMatch(item -> item.getBookCopy() != null && item.getBookCopy().getSeller() != null
+                                && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId())))
+                .toList();
     }
 
     @Override
@@ -239,26 +253,42 @@ public class VendorServiceImpl implements VendorService {
         promotionRepository.delete(promotion);
     }
 
-    private List<Order> deliveredInRange(Branch shop, LocalDate from, LocalDate to) {
-        return orderRepository.findByBranchIdAndOrderStatus(shop.getId(), OrderStatus.DELIVERED).stream()
-                .filter(o -> o.getCreatedAt() != null)
-                .filter(o -> from == null || !o.getCreatedAt().toLocalDate().isBefore(from))
-                .filter(o -> to == null || !o.getCreatedAt().toLocalDate().isAfter(to))
-                .toList();
-    }
-
     @Override
     public VendorDashboardDTO getDashboard(String vendorEmail, LocalDate from, LocalDate to) {
+        User vendor = requireVendor(vendorEmail);
         Branch shop = requireShop(vendorEmail);
-        List<BookCopy> products = bookCopyRepository.findByBranchId(shop.getId());
-        List<Order> delivered = deliveredInRange(shop, from, to);
-        double revenue = delivered.stream().mapToDouble(o -> Optional.ofNullable(o.getFinalAmount()).orElse(0.0)).sum();
-        double commission = delivered.stream().mapToDouble(o -> Optional.ofNullable(o.getAppCommissionAmount()).orElse(0.0)).sum();
+
+        List<BookCopy> products = bookCopyRepository.findBySellerId(vendor.getId());
+
+        List<OrderItem> vendorDeliveredItems = orderItemRepository.findAll().stream()
+                .filter(item -> item.getBookCopy() != null && item.getBookCopy().getSeller() != null
+                        && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId()))
+                .filter(item -> item.getOrder() != null && item.getOrder().getOrderStatus() == OrderStatus.DELIVERED)
+                .filter(item -> item.getOrder().getCreatedAt() != null)
+                .filter(item -> from == null || !item.getOrder().getCreatedAt().toLocalDate().isBefore(from))
+                .filter(item -> to == null || !item.getOrder().getCreatedAt().toLocalDate().isAfter(to))
+                .toList();
+
+        double revenue = vendorDeliveredItems.stream()
+                .mapToDouble(i -> Optional.ofNullable(i.getPrice()).orElse(0.0) * Optional.ofNullable(i.getQuantity()).orElse(1))
+                .sum();
+
+        double commissionRate = Optional.ofNullable(shop.getAppDiscountPercent()).orElse(10.0) / 100.0;
+        double commission = revenue * commissionRate;
+
+        List<Order> vendorOrders = orderRepository.findByBranchIdOrderByCreatedAtDesc(shop.getId()).stream()
+                .filter(o -> orderItemRepository.findByOrderId(o.getId()).stream()
+                        .anyMatch(item -> item.getBookCopy() != null && item.getBookCopy().getSeller() != null
+                                && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId())))
+                .toList();
+
+        long newOrdersCount = vendorOrders.stream().filter(o -> o.getOrderStatus() == OrderStatus.NEW).count();
+
         return VendorDashboardDTO.builder()
                 .totalProducts(products.size())
                 .totalStock(products.stream().mapToLong(p -> Optional.ofNullable(p.getQuantity()).orElse(0)).sum())
-                .newOrders(orderRepository.countByBranchIdAndOrderStatus(shop.getId(), OrderStatus.NEW))
-                .totalOrders(orderRepository.countByBranchId(shop.getId()))
+                .newOrders(newOrdersCount)
+                .totalOrders(vendorOrders.size())
                 .deliveredRevenue(revenue)
                 .commission(commission)
                 .build();
@@ -266,12 +296,19 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public List<ProductSalesDTO> getTopProducts(String vendorEmail, LocalDate from, LocalDate to) {
-        Branch shop = requireShop(vendorEmail);
+        User vendor = requireVendor(vendorEmail);
         Map<Long, ProductSalesDTO> totals = new HashMap<>();
-        for (OrderItem item : orderItemRepository.findByOrderBranchIdAndOrderOrderStatus(shop.getId(), OrderStatus.DELIVERED)) {
-            if (item.getOrder().getCreatedAt() == null
-                    || (from != null && item.getOrder().getCreatedAt().toLocalDate().isBefore(from))
-                    || (to != null && item.getOrder().getCreatedAt().toLocalDate().isAfter(to))) continue;
+
+        List<OrderItem> vendorDeliveredItems = orderItemRepository.findAll().stream()
+                .filter(item -> item.getBookCopy() != null && item.getBookCopy().getSeller() != null
+                        && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId()))
+                .filter(item -> item.getOrder() != null && item.getOrder().getOrderStatus() == OrderStatus.DELIVERED)
+                .filter(item -> item.getOrder().getCreatedAt() != null)
+                .filter(item -> from == null || !item.getOrder().getCreatedAt().toLocalDate().isBefore(from))
+                .filter(item -> to == null || !item.getOrder().getCreatedAt().toLocalDate().isAfter(to))
+                .toList();
+
+        for (OrderItem item : vendorDeliveredItems) {
             Long id = item.getBookCopy().getId();
             ProductSalesDTO old = totals.get(id);
             long quantity = item.getQuantity();
@@ -280,6 +317,7 @@ public class VendorServiceImpl implements VendorService {
                     (old == null ? 0 : old.getQuantity()) + quantity,
                     (old == null ? 0 : old.getRevenue()) + revenue));
         }
+
         return totals.values().stream()
                 .sorted(Comparator.comparingLong(ProductSalesDTO::getQuantity).reversed())
                 .limit(10).toList();

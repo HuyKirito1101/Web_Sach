@@ -28,6 +28,7 @@ public class VendorController {
     private final CategoryService categoryService;
     private final AuthorRepository authorRepository;
     private final PublisherRepository publisherRepository;
+    private final UserService userService;
     private final CloudinaryService cloudinaryService;
 
     @GetMapping({"", "/dashboard"})
@@ -73,8 +74,17 @@ public class VendorController {
 
     @GetMapping("/products")
     public String products(Authentication auth, Model model) {
+        User vendor = userService.findByEmail(auth.getName()).orElse(null);
+        java.util.List<Book> allBooks = bookService.findAllBooks();
+        if (vendor != null && vendor.getSpecializedCategory() != null) {
+            Long specCatId = vendor.getSpecializedCategory().getId();
+            allBooks = allBooks.stream()
+                    .filter(b -> b.getCategory() != null && java.util.Objects.equals(b.getCategory().getId(), specCatId))
+                    .toList();
+        }
+
         model.addAttribute("products", vendorService.getProducts(auth.getName()));
-        model.addAttribute("allBooks", bookService.findAllBooks());
+        model.addAttribute("allBooks", allBooks);
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("conditions", BookCondition.values());
         model.addAttribute("statuses", BookCopyStatus.values());

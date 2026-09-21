@@ -42,6 +42,14 @@ public class User {
     @JoinColumn(name = "branch_id")
     private Branch branch; // Dành cho Manager, Staff, Shipper của chi nhánh
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "shipping_provider_id")
+    private ShippingProvider shippingProvider; // Dành cho Shipper thuộc đơn vị vận chuyển (GHN, Viettel Post)
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "specialized_category_id")
+    private Category specializedCategory; // Danh mục chuyên môn của Vendor (SGK, Truyện tranh, Kinh tế...)
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     private UserStatus status;
