@@ -57,12 +57,37 @@
                 <!-- Shipping Provider -->
                 <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
                     <h5 class="fw-bold mb-3"><i class="fa-solid fa-truck text-primary me-2"></i>2. Phương Thức Vận Chuyển</h5>
-                    <c:forEach var="sp" items="${shippingProviders}">
-                        <div class="form-check border rounded-3 p-3 mb-2">
-                            <input class="form-check-input mt-1" type="radio" name="shippingProviderId" id="sp_${sp.id}" value="${sp.id}" checked>
-                            <label class="form-check-label ms-2 d-flex justify-content-between w-100" for="sp_${sp.id}">
-                                <span><strong>${sp.name}</strong> (${sp.estimatedDays != null ? sp.estimatedDays : '2-3 ngày'})</span>
-                                <span class="fw-bold text-danger"><fmt:formatNumber value="${sp.baseFee != null ? sp.baseFee : 30000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                    <div class="alert alert-light border small text-dark mb-3">
+                        <i class="fa-solid fa-circle-info text-info me-1"></i>
+                        <strong>Vận chuyển Trong Tỉnh:</strong> Giao Hàng Nhanh - GHN (Tiêu chuẩn 20k / Hỏa tốc 40k).<br>
+                        <i class="fa-solid fa-circle-info text-warning me-1"></i>
+                        <strong>Vận chuyển Ngoại Tỉnh:</strong> SPX Express (Shopee Xpress 32k).
+                    </div>
+                    <c:forEach var="sp" items="${shippingProviders}" varStatus="loop">
+                        <div class="form-check border rounded-3 p-3 mb-2 shipping-provider-card">
+                            <input class="form-check-input mt-1" type="radio" name="shippingProviderId" id="sp_${sp.id}" value="${sp.id}" data-fee="${sp.baseFee != null ? sp.baseFee : 20000}" ${loop.first ? 'checked' : ''} onchange="updateShippingFeeInfo()">
+                            <label class="form-check-label ms-2 w-100" for="sp_${sp.id}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong class="text-dark">${sp.name}</strong>
+                                        <c:choose>
+                                            <c:when test="${sp.code == 'GHN_EXPRESS'}">
+                                                <span class="badge bg-danger ms-1"><i class="fa-solid fa-bolt me-1"></i>Hỏa Tốc</span>
+                                            </c:when>
+                                            <c:when test="${sp.code == 'SPX_EXPRESS'}">
+                                                <span class="badge bg-warning text-dark ms-1"><i class="fa-solid fa-globe me-1"></i>Ngoại Tỉnh</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge bg-primary ms-1"><i class="fa-solid fa-house me-1"></i>Trong Tỉnh</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                        <br>
+                                        <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${sp.estimatedDays != null ? sp.estimatedDays : '1-2 ngày'} | ${sp.scopeDescription != null ? sp.scopeDescription : ''}</small>
+                                    </div>
+                                    <span class="fw-bold text-danger fs-6">
+                                        <fmt:formatNumber value="${sp.baseFee != null ? sp.baseFee : 20000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                    </span>
+                                </div>
                             </label>
                         </div>
                     </c:forEach>
@@ -128,12 +153,12 @@
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Phí giao hàng:</span>
-                        <span class="fw-bold">30.000đ</span>
+                        <span class="fw-bold text-primary" id="displayShipFee">20.000đ</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-4">
                         <span class="fw-bold fs-5">Tổng cộng:</span>
-                        <span class="fw-bold fs-5 text-danger"><fmt:formatNumber value="${subtotal + 30000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                        <span class="fw-bold fs-5 text-danger" id="displayTotal"><fmt:formatNumber value="${subtotal + 20000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
                     </div>
 
                     <button type="submit" class="btn btn-warning w-100 btn-lg rounded-pill fw-bold text-dark shadow-sm">
@@ -143,6 +168,33 @@
             </div>
         </div>
     </form>
+</div>
+
+<script>
+    const subtotal = ${subtotal != null ? subtotal : 0};
+
+    function formatVND(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
+    }
+
+    function updateShippingFeeInfo() {
+        const selectedRadio = document.querySelector('input[name="shippingProviderId"]:checked');
+        let shipFee = 20000;
+        if (selectedRadio) {
+            shipFee = parseFloat(selectedRadio.getAttribute('data-fee')) || 20000;
+        }
+
+        const displayShipFee = document.getElementById('displayShipFee');
+        const displayTotal = document.getElementById('displayTotal');
+
+        if (displayShipFee) displayShipFee.textContent = formatVND(shipFee);
+        if (displayTotal) displayTotal.textContent = formatVND(subtotal + shipFee);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        updateShippingFeeInfo();
+    });
+</script>
 </div>
 
 <jsp:include page="../common/footer.jsp"/>

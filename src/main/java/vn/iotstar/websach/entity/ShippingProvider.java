@@ -19,6 +19,18 @@ public class ShippingProvider {
     @Column(nullable = false, length = 150)
     private String name;
 
+    @Column(length = 50)
+    private String code; // GHN_STANDARD, GHN_EXPRESS, SPX_EXPRESS
+
+    @Column(length = 100)
+    private String serviceType; // Trong tỉnh (Tiêu chuẩn), Trong tỉnh (Hỏa tốc), Ngoại tỉnh (Liên tỉnh)
+
+    @Column(length = 100)
+    private String estimatedDays; // 1-2 ngày, 2-4 giờ trong ngày, 2-4 ngày
+
+    @Column(length = 255)
+    private String scopeDescription; // Vận chuyển đơn mua trong tỉnh, Giao hàng siêu tốc trong tỉnh, Vận chuyển đơn mua ngoại tỉnh
+
     @Column(length = 20)
     private String phone;
 

@@ -16,6 +16,7 @@ import vn.iotstar.websach.repository.*;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -41,6 +42,18 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        // Dọn dẹp các tài khoản cũ không còn dùng (vendor@websach.com, shipper@websach.com, customer.test@websach.com)
+        List<String> deprecatedEmails = List.of("vendor@websach.com", "shipper@websach.com", "customer.test@websach.com");
+        for (String email : deprecatedEmails) {
+            userRepository.findByEmail(email).ifPresent(u -> {
+                branchRepository.findAll().stream()
+                        .filter(br -> br.getOwner() != null && Objects.equals(br.getOwner().getId(), u.getId()))
+                        .forEach(br -> { br.setOwner(null); branchRepository.save(br); });
+                userRepository.delete(u);
+                log.info("Đã xóa tài khoản cũ: {}", email);
+            });
+        }
+
         if (bookRepository.count() > 0) {
             log.info("Dữ liệu đã tồn tại, tiến hành dọn dẹp các bản copy sách cũ không thuộc Vendor nào...");
             List<BookCopy> orphans = bookCopyRepository.findAll().stream()
@@ -115,34 +128,6 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        User vendor = userRepository.findByEmail("vendor@websach.com").orElseGet(() ->
-                userRepository.save(User.builder()
-                        .fullName("Chủ Cửa Hàng Sách Cũ")
-                        .email("vendor@websach.com")
-                        .password(passwordEncoder.encode("123456"))
-                        .phone("0933333333")
-                        .role(vendorRole)
-                        .branch(b1)
-                        .status(UserStatus.ACTIVE)
-                        .build())
-        );
-        if (b1.getOwner() == null) {
-            b1.setOwner(vendor);
-            branchRepository.save(b1);
-        }
-
-        userRepository.findByEmail("shipper@websach.com").orElseGet(() ->
-                userRepository.save(User.builder()
-                        .fullName("Nhân Viên Giao Hàng Shipper")
-                        .email("shipper@websach.com")
-                        .password(passwordEncoder.encode("123456"))
-                        .phone("0966666666")
-                        .role(shipperRole)
-                        .branch(b1)
-                        .status(UserStatus.ACTIVE)
-                        .build())
-        );
-
         User customer = userRepository.findByEmail("user@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Khách Hàng Nguyễn Văn A")
@@ -163,17 +148,36 @@ public class DataInitializer implements CommandLineRunner {
         Category cat6 = categoryRepository.save(Category.builder().name("Sách Giáo Khoa & Tham Khảo").slug("sgk-tham-khao").description("Bộ sách giáo khoa các lớp 1-12, sách luyện thi đại học cũ.").active(true).build());
 
         // Shipping Providers (Đơn vị vận chuyển)
-        ShippingProvider ghn = shippingProviderRepository.save(ShippingProvider.builder()
-                .name("Giao Hàng Nhanh (GHN)")
+        ShippingProvider ghnStandard = shippingProviderRepository.save(ShippingProvider.builder()
+                .name("Giao Hàng Nhanh (GHN) - Tiêu Chuẩn")
+                .code("GHN_STANDARD")
+                .serviceType("Trong tỉnh (Tiêu chuẩn)")
+                .estimatedDays("1 - 2 ngày")
+                .scopeDescription("Vận chuyển đơn mua trong tỉnh / nội thành")
                 .phone("19006789")
-                .baseFee(25000.0)
+                .baseFee(20000.0)
                 .active(true)
                 .build());
 
-        ShippingProvider viettelPost = shippingProviderRepository.save(ShippingProvider.builder()
-                .name("Viettel Post")
-                .phone("19008095")
-                .baseFee(22000.0)
+        ShippingProvider ghnExpress = shippingProviderRepository.save(ShippingProvider.builder()
+                .name("Giao Hàng Nhanh (GHN) - Hỏa Tốc")
+                .code("GHN_EXPRESS")
+                .serviceType("Trong tỉnh (Hỏa tốc)")
+                .estimatedDays("2 - 4 giờ (Trong ngày)")
+                .scopeDescription("Giao gấp nhận ngay trong ngày cho đơn nội tỉnh")
+                .phone("19006789")
+                .baseFee(40000.0)
+                .active(true)
+                .build());
+
+        ShippingProvider spxExpress = shippingProviderRepository.save(ShippingProvider.builder()
+                .name("SPX Express (Shopee Xpress) - Giao Liên Tỉnh")
+                .code("SPX_EXPRESS")
+                .serviceType("Ngoại tỉnh (Liên tỉnh)")
+                .estimatedDays("2 - 4 ngày")
+                .scopeDescription("Chuyên vận chuyển các đơn giao ngoài tỉnh toàn quốc")
+                .phone("19001221")
+                .baseFee(32000.0)
                 .active(true)
                 .build());
 
@@ -190,6 +194,10 @@ public class DataInitializer implements CommandLineRunner {
                         .status(UserStatus.ACTIVE)
                         .build())
         );
+        if (b1.getOwner() == null) {
+            b1.setOwner(vThuduc1);
+            branchRepository.save(b1);
+        }
 
         User vThuduc2 = userRepository.findByEmail("vendor.thuduc2@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
@@ -204,29 +212,42 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        // 3.2. Shippers cho Chi Nhánh Thủ Đức (b1) chia theo NVC (GHN vs Viettel Post)
+        // 3.2. Shippers cho Chi Nhánh Thủ Đức (b1) chia theo NVC (GHN Tiêu chuẩn, GHN Hỏa tốc, SPX Express)
         userRepository.findByEmail("shipper.thuduc1@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
-                        .fullName("Shipper Thủ Đức (GHN) - Nguyễn Văn Nam")
+                        .fullName("Shipper Thủ Đức (GHN Tiêu Chuẩn) - Nguyễn Văn Nam")
                         .email("shipper.thuduc1@websach.com")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0961111111")
                         .role(shipperRole)
                         .branch(b1)
-                        .shippingProvider(ghn)
+                        .shippingProvider(ghnStandard)
                         .status(UserStatus.ACTIVE)
                         .build())
         );
 
         userRepository.findByEmail("shipper.thuduc2@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
-                        .fullName("Shipper Thủ Đức (Viettel Post) - Trần Văn Bình")
+                        .fullName("Shipper Thủ Đức (GHN Hỏa Tốc) - Trần Văn Bình")
                         .email("shipper.thuduc2@websach.com")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0962222222")
                         .role(shipperRole)
                         .branch(b1)
-                        .shippingProvider(viettelPost)
+                        .shippingProvider(ghnExpress)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        userRepository.findByEmail("shipper.thuduc3@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Thủ Đức (SPX Express) - Nguyễn Thị Mai")
+                        .email("shipper.thuduc3@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0963333333")
+                        .role(shipperRole)
+                        .branch(b1)
+                        .shippingProvider(spxExpress)
                         .status(UserStatus.ACTIVE)
                         .build())
         );
@@ -258,29 +279,42 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        // 3.4. Shippers cho Chi Nhánh Quận 1 (b2) chia theo NVC (GHN vs Viettel Post)
+        // 3.4. Shippers cho Chi Nhánh Quận 1 (b2) chia theo NVC (GHN Tiêu chuẩn, GHN Hỏa tốc, SPX Express)
         userRepository.findByEmail("shipper.quan1_1@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
-                        .fullName("Shipper Quận 1 (GHN) - Lê Hoàng Long")
+                        .fullName("Shipper Quận 1 (GHN Tiêu Chuẩn) - Lê Hoàng Long")
                         .email("shipper.quan1_1@websach.com")
                         .password(passwordEncoder.encode("123456"))
-                        .phone("0963333333")
+                        .phone("0964444444")
                         .role(shipperRole)
                         .branch(b2)
-                        .shippingProvider(ghn)
+                        .shippingProvider(ghnStandard)
                         .status(UserStatus.ACTIVE)
                         .build())
         );
 
         userRepository.findByEmail("shipper.quan1_2@websach.com").orElseGet(() ->
                 userRepository.save(User.builder()
-                        .fullName("Shipper Quận 1 (Viettel Post) - Phạm Quốc Huy")
+                        .fullName("Shipper Quận 1 (GHN Hỏa Tốc) - Phạm Quốc Huy")
                         .email("shipper.quan1_2@websach.com")
                         .password(passwordEncoder.encode("123456"))
-                        .phone("0964444444")
+                        .phone("0965555555")
                         .role(shipperRole)
                         .branch(b2)
-                        .shippingProvider(viettelPost)
+                        .shippingProvider(ghnExpress)
+                        .status(UserStatus.ACTIVE)
+                        .build())
+        );
+
+        userRepository.findByEmail("shipper.quan1_3@websach.com").orElseGet(() ->
+                userRepository.save(User.builder()
+                        .fullName("Shipper Quận 1 (SPX Express) - Trịnh Văn An")
+                        .email("shipper.quan1_3@websach.com")
+                        .password(passwordEncoder.encode("123456"))
+                        .phone("0966666667")
+                        .role(shipperRole)
+                        .branch(b2)
+                        .shippingProvider(spxExpress)
                         .status(UserStatus.ACTIVE)
                         .build())
         );
@@ -486,11 +520,11 @@ public class DataInitializer implements CommandLineRunner {
 
         if (orderRepository.count() == 0) {
             Order order = orderRepository.save(Order.builder()
-                    .orderCode("DH-DEMO-001").customer(customer).branch(b1).shippingProvider(ghn)
+                    .orderCode("DH-DEMO-001").customer(customer).branch(b1).shippingProvider(ghnStandard)
                     .receiverName(customer.getFullName()).receiverPhone(customer.getPhone())
                     .shippingAddress("12 Võ Văn Ngân, TP. Thủ Đức, TP.HCM")
-                    .totalAmount(65000.0).shippingFee(25000.0).discountAmount(0.0)
-                    .appCommissionAmount(6500.0).finalAmount(90000.0)
+                    .totalAmount(65000.0).shippingFee(20000.0).discountAmount(0.0)
+                    .appCommissionAmount(6500.0).finalAmount(85000.0)
                     .paymentMethod(PaymentMethod.COD).paymentStatus(PaymentStatus.PENDING)
                     .orderStatus(OrderStatus.NEW).note("Gọi trước khi giao").build());
             orderItemRepository.save(OrderItem.builder().order(order).bookCopy(copy1).quantity(1).price(65000.0).build());

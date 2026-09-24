@@ -14,4 +14,6 @@ public interface DeliveryAssignmentRepository extends JpaRepository<DeliveryAssi
     List<DeliveryAssignment> findByShipperId(Long shipperId);
     List<DeliveryAssignment> findByShipperIdOrderByAssignedAtDesc(Long shipperId);
     List<DeliveryAssignment> findByShipperIdAndStatus(Long shipperId, DeliveryStatus status);
+    boolean existsByOrderIdAndShipperId(Long orderId, Long shipperId);
+    List<DeliveryAssignment> findByOrderIdAndShipperIdNot(Long orderId, Long shipperId);
 }

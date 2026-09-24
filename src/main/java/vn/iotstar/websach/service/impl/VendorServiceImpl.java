@@ -31,6 +31,7 @@ public class VendorServiceImpl implements VendorService {
     private final SellRequestRepository sellRequestRepository;
     private final CloudinaryService cloudinaryService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final DeliveryAssignmentRepository deliveryAssignmentRepository;
 
     private User requireVendor(String email) {
         User vendor = userRepository.findByEmail(email)
@@ -204,6 +205,24 @@ public class VendorServiceImpl implements VendorService {
         if (!allowed) throw new IllegalStateException("Không thể chuyển trạng thái " + current + " sang " + target);
         order.setOrderStatus(target);
         Order saved = orderRepository.save(order);
+
+        if (target == OrderStatus.READY_FOR_PICKUP) {
+            List<User> shippers = userRepository.findByRoleNameAndBranchId(RoleName.ROLE_SHIPPER, order.getBranch().getId());
+            for (User s : shippers) {
+                if (s.getShippingProvider() != null && order.getShippingProvider() != null
+                        && Objects.equals(s.getShippingProvider().getId(), order.getShippingProvider().getId())) {
+                    if (!deliveryAssignmentRepository.existsByOrderIdAndShipperId(order.getId(), s.getId())) {
+                        deliveryAssignmentRepository.save(DeliveryAssignment.builder()
+                                .order(order)
+                                .shipper(s)
+                                .status(DeliveryStatus.ASSIGNED)
+                                .assignedAt(java.time.LocalDateTime.now())
+                                .build());
+                    }
+                }
+            }
+        }
+
         send("Đơn hàng " + order.getOrderCode() + " đã chuyển sang " + target);
         return saved;
     }

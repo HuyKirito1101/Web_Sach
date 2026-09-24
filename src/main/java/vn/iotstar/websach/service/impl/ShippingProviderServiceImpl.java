@@ -35,6 +35,10 @@ public class ShippingProviderServiceImpl implements ShippingProviderService {
         ShippingProvider p = shippingProviderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Nhà vận chuyển không tồn tại id: " + id));
         p.setName(details.getName());
+        if (details.getCode() != null) p.setCode(details.getCode());
+        if (details.getServiceType() != null) p.setServiceType(details.getServiceType());
+        if (details.getEstimatedDays() != null) p.setEstimatedDays(details.getEstimatedDays());
+        if (details.getScopeDescription() != null) p.setScopeDescription(details.getScopeDescription());
         p.setPhone(details.getPhone());
         p.setBaseFee(details.getBaseFee());
         if (details.getActive() != null) {

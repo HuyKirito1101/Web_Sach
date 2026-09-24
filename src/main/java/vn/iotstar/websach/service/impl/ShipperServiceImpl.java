@@ -79,7 +79,16 @@ public class ShipperServiceImpl implements ShipperService {
         }
 
         assignment.setStatus(target);
-        if (target == DeliveryStatus.PICKED_UP) {
+        if (target == DeliveryStatus.ACCEPTED) {
+            List<DeliveryAssignment> otherAssignments = assignmentRepository.findByOrderIdAndShipperIdNot(order.getId(), assignment.getShipper().getId());
+            for (DeliveryAssignment oa : otherAssignments) {
+                if (oa.getStatus() == DeliveryStatus.ASSIGNED) {
+                    oa.setStatus(DeliveryStatus.CANCELLED);
+                    oa.setCompletedAt(LocalDateTime.now());
+                    assignmentRepository.save(oa);
+                }
+            }
+        } else if (target == DeliveryStatus.PICKED_UP) {
             assignment.setPickedUpAt(LocalDateTime.now());
             order.setOrderStatus(OrderStatus.PICKED_UP);
         } else if (target == DeliveryStatus.SHIPPING) {
@@ -115,6 +124,12 @@ public class ShipperServiceImpl implements ShipperService {
                 .mapToDouble(a -> a.getOrder().getFinalAmount() != null ? a.getOrder().getFinalAmount() : 0.0)
                 .sum();
 
+        double shippingRevenue = assignments.stream()
+                .filter(a -> a.getStatus() == DeliveryStatus.DELIVERED)
+                .filter(a -> a.getOrder() != null && a.getOrder().getShippingFee() != null)
+                .mapToDouble(a -> a.getOrder().getShippingFee())
+                .sum();
+
         return ShipperDashboardDTO.builder()
                 .total(assignments.size())
                 .assigned(assignments.stream().filter(a -> a.getStatus() == DeliveryStatus.ASSIGNED || a.getStatus() == DeliveryStatus.ACCEPTED).count())
@@ -122,6 +137,7 @@ public class ShipperServiceImpl implements ShipperService {
                 .delivered(assignments.stream().filter(a -> a.getStatus() == DeliveryStatus.DELIVERED).count())
                 .failed(assignments.stream().filter(a -> a.getStatus() == DeliveryStatus.FAILED).count())
                 .totalCodCollected(totalCod)
+                .shippingRevenue(shippingRevenue)
                 .build();
     }
 }

@@ -53,7 +53,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (finalAddressStr == null || finalAddressStr.trim().isEmpty()) finalAddressStr = "Địa chỉ nhận hàng mặc định";
 
         ShippingProvider provider = null;
-        double shipFee = 30000.0;
+        double shipFee = 20000.0;
         if (shippingProviderId != null) {
             provider = shippingProviderRepository.findById(shippingProviderId).orElse(null);
             if (provider != null && provider.getBaseFee() != null) {

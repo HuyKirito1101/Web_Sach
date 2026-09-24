@@ -1,5 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="currentUri" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : pageContext.request.requestURI}" />
+<c:set var="isHome" value="${currentUri == '/' || currentUri == '/home'}" />
+<c:set var="isBooks" value="${currentUri.startsWith('/books')}" />
+<c:set var="isCart" value="${currentUri.startsWith('/cart')}" />
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom px-4 py-2 sticky-top shadow-sm">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold text-warning d-flex align-items-center me-4" href="/">
@@ -23,13 +28,13 @@
 
             <ul class="navbar-nav ms-auto align-items-center gap-2 mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link text-white fw-medium" href="/"><i class="fa-solid fa-house me-1"></i>Trang chủ</a>
+                    <a class="nav-link nav-main-link ${isHome ? 'text-warning' : 'text-white'} fw-medium" href="/"><i class="fa-solid fa-house me-1"></i>Trang chủ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-white fw-medium" href="/books"><i class="fa-solid fa-book me-1"></i>Sách Cũ</a>
+                    <a class="nav-link nav-main-link ${isBooks ? 'text-warning' : 'text-white'} fw-medium" href="/books"><i class="fa-solid fa-book me-1"></i>Sách Cũ</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-warning fw-medium position-relative" href="/cart">
+                    <a class="nav-link nav-main-link ${isCart ? 'text-warning' : 'text-white'} fw-medium position-relative" href="/cart">
                         <i class="fa-solid fa-cart-shopping me-1 fs-5"></i>Giỏ hàng
                     </a>
                 </li>
@@ -64,3 +69,29 @@
         </div>
     </div>
 </nav>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const path = window.location.pathname;
+    const links = document.querySelectorAll('.nav-main-link');
+    
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        let isActive = false;
+        
+        if (href === '/' || href === '/home') {
+            isActive = (path === '/' || path === '/home');
+        } else if (href) {
+            isActive = (path === href || path.startsWith(href + '/') || path.startsWith(href + '?'));
+        }
+        
+        if (isActive) {
+            link.classList.add('text-warning');
+            link.classList.remove('text-white');
+        } else {
+            link.classList.remove('text-warning');
+            link.classList.add('text-white');
+        }
+    });
+});
+</script>

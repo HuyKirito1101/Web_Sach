@@ -12,4 +12,5 @@ public class ShipperDashboardDTO {
     private long delivered;
     private long failed;
     private double totalCodCollected;
+    private double shippingRevenue;
 }
