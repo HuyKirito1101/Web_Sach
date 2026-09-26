@@ -47,6 +47,21 @@
                                 <span>${pageContext.request.userPrincipal.name}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userDropdown">
+                                <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
+                                    <li><a class="dropdown-item" href="/admin/dashboard"><i class="fa-solid fa-gauge-high me-2 text-danger"></i>Quản trị hệ thống</a></li>
+                                </c:if>
+                                <c:if test="${pageContext.request.isUserInRole('MANAGER')}">
+                                    <li><a class="dropdown-item" href="/manager/dashboard"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Quản lý chi nhánh</a></li>
+                                </c:if>
+                                <c:if test="${pageContext.request.isUserInRole('VENDOR')}">
+                                    <li><a class="dropdown-item" href="/vendor/dashboard"><i class="fa-solid fa-store me-2 text-success"></i>Quản lý cửa hàng</a></li>
+                                </c:if>
+                                <c:if test="${pageContext.request.isUserInRole('SHIPPER')}">
+                                    <li><a class="dropdown-item" href="/shipper/dashboard"><i class="fa-solid fa-truck me-2 text-warning"></i>Trang giao hàng</a></li>
+                                </c:if>
+                                <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')}">
+                                    <li><hr class="dropdown-divider"></li>
+                                </c:if>
                                 <li><a class="dropdown-item" href="/profile"><i class="fa-solid fa-user me-2 text-primary"></i>Hồ sơ cá nhân</a></li>
                                 <li><a class="dropdown-item" href="/orders"><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng của tôi</a></li>
                                 <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>

@@ -69,8 +69,8 @@
         <div class="mt-3 text-center border-top pt-3">
             <span class="badge bg-secondary p-2">Dev Accounts:</span>
             <div class="small text-muted mt-1">
-                Admin: <b>admin@websach.com</b> / 123456<br>
-                Manager: <b>manager@websach.com</b> / 123456
+                Admin: <b>admin@websachcu.vn</b> / 123456<br>
+                Manager: <b>manager@websachcu.vn</b> / 123456
             </div>
         </div>
     </div>

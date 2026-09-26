@@ -55,6 +55,14 @@ public class SecurityConfig {
                         .requestMatchers("/shipper/**").hasAnyRole("SHIPPER", "ADMIN")
                         .requestMatchers("/cart/**", "/checkout/**", "/orders/**", "/profile/**", "/favorites/**", "/viewed-products/**", "/reviews/**").authenticated()
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendRedirect("/auth/login?error=unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.sendRedirect("/auth/login?error=forbidden");
+                        })
                 );
 
         http.authenticationProvider(authenticationProvider());

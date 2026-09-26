@@ -101,7 +101,7 @@
                                     <tr>
                                         <td class="fw-bold text-primary">${o.orderCode}</td>
                                         <td>${o.receiverName} (${o.receiverPhone})</td>
-                                        <td><span class="badge bg-secondary">${o.branch.name}</span></td>
+                                        <td><span class="badge bg-secondary">${o.branch != null ? o.branch.name : 'Cửa Hàng'}</span></td>
                                         <td class="fw-bold"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td class="text-success"><fmt:formatNumber value="${o.appCommissionAmount}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge bg-info">${o.orderStatus}</span></td>

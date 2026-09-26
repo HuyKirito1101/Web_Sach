@@ -23,6 +23,13 @@ import java.util.Objects;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
+    /**
+     * Hash đã có trong bản SQL ban đầu nhưng không khớp với mật khẩu 123456
+     * được công bố cho các tài khoản demo.
+     */
+    private static final String INVALID_LEGACY_DEMO_PASSWORD_HASH =
+            "$2a$10$8.UnVuG9HHgffUDAlk8qfOUVGkqRzgVym5pE6tqE/m/m14wU50y/.";
+
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final BranchRepository branchRepository;
@@ -42,6 +49,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        repairLegacyDemoPasswords();
+
         // Dọn dẹp các tài khoản cũ không còn dùng (vendor@websach.com, shipper@websach.com, customer.test@websach.com)
         List<String> deprecatedEmails = List.of("vendor@websach.com", "shipper@websach.com", "customer.test@websach.com");
         for (String email : deprecatedEmails) {
@@ -541,5 +550,19 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Khởi tạo dữ liệu mẫu thành công! Sẵn sàng sử dụng.");
+    }
+
+    /**
+     * Sửa đúng một lần các tài khoản được import từ file SQL mẫu cũ. Chỉ thay
+     * hash lỗi đã biết, không can thiệp vào mật khẩu do người dùng tự thay đổi.
+     */
+    private void repairLegacyDemoPasswords() {
+        userRepository.findAll().stream()
+                .filter(user -> INVALID_LEGACY_DEMO_PASSWORD_HASH.equals(user.getPassword()))
+                .forEach(user -> {
+                    user.setPassword(passwordEncoder.encode("123456"));
+                    userRepository.save(user);
+                    log.info("Đã sửa mật khẩu tài khoản mẫu: {}", user.getEmail());
+                });
     }
 }

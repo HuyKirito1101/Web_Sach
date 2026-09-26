@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import vn.iotstar.websach.dto.LoginRequest;
 import vn.iotstar.websach.dto.OtpVerificationRequest;
 import vn.iotstar.websach.dto.RegisterRequest;
-import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.UserService;
 
 @Controller
@@ -48,20 +47,8 @@ public class AuthController {
             cookie.setMaxAge(86400); // 1 ngày
             response.addCookie(cookie);
 
-            User user = userService.findByEmail(request.getEmail()).orElse(null);
-            if (user != null) {
-                String role = user.getRole().getName().name();
-                if ("ROLE_ADMIN".equals(role)) {
-                    return "redirect:/admin/dashboard";
-                } else if ("ROLE_MANAGER".equals(role)) {
-                    return "redirect:/manager/dashboard";
-                } else if ("ROLE_SHIPPER".equals(role)) {
-                    return "redirect:/shipper/dashboard";
-                } else if ("ROLE_VENDOR".equals(role)) {
-                    return "redirect:/vendor/dashboard";
-                }
-            }
-
+            // Sau đăng nhập, mọi vai trò đều trở về trang chủ. Dashboard vẫn
+            // được mở từ menu hoặc URL tương ứng khi người dùng cần quản trị.
             return "redirect:/";
         } catch (Exception e) {
             model.addAttribute("errorMessage", "Đăng nhập thất bại: " + e.getMessage());
