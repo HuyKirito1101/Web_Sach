@@ -103,7 +103,9 @@ public class UserServiceImpl implements UserService {
                 .used(false)
                 .type(REGISTER_OTP_TYPE)
                 .build();
-        otpTokenRepository.save(otpToken);
+        // Flush trước khi gửi email để mọi lỗi dữ liệu được phát hiện ngay,
+        // thay vì gửi một mã chưa thực sự tồn tại trong database.
+        otpTokenRepository.saveAndFlush(otpToken);
 
         // Nếu SMTP lỗi, exception được ném ra để transaction rollback. User mới
         // sẽ không bị lưu ở trạng thái dở dang khi chưa nhận được OTP.
@@ -128,7 +130,11 @@ public class UserServiceImpl implements UserService {
 
                 user.setStatus(UserStatus.ACTIVE);
                 userRepository.save(user);
-                otpTokenRepository.deleteByEmailAndType(normalizedEmail, REGISTER_OTP_TYPE);
+                // Không xóa entity vừa được đọc/khóa trong cùng persistence
+                // context. Đánh dấu đã dùng giúp tránh stale-state khi người
+                // dùng bấm xác thực hoặc gửi lại OTP nhiều lần gần nhau.
+                otpToken.setUsed(true);
+                otpTokenRepository.saveAndFlush(otpToken);
                 return true;
             }
         }

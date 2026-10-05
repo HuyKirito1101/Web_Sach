@@ -3,18 +3,25 @@ package vn.iotstar.websach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.dto.AssignShipperRequest;
+import vn.iotstar.websach.dto.RegisterRequest;
 import vn.iotstar.websach.entity.DeliveryAssignment;
 import vn.iotstar.websach.entity.Order;
+import vn.iotstar.websach.entity.OtpToken;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.enums.DeliveryStatus;
 import vn.iotstar.websach.entity.enums.OrderStatus;
 import vn.iotstar.websach.entity.enums.PaymentStatus;
+import vn.iotstar.websach.entity.enums.UserStatus;
+import vn.iotstar.websach.repository.OtpTokenRepository;
 import vn.iotstar.websach.repository.UserRepository;
+import vn.iotstar.websach.service.EmailService;
 import vn.iotstar.websach.service.OrderService;
 import vn.iotstar.websach.service.ShipperService;
+import vn.iotstar.websach.service.UserService;
 import vn.iotstar.websach.service.VendorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +38,35 @@ class VendorShipperWorkflowIntegrationTest {
     @Autowired private VendorService vendorService;
     @Autowired private ShipperService shipperService;
     @Autowired private OrderService orderService;
+    @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
+    @Autowired private OtpTokenRepository otpTokenRepository;
+    @MockBean private EmailService emailService;
+
+    @Test
+    void registrationOtpCanBeResentAndConsumedOnlyOnce() {
+        String email = "otp.integration@websachcu.vn";
+        RegisterRequest request = new RegisterRequest();
+        request.setFullName("OTP Integration User");
+        request.setEmail(email);
+        request.setPassword("123456");
+        request.setPhone("0900000000");
+
+        User registered = userService.register(request);
+        assertThat(registered.getStatus()).isEqualTo(UserStatus.INACTIVE);
+
+        userService.resendRegistrationOtp(email);
+        var currentTokens = otpTokenRepository.findAll().stream()
+                .filter(token -> email.equals(token.getEmail()) && "REGISTER".equals(token.getType()))
+                .toList();
+        assertThat(currentTokens).hasSize(1);
+
+        OtpToken currentToken = currentTokens.getFirst();
+        assertThat(userService.verifyOtp(email, currentToken.getOtpCode())).isTrue();
+        assertThat(userRepository.findByEmail(email).orElseThrow().getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(otpTokenRepository.findById(currentToken.getId()).orElseThrow().isUsed()).isTrue();
+        assertThat(userService.verifyOtp(email, currentToken.getOtpCode())).isFalse();
+    }
 
     @Test
     void vendorToShipperCodWorkflowIsScopedAndCompletes() {

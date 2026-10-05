@@ -97,16 +97,20 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public String handleVerifyOtp(@ModelAttribute("otpRequest") OtpVerificationRequest request, Model model) {
-        boolean isSuccess = userService.verifyOtp(request.getEmail(), request.getOtpCode());
-        if (isSuccess) {
-            model.addAttribute("successMessage", "Kích hoạt tài khoản thành công! Vui lòng đăng nhập.");
-            model.addAttribute("loginRequest", new LoginRequest());
-            return "auth/login";
-        } else {
-            model.addAttribute("errorMessage", "Mã OTP sai hoặc đã hết hạn!");
-            model.addAttribute("email", request.getEmail());
-            return "auth/verify-otp";
+        try {
+            boolean isSuccess = userService.verifyOtp(request.getEmail(), request.getOtpCode());
+            if (isSuccess) {
+                model.addAttribute("successMessage", "Kích hoạt tài khoản thành công! Vui lòng đăng nhập.");
+                model.addAttribute("loginRequest", new LoginRequest());
+                return "auth/login";
+            }
+            model.addAttribute("errorMessage", "Mã OTP sai, đã hết hạn hoặc đã được sử dụng!");
+        } catch (RuntimeException e) {
+            model.addAttribute("errorMessage", "Không thể xác thực OTP lúc này. Vui lòng gửi mã mới và thử lại.");
         }
+        model.addAttribute("email", request.getEmail());
+        model.addAttribute("otpRequest", request);
+        return "auth/verify-otp";
     }
 
     @GetMapping("/logout")
