@@ -136,6 +136,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<!-- Keep the development JVM small on Windows machines with a
+					     limited paging file. Serial GC also avoids G1's large native
+					     memory reservation during startup. -->
+					<jvmArguments>-Xms32m -Xmx256m -XX:+UseSerialGC -XX:MaxMetaspaceSize=192m -XX:ReservedCodeCacheSize=64m</jvmArguments>
 					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
