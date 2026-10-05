@@ -3,6 +3,7 @@ package vn.iotstar.websach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.dto.AssignShipperRequest;
 import vn.iotstar.websach.entity.DeliveryAssignment;
@@ -20,8 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
+@ActiveProfiles("h2")
 @Transactional
 class VendorShipperWorkflowIntegrationTest {
+
+    private static final String VENDOR_EMAIL = "vendor.thuduc1@websach.com";
+    private static final String SHIPPER_EMAIL = "shipper.thuduc1@websach.com";
 
     @Autowired private VendorService vendorService;
     @Autowired private ShipperService shipperService;
@@ -32,11 +37,11 @@ class VendorShipperWorkflowIntegrationTest {
     void vendorToShipperCodWorkflowIsScopedAndCompletes() {
         Order order = orderService.findByOrderCode("DH-DEMO-001").orElseThrow();
 
-        vendorService.updateOrderStatus("vendor@websach.com", order.getId(), OrderStatus.CONFIRMED);
-        vendorService.updateOrderStatus("vendor@websach.com", order.getId(), OrderStatus.PACKING);
-        vendorService.updateOrderStatus("vendor@websach.com", order.getId(), OrderStatus.READY_FOR_PICKUP);
+        vendorService.updateOrderStatus(VENDOR_EMAIL, order.getId(), OrderStatus.CONFIRMED);
+        vendorService.updateOrderStatus(VENDOR_EMAIL, order.getId(), OrderStatus.PACKING);
+        vendorService.updateOrderStatus(VENDOR_EMAIL, order.getId(), OrderStatus.READY_FOR_PICKUP);
 
-        User shipper = userRepository.findByEmail("shipper@websach.com").orElseThrow();
+        User shipper = userRepository.findByEmail(SHIPPER_EMAIL).orElseThrow();
         AssignShipperRequest request = new AssignShipperRequest();
         request.setOrderId(order.getId());
         request.setShipperId(shipper.getId());
@@ -44,37 +49,37 @@ class VendorShipperWorkflowIntegrationTest {
         DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websach.com");
 
         assertThat(assignment.getStatus()).isEqualTo(DeliveryStatus.ASSIGNED);
-        assertThatThrownBy(() -> shipperService.getAssignment("vendor@websach.com", assignment.getId()))
+        assertThatThrownBy(() -> shipperService.getAssignment(VENDOR_EMAIL, assignment.getId()))
                 .isInstanceOf(SecurityException.class);
 
-        shipperService.updateStatus("shipper@websach.com", assignment.getId(), DeliveryStatus.ACCEPTED, null);
-        shipperService.updateStatus("shipper@websach.com", assignment.getId(), DeliveryStatus.PICKED_UP, null);
-        shipperService.updateStatus("shipper@websach.com", assignment.getId(), DeliveryStatus.SHIPPING, null);
+        shipperService.updateStatus(SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.ACCEPTED, null);
+        shipperService.updateStatus(SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.PICKED_UP, null);
+        shipperService.updateStatus(SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.SHIPPING, null);
         DeliveryAssignment delivered = shipperService.updateStatus(
-                "shipper@websach.com", assignment.getId(), DeliveryStatus.DELIVERED, null);
+                SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.DELIVERED, null);
 
         Order completedOrder = orderService.findById(order.getId()).orElseThrow();
         assertThat(delivered.getDeliveredAt()).isNotNull();
         assertThat(completedOrder.getOrderStatus()).isEqualTo(OrderStatus.DELIVERED);
         assertThat(completedOrder.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-        assertThat(shipperService.getDashboard("shipper@websach.com", null, null).getDelivered()).isEqualTo(1);
+        assertThat(shipperService.getDashboard(SHIPPER_EMAIL, null, null).getDelivered()).isEqualTo(1);
     }
 
     @Test
     void failedDeliveryRequiresAReason() {
         Order order = orderService.findByOrderCode("DH-DEMO-001").orElseThrow();
-        vendorService.updateOrderStatus("vendor@websach.com", order.getId(), OrderStatus.CONFIRMED);
-        vendorService.updateOrderStatus("vendor@websach.com", order.getId(), OrderStatus.READY_FOR_PICKUP);
+        vendorService.updateOrderStatus(VENDOR_EMAIL, order.getId(), OrderStatus.CONFIRMED);
+        vendorService.updateOrderStatus(VENDOR_EMAIL, order.getId(), OrderStatus.READY_FOR_PICKUP);
 
-        User shipper = userRepository.findByEmail("shipper@websach.com").orElseThrow();
+        User shipper = userRepository.findByEmail(SHIPPER_EMAIL).orElseThrow();
         AssignShipperRequest request = new AssignShipperRequest();
         request.setOrderId(order.getId());
         request.setShipperId(shipper.getId());
         DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websach.com");
-        shipperService.updateStatus("shipper@websach.com", assignment.getId(), DeliveryStatus.PICKED_UP, null);
+        shipperService.updateStatus(SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.PICKED_UP, null);
 
         assertThatThrownBy(() -> shipperService.updateStatus(
-                "shipper@websach.com", assignment.getId(), DeliveryStatus.FAILED, " "))
+                SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.FAILED, " "))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("lý do");
     }
