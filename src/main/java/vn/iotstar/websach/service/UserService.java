@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface UserService {
     User register(RegisterRequest request);
+    void resendRegistrationOtp(String email);
     boolean verifyOtp(String email, String otpCode);
     String login(LoginRequest request);
     Optional<User> findByEmail(String email);

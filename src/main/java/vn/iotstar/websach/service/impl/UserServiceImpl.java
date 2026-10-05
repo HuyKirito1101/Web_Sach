@@ -24,13 +24,17 @@ import vn.iotstar.websach.service.EmailService;
 import vn.iotstar.websach.service.UserService;
 
 import java.time.LocalDateTime;
+import java.security.SecureRandom;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private static final String REGISTER_OTP_TYPE = "REGISTER";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -44,54 +48,87 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã được đăng ký trong hệ thống!");
-        }
+        String email = normalizeEmail(request.getEmail());
 
         Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Lỗi cấu hình Role mặc định USER"));
 
-        User user = User.builder()
-                .fullName(request.getFullName())
-                .email(request.getEmail())
+        User user = userRepository.findByEmail(email).map(existingUser -> {
+            if (existingUser.getStatus() != UserStatus.INACTIVE) {
+                throw new IllegalStateException("Email đã được đăng ký và kích hoạt trong hệ thống!");
+            }
+
+            // Email chưa xác thực được phép đăng ký lại để nhận OTP mới.
+            existingUser.setFullName(request.getFullName().trim());
+            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
+            existingUser.setPhone(request.getPhone());
+            existingUser.setRole(userRole);
+            return existingUser;
+        }).orElseGet(() -> User.builder()
+                .fullName(request.getFullName().trim())
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phone(request.getPhone())
                 .role(userRole)
-                .status(UserStatus.INACTIVE) // Chờ xác thực OTP
-                .build();
+                .status(UserStatus.INACTIVE)
+                .build());
 
         User savedUser = userRepository.save(user);
-
-        // Sinh OTP & Gửi Email
-        String otpCode = String.format("%06d", new Random().nextInt(900000) + 100000);
-        OtpToken otpToken = OtpToken.builder()
-                .email(user.getEmail())
-                .otpCode(otpCode)
-                .expiryTime(LocalDateTime.now().plusMinutes(5))
-                .used(false)
-                .type("REGISTER")
-                .build();
-        otpTokenRepository.save(otpToken);
-
-        emailService.sendOtpEmail(user.getEmail(), otpCode);
-
+        issueRegistrationOtp(email);
         return savedUser;
     }
 
     @Override
     @Transactional
+    public void resendRegistrationOtp(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản chờ xác thực."));
+
+        if (user.getStatus() != UserStatus.INACTIVE) {
+            throw new IllegalStateException("Tài khoản này đã được kích hoạt hoặc đã bị khóa.");
+        }
+
+        issueRegistrationOtp(normalizedEmail);
+    }
+
+    private void issueRegistrationOtp(String email) {
+        otpTokenRepository.deleteByEmailAndType(email, REGISTER_OTP_TYPE);
+
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(900000) + 100000);
+        OtpToken otpToken = OtpToken.builder()
+                .email(email)
+                .otpCode(otpCode)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .type(REGISTER_OTP_TYPE)
+                .build();
+        otpTokenRepository.save(otpToken);
+
+        // Nếu SMTP lỗi, exception được ném ra để transaction rollback. User mới
+        // sẽ không bị lưu ở trạng thái dở dang khi chưa nhận được OTP.
+        emailService.sendOtpEmail(email, otpCode);
+    }
+
+    @Override
+    @Transactional
     public boolean verifyOtp(String email, String otpCode) {
-        Optional<OtpToken> otpOpt = otpTokenRepository.findByEmailAndOtpCodeAndUsedFalse(email, otpCode);
+        String normalizedEmail = normalizeEmail(email);
+        Optional<OtpToken> otpOpt = otpTokenRepository
+                .findByEmailAndOtpCodeAndTypeAndUsedFalse(
+                        normalizedEmail, otpCode == null ? "" : otpCode.trim(), REGISTER_OTP_TYPE);
         if (otpOpt.isPresent()) {
             OtpToken otpToken = otpOpt.get();
             if (otpToken.getExpiryTime().isAfter(LocalDateTime.now())) {
-                otpToken.setUsed(true);
-                otpTokenRepository.save(otpToken);
-
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmail(normalizedEmail)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
+                if (user.getStatus() != UserStatus.INACTIVE) {
+                    return false;
+                }
+
                 user.setStatus(UserStatus.ACTIVE);
                 userRepository.save(user);
+                otpTokenRepository.deleteByEmailAndType(normalizedEmail, REGISTER_OTP_TYPE);
                 return true;
             }
         }
@@ -100,11 +137,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String login(LoginRequest request) {
+        String email = normalizeEmail(request.getEmail());
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(email, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
         return jwtUtils.generateJwtToken(user.getEmail(), user.getRole().getName().name());
@@ -196,6 +234,15 @@ public class UserServiceImpl implements UserService {
                     branchRepository.save(b);
                 });
 
+        otpTokenRepository.deleteByEmail(user.getEmail());
         userRepository.delete(user);
+        userRepository.flush();
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email không được để trống.");
+        }
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

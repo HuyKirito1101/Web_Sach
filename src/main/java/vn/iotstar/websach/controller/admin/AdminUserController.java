@@ -1,6 +1,7 @@
 package vn.iotstar.websach.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -46,13 +47,21 @@ public class AdminUserController {
         return "redirect:/admin/users?locked";
     }
 
-    @GetMapping("/delete/{id}")
-    public String deleteUser(@PathVariable("id") Long userId, RedirectAttributes redirectAttributes) {
+    @PostMapping("/delete/{id}")
+    public String deleteUser(@PathVariable("id") Long userId,
+                             Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
         try {
+            User currentAdmin = userService.findByEmail(authentication.getName()).orElse(null);
+            if (currentAdmin != null && currentAdmin.getId().equals(userId)) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự xóa tài khoản đang đăng nhập.");
+                return "redirect:/admin/users";
+            }
             userService.deleteUser(userId);
             redirectAttributes.addFlashAttribute("successMessage", "Đã xóa thành công người dùng id: " + userId);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa người dùng do đã có dữ liệu đơn hàng / đánh giá. Bạn nên chọn Khóa tài khoản thay thế!");
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Không thể xóa người dùng vì tài khoản đang liên kết với dữ liệu nghiệp vụ. Hãy khóa tài khoản nếu cần giữ lịch sử.");
         }
         return "redirect:/admin/users";
     }

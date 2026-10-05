@@ -75,9 +75,20 @@
                                             <a href="/admin/users/toggle-lock/${u.id}" class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1" title="${u.status == 'LOCKED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}">
                                                 <i class="fa-solid ${u.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i>
                                             </a>
-                                            <a href="/admin/users/delete/${u.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng [${u.fullName}] khỏi hệ thống?')" title="Xóa người dùng">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </a>
+                                            <c:choose>
+                                                <c:when test="${u.email == pageContext.request.userPrincipal.name}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Không thể tự xóa tài khoản đang đăng nhập">
+                                                        <i class="fa-solid fa-user-shield me-1"></i>Đang dùng
+                                                    </button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng [${u.fullName}] khỏi hệ thống?')">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa người dùng">
+                                                            <i class="fa-solid fa-trash me-1"></i>Xóa
+                                                        </button>
+                                                    </form>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                     </tr>
 

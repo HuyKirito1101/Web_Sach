@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Transactional
 class VendorShipperWorkflowIntegrationTest {
 
-    private static final String VENDOR_EMAIL = "vendor.thuduc1@websach.com";
-    private static final String SHIPPER_EMAIL = "shipper.thuduc1@websach.com";
+    private static final String VENDOR_EMAIL = "vendor.thuduc1@websachcu.vn";
+    private static final String SHIPPER_EMAIL = "shipper.thuduc1@websachcu.vn";
 
     @Autowired private VendorService vendorService;
     @Autowired private ShipperService shipperService;
@@ -46,7 +46,7 @@ class VendorShipperWorkflowIntegrationTest {
         request.setOrderId(order.getId());
         request.setShipperId(shipper.getId());
         request.setNote("Giao trong giờ hành chính");
-        DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websach.com");
+        DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websachcu.vn");
 
         assertThat(assignment.getStatus()).isEqualTo(DeliveryStatus.ASSIGNED);
         assertThatThrownBy(() -> shipperService.getAssignment(VENDOR_EMAIL, assignment.getId()))
@@ -75,7 +75,7 @@ class VendorShipperWorkflowIntegrationTest {
         AssignShipperRequest request = new AssignShipperRequest();
         request.setOrderId(order.getId());
         request.setShipperId(shipper.getId());
-        DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websach.com");
+        DeliveryAssignment assignment = orderService.assignShipper(request, "manager@websachcu.vn");
         shipperService.updateStatus(SHIPPER_EMAIL, assignment.getId(), DeliveryStatus.PICKED_UP, null);
 
         assertThatThrownBy(() -> shipperService.updateStatus(

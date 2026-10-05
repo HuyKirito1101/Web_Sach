@@ -29,8 +29,9 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(message);
             log.info("Đã gửi mã OTP thực tế tới Gmail: {}", toEmail);
         } catch (Exception e) {
-            log.error("Lỗi khi gửi OTP qua SMTP Gmail (Do chưa điền App Password): {}", e.getMessage());
-            log.info("👉 MOCK OTP CONSOLE (Dành cho Dev Test): Mã OTP của email {} là: [{}]", toEmail, otpCode);
+            log.error("Không thể gửi OTP qua SMTP Gmail tới {}: {}", toEmail, e.getMessage());
+            throw new IllegalStateException(
+                    "Không thể gửi mã OTP. Vui lòng kiểm tra email hoặc cấu hình Gmail rồi thử lại.", e);
         }
     }
 }

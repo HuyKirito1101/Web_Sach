@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.iotstar.websach.dto.LoginRequest;
 import vn.iotstar.websach.dto.OtpVerificationRequest;
 import vn.iotstar.websach.dto.RegisterRequest;
+import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.UserService;
 
 @Controller
@@ -71,14 +72,27 @@ public class AuthController {
         }
 
         try {
-            userService.register(request);
-            model.addAttribute("email", request.getEmail());
+            User registeredUser = userService.register(request);
+            model.addAttribute("email", registeredUser.getEmail());
             model.addAttribute("otpRequest", new OtpVerificationRequest());
             return "auth/verify-otp";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
             return "auth/register";
         }
+    }
+
+    @PostMapping("/resend-otp")
+    public String resendOtp(@RequestParam("email") String email, Model model) {
+        model.addAttribute("email", email == null ? "" : email.trim().toLowerCase());
+        model.addAttribute("otpRequest", new OtpVerificationRequest());
+        try {
+            userService.resendRegistrationOtp(email);
+            model.addAttribute("successMessage", "Đã gửi mã OTP mới. Mã có hiệu lực trong 5 phút.");
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage());
+        }
+        return "auth/verify-otp";
     }
 
     @PostMapping("/verify-otp")

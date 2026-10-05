@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -50,6 +51,7 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         repairLegacyDemoPasswords();
+        ensureDemoLoginAccounts();
 
         // Dọn dẹp các tài khoản cũ không còn dùng (vendor@websach.com, shipper@websach.com, customer.test@websach.com)
         List<String> deprecatedEmails = List.of("vendor@websach.com", "shipper@websach.com", "customer.test@websach.com");
@@ -114,10 +116,10 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // 3. Users
-        userRepository.findByEmail("admin@websach.com").orElseGet(() ->
+        userRepository.findByEmail("admin@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Quản Trị Viên Admin")
-                        .email("admin@websach.com")
+                        .email("admin@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0988888888")
                         .role(adminRole)
@@ -125,10 +127,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("manager@websach.com").orElseGet(() ->
+        userRepository.findByEmail("manager@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Quản Lý Chi Nhánh Thủ Đức")
-                        .email("manager@websach.com")
+                        .email("manager@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0977777777")
                         .role(managerRole)
@@ -137,10 +139,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        User customer = userRepository.findByEmail("user@websach.com").orElseGet(() ->
+        User customer = userRepository.findByEmail("user@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Khách Hàng Nguyễn Văn A")
-                        .email("user@websach.com")
+                        .email("user@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0955555555")
                         .role(userRole)
@@ -191,10 +193,10 @@ public class DataInitializer implements CommandLineRunner {
                 .build());
 
         // 3.1. Vendors cho Chi Nhánh Thủ Đức (b1) kèm Chuyên Môn Danh Mục
-        User vThuduc1 = userRepository.findByEmail("vendor.thuduc1@websach.com").orElseGet(() ->
+        User vThuduc1 = userRepository.findByEmail("vendor.thuduc1@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Vendor 1 Thủ Đức - Sách Văn Học & Truyện Tranh")
-                        .email("vendor.thuduc1@websach.com")
+                        .email("vendor.thuduc1@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0901111111")
                         .role(vendorRole)
@@ -208,10 +210,10 @@ public class DataInitializer implements CommandLineRunner {
             branchRepository.save(b1);
         }
 
-        User vThuduc2 = userRepository.findByEmail("vendor.thuduc2@websach.com").orElseGet(() ->
+        User vThuduc2 = userRepository.findByEmail("vendor.thuduc2@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Vendor 2 Thủ Đức - Sách Giáo Khoa & Tham Khảo")
-                        .email("vendor.thuduc2@websach.com")
+                        .email("vendor.thuduc2@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0902222222")
                         .role(vendorRole)
@@ -222,10 +224,10 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         // 3.2. Shippers cho Chi Nhánh Thủ Đức (b1) chia theo NVC (GHN Tiêu chuẩn, GHN Hỏa tốc, SPX Express)
-        userRepository.findByEmail("shipper.thuduc1@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.thuduc1@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Thủ Đức (GHN Tiêu Chuẩn) - Nguyễn Văn Nam")
-                        .email("shipper.thuduc1@websach.com")
+                        .email("shipper.thuduc1@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0961111111")
                         .role(shipperRole)
@@ -235,10 +237,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("shipper.thuduc2@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.thuduc2@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Thủ Đức (GHN Hỏa Tốc) - Trần Văn Bình")
-                        .email("shipper.thuduc2@websach.com")
+                        .email("shipper.thuduc2@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0962222222")
                         .role(shipperRole)
@@ -248,10 +250,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("shipper.thuduc3@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.thuduc3@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Thủ Đức (SPX Express) - Nguyễn Thị Mai")
-                        .email("shipper.thuduc3@websach.com")
+                        .email("shipper.thuduc3@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0963333333")
                         .role(shipperRole)
@@ -262,10 +264,10 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         // 3.3. Vendors cho Chi Nhánh Quận 1 (b2) kèm Chuyên Môn Danh Mục
-        User vQuan1_1 = userRepository.findByEmail("vendor.quan1_1@websach.com").orElseGet(() ->
+        User vQuan1_1 = userRepository.findByEmail("vendor.quan1_1@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Vendor 1 Quận 1 - Sách Kinh Tế & Kỹ Năng")
-                        .email("vendor.quan1_1@websach.com")
+                        .email("vendor.quan1_1@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0903333333")
                         .role(vendorRole)
@@ -275,10 +277,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        User vQuan1_2 = userRepository.findByEmail("vendor.quan1_2@websach.com").orElseGet(() ->
+        User vQuan1_2 = userRepository.findByEmail("vendor.quan1_2@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Vendor 2 Quận 1 - Sách Ngoại Văn & Trước 1975")
-                        .email("vendor.quan1_2@websach.com")
+                        .email("vendor.quan1_2@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0904444444")
                         .role(vendorRole)
@@ -289,10 +291,10 @@ public class DataInitializer implements CommandLineRunner {
         );
 
         // 3.4. Shippers cho Chi Nhánh Quận 1 (b2) chia theo NVC (GHN Tiêu chuẩn, GHN Hỏa tốc, SPX Express)
-        userRepository.findByEmail("shipper.quan1_1@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.quan1_1@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Quận 1 (GHN Tiêu Chuẩn) - Lê Hoàng Long")
-                        .email("shipper.quan1_1@websach.com")
+                        .email("shipper.quan1_1@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0964444444")
                         .role(shipperRole)
@@ -302,10 +304,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("shipper.quan1_2@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.quan1_2@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Quận 1 (GHN Hỏa Tốc) - Phạm Quốc Huy")
-                        .email("shipper.quan1_2@websach.com")
+                        .email("shipper.quan1_2@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0965555555")
                         .role(shipperRole)
@@ -315,10 +317,10 @@ public class DataInitializer implements CommandLineRunner {
                         .build())
         );
 
-        userRepository.findByEmail("shipper.quan1_3@websach.com").orElseGet(() ->
+        userRepository.findByEmail("shipper.quan1_3@websachcu.vn").orElseGet(() ->
                 userRepository.save(User.builder()
                         .fullName("Shipper Quận 1 (SPX Express) - Trịnh Văn An")
-                        .email("shipper.quan1_3@websach.com")
+                        .email("shipper.quan1_3@websachcu.vn")
                         .password(passwordEncoder.encode("123456"))
                         .phone("0966666667")
                         .role(shipperRole)
@@ -564,5 +566,60 @@ public class DataInitializer implements CommandLineRunner {
                     userRepository.save(user);
                     log.info("Đã sửa mật khẩu tài khoản mẫu: {}", user.getEmail());
                 });
+    }
+
+    /**
+     * Bảo đảm hai tài khoản được hiển thị trên trang đăng nhập luôn tồn tại,
+     * đang hoạt động và dùng đúng mật khẩu demo. Phần này cũng sửa database cũ
+     * từng tạo tài khoản với tên miền @websach.com không đồng nhất với file SQL.
+     */
+    private void ensureDemoLoginAccounts() {
+        Optional<Role> adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN);
+        Optional<Role> managerRole = roleRepository.findByName(RoleName.ROLE_MANAGER);
+        if (adminRole.isEmpty() || managerRole.isEmpty()) {
+            return;
+        }
+
+        ensureDemoAccount(
+                "admin@websachcu.vn", "Quản Trị Viên Admin", "0988888888",
+                adminRole.get(), null);
+        ensureDemoAccount(
+                "manager@websachcu.vn", "Quản Lý Chi Nhánh", "0977777777",
+                managerRole.get(), branchRepository.findAll().stream().findFirst().orElse(null));
+    }
+
+    private void ensureDemoAccount(String email, String fullName, String phone, Role role, Branch branch) {
+        User user = userRepository.findByEmail(email).orElseGet(() -> User.builder()
+                .email(email)
+                .fullName(fullName)
+                .phone(phone)
+                .role(role)
+                .branch(branch)
+                .status(UserStatus.ACTIVE)
+                .password(passwordEncoder.encode("123456"))
+                .build());
+
+        boolean changed = user.getId() == null;
+        if (!passwordEncoder.matches("123456", user.getPassword())) {
+            user.setPassword(passwordEncoder.encode("123456"));
+            changed = true;
+        }
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            user.setStatus(UserStatus.ACTIVE);
+            changed = true;
+        }
+        if (user.getRole() == null || user.getRole().getName() != role.getName()) {
+            user.setRole(role);
+            changed = true;
+        }
+        if (branch != null && user.getBranch() == null) {
+            user.setBranch(branch);
+            changed = true;
+        }
+
+        if (changed) {
+            userRepository.save(user);
+            log.info("Đã đồng bộ tài khoản demo: {}", email);
+        }
     }
 }

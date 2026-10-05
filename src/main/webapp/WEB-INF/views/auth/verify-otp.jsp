@@ -37,6 +37,12 @@
             </div>
         </c:if>
 
+        <c:if test="${not empty successMessage}">
+            <div class="alert alert-success" role="alert">
+                ${successMessage}
+            </div>
+        </c:if>
+
         <form action="/auth/verify-otp" method="post" class="mt-4">
             <input type="hidden" name="email" value="${email}" />
 
@@ -46,6 +52,13 @@
 
             <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3">
                 <i class="fa-solid fa-check-circle me-2"></i> Kích Hoạt Tài Khoản
+            </button>
+        </form>
+
+        <form action="/auth/resend-otp" method="post" class="mt-3">
+            <input type="hidden" name="email" value="${email}" />
+            <button type="submit" class="btn btn-link text-decoration-none">
+                <i class="fa-solid fa-rotate me-1"></i> Gửi lại mã OTP
             </button>
         </form>
     </div>

@@ -49,7 +49,7 @@
         <form:form action="/auth/login" method="post" modelAttribute="loginRequest">
             <div class="mb-3">
                 <label class="form-label font-weight-bold">Email tài khoản</label>
-                <form:input path="email" type="email" class="form-control" placeholder="admin@websach.com" required="true" />
+                <form:input path="email" type="email" class="form-control" placeholder="admin@websachcu.vn" required="true" />
             </div>
 
             <div class="mb-4">
