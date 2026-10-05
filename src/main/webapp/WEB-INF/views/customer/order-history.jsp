@@ -9,17 +9,38 @@
 <div class="container py-4">
     <h3 class="fw-bold mb-4"><i class="fa-solid fa-receipt text-warning me-2"></i>Lịch Sử Mua Hàng</h3>
 
-    <!-- Status Tabs -->
-    <ul class="nav nav-pills mb-4 bg-white p-2 rounded-3 shadow-sm gap-1">
-        <li class="nav-item">
-            <a class="nav-link ${selectedStatus == null ? 'active bg-warning text-dark fw-bold' : 'text-dark'}" href="/orders">Tất cả</a>
-        </li>
-        <c:forEach var="st" items="${statuses}">
-            <li class="nav-item">
-                <a class="nav-link ${selectedStatus == st ? 'active bg-warning text-dark fw-bold' : 'text-dark'}" href="/orders?status=${st}">${st}</a>
-            </li>
-        </c:forEach>
-    </ul>
+    <!-- Status Tabs - hiển thị đầy đủ 7 trạng thái -->
+    <div class="card border-0 shadow-sm rounded-3 p-2 mb-4">
+        <div class="d-flex flex-wrap gap-1 justify-content-start">
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == null ? 'btn-warning text-dark' : 'btn-light text-dark'}" href="/orders">
+                <i class="fa-solid fa-list me-1"></i>Tất cả
+            </a>
+            <!-- Đơn hàng mới -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'NEW' ? 'btn-info text-dark' : 'btn-light text-dark'}" href="/orders?status=NEW">
+                <i class="fa-solid fa-clock me-1"></i>Chờ xác nhận
+            </a>
+            <!-- Đã xác nhận -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'CONFIRMED' ? 'btn-primary text-white' : 'btn-light text-dark'}" href="/orders?status=CONFIRMED">
+                <i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận
+            </a>
+            <!-- Đang giao -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'SHIPPING' ? 'btn-warning text-dark' : 'btn-light text-dark'}" href="/orders?status=SHIPPING">
+                <i class="fa-solid fa-truck me-1"></i>Đang giao
+            </a>
+            <!-- Đã giao -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'DELIVERED' ? 'btn-success text-white' : 'btn-light text-dark'}" href="/orders?status=DELIVERED">
+                <i class="fa-solid fa-box-open me-1"></i>Đã giao
+            </a>
+            <!-- Hủy -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'CANCELLED' ? 'btn-danger text-white' : 'btn-light text-dark'}" href="/orders?status=CANCELLED">
+                <i class="fa-solid fa-ban me-1"></i>Đã hủy
+            </a>
+            <!-- Trả hàng/Hoàn tiền -->
+            <a class="btn btn-sm rounded-pill fw-medium ${selectedStatus == 'RETURN_REQUESTED' || selectedStatus == 'RETURNED' || selectedStatus == 'REFUNDED' ? 'btn-secondary text-white' : 'btn-light text-dark'}" href="/orders?status=RETURN_REQUESTED">
+                <i class="fa-solid fa-rotate-left me-1"></i>Trả hàng/Hoàn tiền
+            </a>
+        </div>
+    </div>
 
     <c:choose>
         <c:when test="${empty orders}">
@@ -36,18 +57,96 @@
             <div class="d-flex flex-column gap-3">
                 <c:forEach var="o" items="${orders}">
                     <div class="card border-0 shadow-sm rounded-3 p-3">
-                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2 flex-wrap gap-2">
                             <div>
-                                <span class="fw-bold text-dark me-2">Mã đơn: #${o.orderCode}</span>
+                                <span class="fw-bold text-dark me-2">
+                                    <i class="fa-solid fa-hashtag text-muted me-1"></i>${o.orderCode}
+                                </span>
                                 <small class="text-muted"><i class="fa-solid fa-store me-1"></i>${o.branch.name}</small>
                             </div>
-                            <span class="badge ${o.orderStatus == 'NEW' ? 'bg-info' : o.orderStatus == 'DELIVERED' ? 'bg-success' : o.orderStatus == 'CANCELLED' ? 'bg-danger' : 'bg-warning'} text-dark fw-bold">${o.orderStatus}</span>
+                            <!-- Status badge với màu theo trạng thái -->
+                            <c:choose>
+                                <c:when test="${o.orderStatus == 'NEW'}">
+                                    <span class="badge bg-info text-dark fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-clock me-1"></i>Chờ xác nhận
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'CONFIRMED'}">
+                                    <span class="badge bg-primary fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-circle-check me-1"></i>Đã xác nhận
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'PACKING'}">
+                                    <span class="badge bg-warning text-dark fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-box me-1"></i>Đang đóng gói
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'PICKED_UP'}">
+                                    <span class="badge bg-warning text-dark fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-truck-loading me-1"></i>Chờ shipper
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'SHIPPING'}">
+                                    <span class="badge bg-warning text-dark fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-truck me-1"></i>Đang giao hàng
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'DELIVERED'}">
+                                    <span class="badge bg-success fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-box-open me-1"></i>Đã giao thành công
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'CANCELLED'}">
+                                    <span class="badge bg-danger fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-ban me-1"></i>Đã hủy đơn
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'RETURN_REQUESTED'}">
+                                    <span class="badge bg-secondary fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-rotate-left me-1"></i>Đang xét trả hàng
+                                    </span>
+                                </c:when>
+                                <c:when test="${o.orderStatus == 'RETURNED' || o.orderStatus == 'REFUNDED'}">
+                                    <span class="badge bg-secondary fs-6 fw-bold px-3 py-2">
+                                        <i class="fa-solid fa-money-bill-transfer me-1"></i>Đã hoàn tiền
+                                    </span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-light text-dark border fs-6 fw-bold px-3 py-2">${o.orderStatus}</span>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
+
+                        <!-- Order progress bar -->
+                        <c:if test="${o.orderStatus != 'CANCELLED' && o.orderStatus != 'RETURN_REQUESTED' && o.orderStatus != 'RETURNED' && o.orderStatus != 'REFUNDED'}">
+                            <div class="d-flex align-items-center gap-1 mb-3 small text-center" style="overflow-x:auto;">
+                                <div class="d-flex flex-column align-items-center" style="min-width:60px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center ${o.orderStatus == 'NEW' || o.orderStatus == 'CONFIRMED' || o.orderStatus == 'PACKING' || o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'PICKED_UP' || o.orderStatus == 'SHIPPING' || o.orderStatus == 'DELIVERED' ? 'bg-warning' : 'bg-light border'}" style="width:28px;height:28px;"><i class="fa-solid fa-clock" style="font-size:12px;"></i></div>
+                                    <span style="font-size:10px;" class="mt-1">Đặt hàng</span>
+                                </div>
+                                <div class="flex-grow-1 border-top border-warning" style="height:2px;margin-bottom:18px;"></div>
+                                <div class="d-flex flex-column align-items-center" style="min-width:60px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center ${o.orderStatus == 'CONFIRMED' || o.orderStatus == 'PACKING' || o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'PICKED_UP' || o.orderStatus == 'SHIPPING' || o.orderStatus == 'DELIVERED' ? 'bg-primary text-white' : 'bg-light border'}" style="width:28px;height:28px;"><i class="fa-solid fa-check" style="font-size:12px;"></i></div>
+                                    <span style="font-size:10px;" class="mt-1">Xác nhận</span>
+                                </div>
+                                <div class="flex-grow-1 border-top ${o.orderStatus == 'SHIPPING' || o.orderStatus == 'DELIVERED' ? 'border-warning' : 'border-light'}" style="height:2px;margin-bottom:18px;"></div>
+                                <div class="d-flex flex-column align-items-center" style="min-width:60px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center ${o.orderStatus == 'SHIPPING' || o.orderStatus == 'DELIVERED' ? 'bg-warning' : 'bg-light border'}" style="width:28px;height:28px;"><i class="fa-solid fa-truck" style="font-size:12px;"></i></div>
+                                    <span style="font-size:10px;" class="mt-1">Đang giao</span>
+                                </div>
+                                <div class="flex-grow-1 border-top ${o.orderStatus == 'DELIVERED' ? 'border-success' : 'border-light'}" style="height:2px;margin-bottom:18px;"></div>
+                                <div class="d-flex flex-column align-items-center" style="min-width:60px;">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center ${o.orderStatus == 'DELIVERED' ? 'bg-success text-white' : 'bg-light border'}" style="width:28px;height:28px;"><i class="fa-solid fa-box-open" style="font-size:12px;"></i></div>
+                                    <span style="font-size:10px;" class="mt-1">Đã giao</span>
+                                </div>
+                            </div>
+                        </c:if>
+
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <p class="mb-1 text-secondary small"><strong>Người nhận:</strong> ${o.receiverName} - ${o.receiverPhone}</p>
                                 <p class="mb-1 text-secondary small"><strong>Địa chỉ:</strong> ${o.shippingAddress}</p>
-                                <p class="mb-0 text-muted small"><strong>Thanh toán:</strong> ${o.paymentMethod} (${o.paymentStatus})</p>
+                                <p class="mb-0 text-muted small"><strong>Thanh toán:</strong> ${o.paymentMethod} (<span class="${o.paymentStatus == 'PAID' ? 'text-success' : 'text-warning'}">${o.paymentStatus}</span>)</p>
                             </div>
                             <div class="col-md-4 text-md-end mt-2 mt-md-0">
                                 <div class="mb-2">
@@ -57,8 +156,46 @@
                                     </span>
                                 </div>
                                 <a href="/orders/${o.id}" class="btn btn-outline-warning text-dark btn-sm rounded-pill fw-bold px-3">
-                                    Chi Tiết Đơn Hàng <i class="fa-solid fa-chevron-right ms-1"></i>
+                                    Chi Tiết <i class="fa-solid fa-chevron-right ms-1"></i>
                                 </a>
+                                <!-- Nút hủy nếu đơn mới -->
+                                <c:if test="${o.orderStatus == 'NEW'}">
+                                    <form action="/orders/${o.id}/cancel" method="POST" class="d-inline ms-1"
+                                          onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?')">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-bold">
+                                            <i class="fa-solid fa-ban me-1"></i>Hủy đơn
+                                        </button>
+                                    </form>
+                                </c:if>
+                                <!-- Nút trả hàng nếu đã giao -->
+                                <c:if test="${o.orderStatus == 'DELIVERED'}">
+                                    <button class="btn btn-outline-secondary btn-sm rounded-pill fw-bold ms-1"
+                                            data-bs-toggle="modal" data-bs-target="#returnModal${o.id}">
+                                        <i class="fa-solid fa-rotate-left me-1"></i>Trả hàng
+                                    </button>
+                                    <!-- Modal trả hàng -->
+                                    <div class="modal fade" id="returnModal${o.id}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h6 class="modal-title fw-bold">Yêu Cầu Trả Hàng - Hoàn Tiền</h6>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form action="/orders/${o.id}/return" method="POST">
+                                                    <div class="modal-body">
+                                                        <label class="form-label fw-medium small">Lý do trả hàng:</label>
+                                                        <textarea name="reason" class="form-control" rows="3" required
+                                                                  placeholder="Mô tả lý do trả hàng: sách bị hư hỏng, không đúng mô tả..."></textarea>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                                                        <button type="submit" class="btn btn-warning fw-bold">Gửi Yêu Cầu</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </c:if>
                             </div>
                         </div>
                     </div>

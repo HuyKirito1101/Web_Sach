@@ -23,16 +23,22 @@ public class ReviewController {
                             @RequestParam("rating") Integer rating,
                             @RequestParam("comment") String comment,
                             @RequestParam(value = "imageUrl", required = false) String imageUrl,
+                            @RequestParam(value = "videoUrl", required = false) String videoUrl,
                             Authentication authentication,
                             Model model) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
         try {
-            reviewService.addReview(user, bookId, orderItemId, rating, comment, imageUrl);
+            // Kết hợp imageUrl và videoUrl nếu cần
+            String mediaUrl = imageUrl;
+            if ((imageUrl == null || imageUrl.trim().isEmpty()) && videoUrl != null && !videoUrl.trim().isEmpty()) {
+                mediaUrl = videoUrl;
+            }
+            reviewService.addReview(user, bookId, orderItemId, rating, comment, mediaUrl);
             return "redirect:/books/" + bookId + "?reviewSuccess=true";
         } catch (Exception e) {
-            return "redirect:/books/" + bookId + "?reviewError=" + e.getMessage();
+            return "redirect:/books/" + bookId + "?reviewError=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 }

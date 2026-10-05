@@ -9,6 +9,7 @@ import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.entity.enums.BookCopyStatus;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BookRepository;
+import vn.iotstar.websach.repository.FavoriteRepository;
 import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.service.CustomerBookService;
 
@@ -23,31 +24,97 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     private final BookRepository bookRepository;
     private final BookCopyRepository bookCopyRepository;
     private final ReviewRepository reviewRepository;
+    private final FavoriteRepository favoriteRepository;
+
+    /**
+     * Top 10 sản phẩm sắp xếp giá bán cao → thấp (dựa trên giá cao nhất của các bản copy)
+     */
+    @Override
+    public List<Book> getTop10ByPriceDesc() {
+        List<Book> all = bookRepository.findAll();
+        // Sắp xếp theo giá bán cao nhất trong các bản copy
+        all.sort((b1, b2) -> {
+            double p1 = getMaxPrice(b1.getId());
+            double p2 = getMaxPrice(b2.getId());
+            return Double.compare(p2, p1); // giảm dần
+        });
+        return all.stream().limit(10).collect(Collectors.toList());
+    }
+
+    private double getMaxPrice(Long bookId) {
+        return bookCopyRepository.findByBookId(bookId).stream()
+                .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE && c.getSellingPrice() != null)
+                .mapToDouble(BookCopy::getSellingPrice)
+                .max()
+                .orElse(0.0);
+    }
 
     @Override
     public List<Book> getTop20NewBooks() {
         List<Book> all = bookRepository.findAll();
-        all.sort((b1, b2) -> b2.getCreatedAt().compareTo(b1.getCreatedAt()));
+        all.sort((b1, b2) -> {
+            if (b2.getCreatedAt() == null && b1.getCreatedAt() == null) return 0;
+            if (b2.getCreatedAt() == null) return -1;
+            if (b1.getCreatedAt() == null) return 1;
+            return b2.getCreatedAt().compareTo(b1.getCreatedAt());
+        });
         return all.stream().limit(20).collect(Collectors.toList());
     }
 
     @Override
     public List<Book> getTop20BestSellers() {
+        // Sắp xếp theo số lượng bản copy bán được (số copy với status SOLD)
         List<Book> all = bookRepository.findAll();
+        all.sort((b1, b2) -> {
+            long sold1 = bookCopyRepository.findByBookId(b1.getId()).stream()
+                    .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+            long sold2 = bookCopyRepository.findByBookId(b2.getId()).stream()
+                    .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+            return Long.compare(sold2, sold1);
+        });
         return all.stream().limit(20).collect(Collectors.toList());
     }
 
     @Override
     public List<Book> getTop20TopRated() {
         List<Book> all = bookRepository.findAll();
+        all.sort((b1, b2) -> {
+            Double r1 = reviewRepository.getAverageRatingForBook(b1);
+            Double r2 = reviewRepository.getAverageRatingForBook(b2);
+            double v1 = r1 != null ? r1 : 0.0;
+            double v2 = r2 != null ? r2 : 0.0;
+            return Double.compare(v2, v1);
+        });
         return all.stream().limit(20).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Book> getTop20MostFavorite() {
+        // Lấy danh sách sách được yêu thích nhiều nhất
+        List<Object[]> rows = favoriteRepository.findTopFavoriteBooks();
+        List<Book> result = rows.stream()
+                .map(r -> (Book) r[0])
+                .limit(20)
+                .collect(Collectors.toList());
+        // Nếu chưa đủ 20, bổ sung bằng sách mới nhất
+        if (result.size() < 20) {
+            Set<Long> existingIds = result.stream().map(Book::getId).collect(Collectors.toSet());
+            List<Book> all = bookRepository.findAll();
+            for (Book b : all) {
+                if (!existingIds.contains(b.getId())) {
+                    result.add(b);
+                    if (result.size() >= 20) break;
+                }
+            }
+        }
+        return result;
     }
 
     @Override
     public List<Book> searchAndFilterBooks(String keyword, Long categoryId, Long branchId, BookCondition condition, Double minPrice, Double maxPrice, String sortBy) {
         List<Book> all = bookRepository.findAll();
 
-        return all.stream().filter(book -> {
+        List<Book> filtered = all.stream().filter(book -> {
             boolean matchesKeyword = true;
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String kw = keyword.trim().toLowerCase();
@@ -78,6 +145,51 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
             return matchesKeyword && matchesCategory && matchesBranch && matchesCondition && matchesPrice;
         }).collect(Collectors.toList());
+
+        // Sắp xếp
+        if (sortBy != null) {
+            switch (sortBy) {
+                case "price_asc":
+                    filtered.sort(Comparator.comparingDouble(b -> getMaxPrice(b.getId())));
+                    break;
+                case "price_desc":
+                    filtered.sort((b1, b2) -> Double.compare(getMaxPrice(b2.getId()), getMaxPrice(b1.getId())));
+                    break;
+                case "newest":
+                    filtered.sort((b1, b2) -> {
+                        if (b2.getCreatedAt() == null && b1.getCreatedAt() == null) return 0;
+                        if (b2.getCreatedAt() == null) return -1;
+                        if (b1.getCreatedAt() == null) return 1;
+                        return b2.getCreatedAt().compareTo(b1.getCreatedAt());
+                    });
+                    break;
+                case "best_seller":
+                    filtered.sort((b1, b2) -> {
+                        long s1 = bookCopyRepository.findByBookId(b1.getId()).stream().filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+                        long s2 = bookCopyRepository.findByBookId(b2.getId()).stream().filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+                        return Long.compare(s2, s1);
+                    });
+                    break;
+                case "top_rated":
+                    filtered.sort((b1, b2) -> {
+                        Double r1 = reviewRepository.getAverageRatingForBook(b1);
+                        Double r2 = reviewRepository.getAverageRatingForBook(b2);
+                        return Double.compare(r2 != null ? r2 : 0.0, r1 != null ? r1 : 0.0);
+                    });
+                    break;
+                case "most_favorite":
+                    filtered.sort((b1, b2) -> {
+                        long f1 = favoriteRepository.countByBook(b1);
+                        long f2 = favoriteRepository.countByBook(b2);
+                        return Long.compare(f2, f1);
+                    });
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return filtered;
     }
 
     @Override

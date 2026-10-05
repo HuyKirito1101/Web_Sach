@@ -23,6 +23,7 @@ public class CheckoutController {
     private final CustomerProfileService profileService;
     private final ShippingProviderService shippingProviderService;
     private final UserService userService;
+    private final AppDiscountService appDiscountService;
 
     @GetMapping
     public String showCheckoutPage(Authentication authentication, Model model) {
@@ -42,6 +43,9 @@ public class CheckoutController {
         model.addAttribute("shippingProviders", shippingProviderService.findAllProviders());
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("user", user);
+        // Danh sách mã giảm giá có thể dùng
+        model.addAttribute("availableDiscounts", appDiscountService.findAllDiscounts()
+                .stream().filter(d -> Boolean.TRUE.equals(d.getActive())).toList());
 
         return "customer/checkout";
     }
@@ -61,11 +65,15 @@ public class CheckoutController {
         if (user == null) return "redirect:/auth/login";
 
         try {
-            Order order = checkoutService.processCheckout(user, addressId, recipientName, phone, shippingAddress, shippingProviderId, voucherCode, paymentMethod, note);
+            Order order = checkoutService.processCheckout(user, addressId, recipientName, phone, shippingAddress,
+                    shippingProviderId, voucherCode, paymentMethod, note);
 
             if ("VNPAY".equalsIgnoreCase(paymentMethod)) {
-                model.addAttribute("order", order);
                 return "redirect:/checkout/vnpay-demo?orderId=" + order.getId();
+            }
+
+            if ("MOMO".equalsIgnoreCase(paymentMethod)) {
+                return "redirect:/checkout/momo-demo?orderId=" + order.getId();
             }
 
             return "redirect:/orders/" + order.getId() + "?success=true";
@@ -79,5 +87,11 @@ public class CheckoutController {
     public String vnpayDemo(@RequestParam("orderId") Long orderId, Model model) {
         model.addAttribute("orderId", orderId);
         return "customer/vnpay-demo";
+    }
+
+    @GetMapping("/momo-demo")
+    public String momoDemo(@RequestParam("orderId") Long orderId, Model model) {
+        model.addAttribute("orderId", orderId);
+        return "customer/momo-demo";
     }
 }
