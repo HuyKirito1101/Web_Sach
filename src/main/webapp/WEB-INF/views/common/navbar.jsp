@@ -43,7 +43,13 @@
                     <c:when test="${pageContext.request.userPrincipal != null}">
                         <li class="nav-item dropdown ms-2">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white fw-medium" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                <img src="https://ui-avatars.com/api/?name=${pageContext.request.userPrincipal.name}&background=FFC107&color=000" class="rounded-circle border border-warning" width="35" height="35" alt="Avatar">
+                                <c:set var="fallbackAvatar" value="https://ui-avatars.com/api/?name=${pageContext.request.userPrincipal.name}&background=FFC107&color=000" />
+                                <c:set var="navbarAvatar" value="${not empty currentUser.avatarUrl ? currentUser.avatarUrl : fallbackAvatar}" />
+                                <img src="<c:out value='${navbarAvatar}'/>"
+                                     onerror="this.onerror=null;this.src='<c:out value='${fallbackAvatar}'/>';"
+                                     class="rounded-circle border border-warning"
+                                     width="35" height="35" alt="Ảnh đại diện"
+                                     style="object-fit: cover;">
                                 <span>${pageContext.request.userPrincipal.name}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userDropdown">

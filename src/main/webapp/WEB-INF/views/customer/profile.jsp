@@ -28,7 +28,16 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Link ảnh đại diện (Avatar URL)</label>
-                        <input type="text" name="avatarUrl" class="form-control" value="${user.avatarUrl}" placeholder="https://...">
+                        <div class="d-flex align-items-center gap-3">
+                            <c:set var="profileFallbackAvatar" value="https://ui-avatars.com/api/?name=${user.email}&background=FFC107&color=000" />
+                            <img id="avatarPreview"
+                                 src="<c:out value='${not empty user.avatarUrl ? user.avatarUrl : profileFallbackAvatar}'/>"
+                                 data-fallback="<c:out value='${profileFallbackAvatar}'/>"
+                                 class="rounded-circle border border-warning flex-shrink-0"
+                                 width="64" height="64" alt="Xem trước ảnh đại diện"
+                                 style="object-fit: cover;">
+                            <input id="avatarUrl" type="url" name="avatarUrl" class="form-control" value="<c:out value='${user.avatarUrl}'/>" placeholder="https://...">
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Cập Nhật Thông Tin</button>
                 </form>
@@ -117,5 +126,20 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('avatarUrl');
+    const preview = document.getElementById('avatarPreview');
+    if (!input || !preview) return;
+
+    preview.addEventListener('error', function () {
+        preview.src = preview.dataset.fallback;
+    });
+    input.addEventListener('input', function () {
+        preview.src = input.value.trim() || preview.dataset.fallback;
+    });
+});
+</script>
 
 <jsp:include page="../common/footer.jsp"/>
