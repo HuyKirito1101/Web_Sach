@@ -31,7 +31,7 @@ public class AdminCategoryController {
         return "redirect:/admin/categories?success";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteCategory(@PathVariable("id") Long id) {
         categoryService.deleteCategory(id);
         return "redirect:/admin/categories?deleted";

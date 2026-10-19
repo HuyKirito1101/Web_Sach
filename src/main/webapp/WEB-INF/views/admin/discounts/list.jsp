@@ -44,7 +44,7 @@
                                         <td><fmt:formatNumber value="${d.minOrderValue}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${d.active ? 'bg-success' : 'bg-secondary'}">${d.active ? 'ĐANG ÁP DỤNG' : 'HẾT HẠN'}</span></td>
                                         <td class="text-end">
-                                            <a href="/admin/discounts/delete/${d.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa mã này?')"><i class="fa-solid fa-trash"></i></a>
+                                            <form action="/admin/discounts/delete/${d.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>

@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/", "/home", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**", "/ws/**", "/WEB-INF/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/manager/**").hasRole("MANAGER")
                         .requestMatchers("/vendor/**").hasAnyRole("VENDOR", "ADMIN")
                         .requestMatchers("/shipper/**").hasAnyRole("SHIPPER", "ADMIN")
                         .requestMatchers("/cart/**", "/checkout/**", "/orders/**", "/profile/**", "/favorites/**", "/viewed-products/**", "/reviews/**").authenticated()

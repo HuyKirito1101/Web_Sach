@@ -72,9 +72,9 @@
                                             <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editModal${u.id}" title="Sửa quyền & chi nhánh">
                                                 <i class="fa-solid fa-user-pen"></i> Sửa Role
                                             </button>
-                                            <a href="/admin/users/toggle-lock/${u.id}" class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1" title="${u.status == 'LOCKED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}">
-                                                <i class="fa-solid ${u.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i>
-                                            </a>
+                                            <form action="/admin/users/toggle-lock/${u.id}" method="post" class="d-inline">
+                                                <button class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1" title="${u.status == 'LOCKED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}"><i class="fa-solid ${u.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i></button>
+                                            </form>
                                             <c:choose>
                                                 <c:when test="${u.email == pageContext.request.userPrincipal.name}">
                                                     <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Không thể tự xóa tài khoản đang đăng nhập">

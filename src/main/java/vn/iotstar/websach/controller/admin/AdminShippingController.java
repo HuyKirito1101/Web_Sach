@@ -31,7 +31,7 @@ public class AdminShippingController {
         return "redirect:/admin/shipping?success";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteShippingProvider(@PathVariable("id") Long id) {
         shippingProviderService.deleteProvider(id);
         return "redirect:/admin/shipping?deleted";

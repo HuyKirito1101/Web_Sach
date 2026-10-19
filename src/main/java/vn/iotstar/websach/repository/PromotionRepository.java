@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     List<Promotion> findByBranchId(Long branchId);
+    List<Promotion> findByBranchIdOrderByStartDateDesc(Long branchId);
+    List<Promotion> findAllByOrderByStartDateDesc();
 }

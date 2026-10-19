@@ -18,6 +18,9 @@
                 </button>
             </div>
 
+            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+
             <div class="row g-4">
                 <c:forEach var="b" items="${branches}">
                     <div class="col-md-4">
@@ -29,10 +32,17 @@
                                 <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i>${b.address}</p>
                                 <p class="text-muted small mb-1"><i class="fa-solid fa-phone me-2 text-primary"></i>${b.phone}</p>
                                 <p class="text-muted small mb-3"><i class="fa-solid fa-envelope me-2 text-info"></i>${b.email}</p>
-                                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                    <span class="small fw-bold text-success">Chiết khấu App: ${b.appDiscountPercent}%</span>
+                                <div class="pt-2 border-top">
+                                    <form action="/admin/branches/${b.id}/commission" method="post" class="input-group input-group-sm mb-2">
+                                        <span class="input-group-text">Chiết khấu App</span>
+                                        <input type="number" min="0" max="100" step="0.1" name="appDiscountPercent" value="${b.appDiscountPercent}" class="form-control" required>
+                                        <span class="input-group-text">%</span>
+                                        <button class="btn btn-outline-primary" title="Lưu chiết khấu"><i class="fa-solid fa-floppy-disk"></i></button>
+                                    </form>
+                                    <div class="text-end">
                                     <div>
-                                        <a href="/admin/branches/delete/${b.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')"><i class="fa-solid fa-trash"></i></a>
+                                        <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                    </div>
                                     </div>
                                 </div>
                             </div>

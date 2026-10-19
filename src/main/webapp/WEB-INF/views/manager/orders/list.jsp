@@ -16,6 +16,9 @@
                 <h3 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i>Quản Lý Đơn Hàng Của Cửa Hàng</h3>
             </div>
 
+            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -44,20 +47,21 @@
                                             <form action="/manager/orders/update-status" method="post" class="d-inline">
                                                 <input type="hidden" name="orderId" value="${o.id}" />
                                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                                    <option value="NEW" ${o.orderStatus == 'NEW' ? 'selected' : ''}>NEW</option>
-                                                    <option value="CONFIRMED" ${o.orderStatus == 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
-                                                    <option value="PACKING" ${o.orderStatus == 'PACKING' ? 'selected' : ''}>PACKING</option>
-                                                    <option value="READY_FOR_PICKUP" ${o.orderStatus == 'READY_FOR_PICKUP' ? 'selected' : ''}>READY_FOR_PICKUP</option>
-                                                    <option value="SHIPPING" ${o.orderStatus == 'SHIPPING' ? 'selected' : ''}>SHIPPING</option>
-                                                    <option value="DELIVERED" ${o.orderStatus == 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
-                                                    <option value="CANCELLED" ${o.orderStatus == 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                                                    <option value="${o.orderStatus}" selected>${o.orderStatus}</option>
+                                                    <c:if test="${o.orderStatus == 'NEW'}"><option value="CONFIRMED">CONFIRMED</option><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    <c:if test="${o.orderStatus == 'CONFIRMED'}"><option value="PACKING">PACKING</option><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    <c:if test="${o.orderStatus == 'PACKING'}"><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    <c:if test="${o.orderStatus == 'RETURN_REQUESTED'}"><option value="RETURNED">RETURNED</option></c:if>
+                                                    <c:if test="${o.orderStatus == 'RETURNED'}"><option value="REFUNDED">REFUNDED</option></c:if>
                                                 </select>
                                             </form>
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}">
-                                                <i class="fa-solid fa-truck-fast me-1"></i> Phân Shipper
-                                            </button>
+                                            <c:choose>
+                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' && not empty shippers}"><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}"><i class="fa-solid fa-truck-fast me-1"></i> Phân Shipper</button></c:when>
+                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP'}"><span class="text-danger small">Chưa có shipper</span></c:when>
+                                                <c:otherwise><span class="text-muted small">Chưa sẵn sàng giao</span></c:otherwise>
+                                            </c:choose>
                                         </td>
                                     </tr>
 

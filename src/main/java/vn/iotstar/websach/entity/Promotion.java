@@ -3,6 +3,7 @@ package vn.iotstar.websach.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import vn.iotstar.websach.entity.enums.PromotionType;
 
 import java.time.LocalDate;
 
@@ -28,6 +29,14 @@ public class Promotion {
 
     private Double discountPercent;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private PromotionType type;
+
+    private Double maxDiscountAmount;
+
+    private Double minOrderValue;
+
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate startDate;
 
@@ -39,5 +48,6 @@ public class Promotion {
     @PrePersist
     protected void onCreate() {
         if (active == null) active = true;
+        if (type == null) type = PromotionType.PRODUCT_PERCENT;
     }
 }

@@ -21,20 +21,19 @@ public class ManagerBookController {
 
     private final BookCopyService bookCopyService;
     private final BookService bookService;
-    private final UserService userService;
     private final BranchService branchService;
     private final CategoryService categoryService;
     private final AuthorRepository authorRepository;
     private final PublisherRepository publisherRepository;
     private final CloudinaryService cloudinaryService;
+    private final ManagerAccessService managerAccessService;
 
     @GetMapping
     public String listBranchBooks(@RequestParam(value = "condition", required = false) String conditionStr,
                                   Authentication authentication,
                                   Model model) {
         String email = authentication.getName();
-        User manager = userService.findByEmail(email).orElse(null);
-        Long branchId = (manager != null && manager.getBranch() != null) ? manager.getBranch().getId() : 1L;
+        Long branchId = managerAccessService.requireManagedBranch(email).getId();
 
         BookCondition condition = null;
         if (conditionStr != null && !conditionStr.isEmpty()) {
@@ -57,8 +56,11 @@ public class ManagerBookController {
                                @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
                                Authentication authentication) {
         String email = authentication.getName();
-        User manager = userService.findByEmail(email).orElse(null);
-        Long branchId = (manager != null && manager.getBranch() != null) ? manager.getBranch().getId() : 1L;
+        Long branchId = managerAccessService.requireManagedBranch(email).getId();
+
+        if (bookCopy.getId() != null) {
+            managerAccessService.requireCopyInBranch(email, bookCopy.getId());
+        }
 
         Book book = bookService.findById(bookId).orElseThrow(() -> new RuntimeException("Đầu sách không tồn tại"));
         Branch branch = branchService.findById(branchId).orElseThrow(() -> new RuntimeException("Chi nhánh không tồn tại"));
@@ -126,8 +128,9 @@ public class ManagerBookController {
         return "redirect:/manager/books?bookAdded=true";
     }
 
-    @GetMapping("/delete/{id}")
-    public String deleteBookCopy(@PathVariable("id") Long id) {
+    @PostMapping("/delete/{id}")
+    public String deleteBookCopy(@PathVariable("id") Long id, Authentication authentication) {
+        managerAccessService.requireCopyInBranch(authentication.getName(), id);
         bookCopyService.deleteCopy(id);
         return "redirect:/manager/books?deleted";
     }

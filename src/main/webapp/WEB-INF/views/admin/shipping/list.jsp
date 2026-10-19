@@ -42,7 +42,7 @@
                                         <td class="fw-bold text-success"><fmt:formatNumber value="${p.baseFee}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${p.active ? 'bg-success' : 'bg-secondary'}">${p.active ? 'HOẠT ĐỘNG' : 'TẠM DỪNG'}</span></td>
                                         <td class="text-end">
-                                            <a href="/admin/shipping/delete/${p.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fa-solid fa-trash"></i></a>
+                                            <form action="/admin/shipping/delete/${p.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>

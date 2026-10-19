@@ -5,6 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.service.BranchService;
@@ -40,9 +41,28 @@ public class AdminBranchController {
         return "redirect:/admin/branches?success";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteBranch(@PathVariable("id") Long id) {
         branchService.deleteBranch(id);
         return "redirect:/admin/branches?deleted";
+    }
+
+    @PostMapping("/{id}/commission")
+    public String updateCommission(@PathVariable Long id,
+                                   @RequestParam Double appDiscountPercent,
+                                   RedirectAttributes redirect) {
+        try {
+            if (appDiscountPercent == null || appDiscountPercent < 0 || appDiscountPercent > 100) {
+                throw new IllegalArgumentException("Chiết khấu ứng dụng phải nằm trong khoảng 0 đến 100%.");
+            }
+            Branch branch = branchService.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Chi nhánh không tồn tại."));
+            branch.setAppDiscountPercent(appDiscountPercent);
+            branchService.saveBranch(branch);
+            redirect.addFlashAttribute("successMessage", "Đã cập nhật chiết khấu cho " + branch.getName() + ".");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/branches";
     }
 }

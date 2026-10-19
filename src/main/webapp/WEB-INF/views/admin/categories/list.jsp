@@ -41,7 +41,7 @@
                                         <td>${c.description}</td>
                                         <td><span class="badge ${c.active ? 'bg-success' : 'bg-secondary'}">${c.active ? 'HIỂN THỊ' : 'ẨN'}</span></td>
                                         <td class="text-end">
-                                            <a href="/admin/categories/delete/${c.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này?')"><i class="fa-solid fa-trash"></i></a>
+                                            <form action="/admin/categories/delete/${c.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>

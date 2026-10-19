@@ -79,7 +79,7 @@
                                         <td class="fw-bold fs-6">${c.quantity}</td>
                                         <td><span class="badge ${c.status == 'AVAILABLE' ? 'bg-success' : 'bg-secondary'}">${c.status}</span></td>
                                         <td class="text-end">
-                                            <a href="/manager/books/delete/${c.id}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fa-solid fa-trash"></i></a>
+                                            <form method="post" action="/manager/books/delete/${c.id}" class="d-inline"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>

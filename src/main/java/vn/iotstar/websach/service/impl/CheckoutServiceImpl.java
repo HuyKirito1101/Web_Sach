@@ -7,10 +7,13 @@ import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.OrderStatus;
 import vn.iotstar.websach.entity.enums.PaymentMethod;
 import vn.iotstar.websach.entity.enums.PaymentStatus;
+import vn.iotstar.websach.entity.enums.PromotionType;
 import vn.iotstar.websach.repository.*;
 import vn.iotstar.websach.service.CartService;
 import vn.iotstar.websach.service.CheckoutService;
+import vn.iotstar.websach.service.PromotionService;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +29,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final PromotionService promotionService;
 
     @Override
     public Order processCheckout(User user, Long addressId, String recipientName, String phone, String shippingAddress, Long shippingProviderId, String voucherCode, String paymentMethodStr, String note) {
@@ -66,11 +70,31 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
                 .sum();
 
+        Branch branch = cartItems.get(0).getBookCopy().getBranch();
+        boolean containsMultipleBranches = cartItems.stream()
+                .anyMatch(item -> item.getBookCopy().getBranch() == null
+                        || !item.getBookCopy().getBranch().getId().equals(branch.getId()));
+        if (containsMultipleBranches) {
+            throw new IllegalStateException("Vui lòng thanh toán riêng sản phẩm của từng cửa hàng.");
+        }
+
+        for (CartItem item : cartItems) {
+            Integer available = item.getBookCopy().getQuantity();
+            if (available == null || item.getQuantity() == null || item.getQuantity() <= 0
+                    || item.getQuantity() > available) {
+                throw new IllegalStateException("Sản phẩm " + item.getBookCopy().getBook().getTitle()
+                        + " không đủ số lượng tồn kho.");
+            }
+        }
+
         // Check voucher
         double discount = 0.0;
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
             AppDiscount promo = appDiscountRepository.findByCodeAndActiveTrue(voucherCode.trim()).orElse(null);
-            if (promo != null) {
+            if (promo != null
+                    && (promo.getStartDate() == null || !LocalDate.now().isBefore(promo.getStartDate()))
+                    && (promo.getEndDate() == null || !LocalDate.now().isAfter(promo.getEndDate()))
+                    && (promo.getMinOrderValue() == null || subtotal >= promo.getMinOrderValue())) {
                 if (promo.getDiscountPercent() != null) {
                     discount = subtotal * (promo.getDiscountPercent() / 100.0);
                     if (promo.getMaxDiscountAmount() != null && discount > promo.getMaxDiscountAmount()) {
@@ -79,6 +103,20 @@ public class CheckoutServiceImpl implements CheckoutService {
                 }
             }
         }
+
+        List<Promotion> applicablePromotions = promotionService.findApplicablePromotions(
+                branch.getId(), LocalDate.now(), subtotal);
+        double productPromotionDiscount = applicablePromotions.stream()
+                .filter(p -> p.getType() == null || p.getType() == PromotionType.PRODUCT_PERCENT)
+                .mapToDouble(p -> cappedDiscount(subtotal, p))
+                .max().orElse(0.0);
+        double baseShippingFee = shipFee;
+        double shippingPromotionDiscount = applicablePromotions.stream()
+                .filter(p -> p.getType() == PromotionType.SHIPPING_PERCENT)
+                .mapToDouble(p -> cappedDiscount(baseShippingFee, p))
+                .max().orElse(0.0);
+        discount += productPromotionDiscount;
+        shipFee = Math.max(0, shipFee - shippingPromotionDiscount);
 
         double finalAmount = Math.max(0, subtotal + shipFee - discount);
 
@@ -89,10 +127,8 @@ public class CheckoutServiceImpl implements CheckoutService {
             }
         } catch (Exception ignored) {}
 
-        PaymentStatus ps = (pm == PaymentMethod.VNPAY) ? PaymentStatus.PAID : PaymentStatus.PENDING;
+        PaymentStatus ps = PaymentStatus.PENDING;
 
-        // Take primary branch from first cart item
-        Branch branch = cartItems.get(0).getBookCopy().getBranch();
         double appCommission = subtotal * (branch.getAppDiscountPercent() != null ? branch.getAppDiscountPercent() / 100.0 : 0.1);
 
         String orderCode = "WS-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
@@ -140,5 +176,14 @@ public class CheckoutServiceImpl implements CheckoutService {
         cartService.clearCart(user);
 
         return savedOrder;
+    }
+
+    private double cappedDiscount(double amount, Promotion promotion) {
+        if (promotion.getDiscountPercent() == null) return 0.0;
+        double value = amount * promotion.getDiscountPercent() / 100.0;
+        if (promotion.getMaxDiscountAmount() != null) {
+            value = Math.min(value, promotion.getMaxDiscountAmount());
+        }
+        return Math.max(0.0, value);
     }
 }

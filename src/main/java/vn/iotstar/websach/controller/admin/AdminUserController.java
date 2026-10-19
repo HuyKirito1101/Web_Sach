@@ -36,13 +36,27 @@ public class AdminUserController {
     public String updateRoleStatus(@RequestParam("userId") Long userId,
                                    @RequestParam(value = "roleId", required = false) Long roleId,
                                    @RequestParam(value = "branchId", required = false) Long branchId,
-                                   @RequestParam(value = "status", required = false) String status) {
+                                   @RequestParam(value = "status", required = false) String status,
+                                   Authentication authentication,
+                                   RedirectAttributes redirectAttributes) {
+        User currentAdmin = userService.findByEmail(authentication.getName()).orElse(null);
+        if (currentAdmin != null && currentAdmin.getId().equals(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không thể tự đổi quyền hoặc trạng thái của tài khoản đang đăng nhập.");
+            return "redirect:/admin/users";
+        }
         userService.updateUserRoleAndStatus(userId, roleId, branchId, status);
         return "redirect:/admin/users?success";
     }
 
-    @GetMapping("/toggle-lock/{id}")
-    public String toggleLock(@PathVariable("id") Long userId) {
+    @PostMapping("/toggle-lock/{id}")
+    public String toggleLock(@PathVariable("id") Long userId,
+                             Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
+        User currentAdmin = userService.findByEmail(authentication.getName()).orElse(null);
+        if (currentAdmin != null && currentAdmin.getId().equals(userId)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự khóa tài khoản đang đăng nhập.");
+            return "redirect:/admin/users";
+        }
         userService.toggleUserLock(userId);
         return "redirect:/admin/users?locked";
     }

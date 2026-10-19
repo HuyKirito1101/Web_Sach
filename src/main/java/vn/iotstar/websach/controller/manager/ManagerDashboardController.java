@@ -10,6 +10,7 @@ import vn.iotstar.websach.dto.BranchStatDTO;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.OrderService;
+import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.StatService;
 import vn.iotstar.websach.service.UserService;
 
@@ -21,13 +22,13 @@ public class ManagerDashboardController {
     private final StatService statService;
     private final UserService userService;
     private final OrderService orderService;
+    private final ManagerAccessService managerAccessService;
 
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
         String email = authentication.getName();
         User manager = userService.findByEmail(email).orElse(null);
-
-        Long branchId = (manager != null && manager.getBranch() != null) ? manager.getBranch().getId() : 1L;
+        Long branchId = managerAccessService.requireManagedBranch(email).getId();
 
         BranchStatDTO stats = statService.getBranchStats(branchId);
         model.addAttribute("stats", stats);

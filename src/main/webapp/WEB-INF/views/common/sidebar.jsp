@@ -31,6 +31,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="/admin/products" class="nav-link ${pageContext.request.requestURI.contains('/admin/products') ? 'active' : ''}">
+                    <i class="fa-solid fa-book-open"></i> Sản Phẩm Toàn Hệ Thống
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="/admin/discounts" class="nav-link ${pageContext.request.requestURI.contains('/admin/discounts') ? 'active' : ''}">
                     <i class="fa-solid fa-ticket"></i> Chiết Khấu & Voucher
                 </a>
@@ -38,6 +43,11 @@
             <li class="nav-item">
                 <a href="/admin/shipping" class="nav-link ${pageContext.request.requestURI.contains('/admin/shipping') ? 'active' : ''}">
                     <i class="fa-solid fa-truck-fast"></i> Nhà Vận Chuyển
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/admin/promotions" class="nav-link ${pageContext.request.requestURI.contains('/admin/promotions') ? 'active' : ''}">
+                    <i class="fa-solid fa-percent"></i> Chương Trình Khuyến Mãi
                 </a>
             </li>
             <li class="nav-item">
@@ -70,9 +80,13 @@
             </li>
             <li class="nav-item">
                 <a href="/manager/staff" class="nav-link ${pageContext.request.requestURI.contains('/manager/staff') ? 'active' : ''}">
-                    <i class="fa-solid fa-user-group"></i> Nhân Viên Chi Nhánh
+                    <i class="fa-solid fa-user-group"></i> Người Dùng Chi Nhánh
                 </a>
             </li>
+            <li class="nav-item"><a href="/manager/categories" class="nav-link ${pageContext.request.requestURI.contains('/manager/categories') ? 'active' : ''}"><i class="fa-solid fa-list-check"></i> Quản Lý Danh Mục</a></li>
+            <li class="nav-item"><a href="/manager/settings" class="nav-link ${pageContext.request.requestURI.contains('/manager/settings') ? 'active' : ''}"><i class="fa-solid fa-sliders"></i> Chiết Khấu Chi Nhánh</a></li>
+            <li class="nav-item"><a href="/manager/promotions" class="nav-link ${pageContext.request.requestURI.contains('/manager/promotions') ? 'active' : ''}"><i class="fa-solid fa-percent"></i> Chương Trình Khuyến Mãi</a></li>
+            <li class="nav-item"><a href="/manager/shipping" class="nav-link ${pageContext.request.requestURI.contains('/manager/shipping') ? 'active' : ''}"><i class="fa-solid fa-truck-fast"></i> Nhà Vận Chuyển</a></li>
         </c:if>
 
         <c:if test="${pageContext.request.isUserInRole('ROLE_VENDOR') || pageContext.request.isUserInRole('VENDOR')}">

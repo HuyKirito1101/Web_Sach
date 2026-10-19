@@ -254,6 +254,11 @@ public class VendorServiceImpl implements VendorService {
         promotion.setBranch(shop);
         promotion.setTitle(details.getTitle());
         promotion.setDiscountPercent(details.getDiscountPercent());
+        promotion.setType(details.getType() == null
+                ? vn.iotstar.websach.entity.enums.PromotionType.PRODUCT_PERCENT
+                : details.getType());
+        promotion.setMaxDiscountAmount(details.getMaxDiscountAmount());
+        promotion.setMinOrderValue(details.getMinOrderValue());
         promotion.setStartDate(details.getStartDate());
         promotion.setEndDate(details.getEndDate());
         promotion.setActive(details.getActive() == null || details.getActive());

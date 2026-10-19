@@ -31,7 +31,7 @@ public class AdminDiscountController {
         return "redirect:/admin/discounts?success";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteDiscount(@PathVariable("id") Long id) {
         appDiscountService.deleteDiscount(id);
         return "redirect:/admin/discounts?deleted";
