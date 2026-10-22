@@ -14,20 +14,29 @@
                     <i class="fa-solid fa-file-contract text-warning me-2"></i>Trung Tâm Chính Sách
                 </h6>
                 <div class="nav flex-column nav-pills gap-1">
-                    <a href="/policies/terms" class="nav-link ${activePolicy == 'terms' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
-                        <i class="fa-solid fa-scale-balanced me-2"></i>Điều khoản sử dụng
+                    <a href="/policies/guide" class="nav-link ${activePolicy == 'guide' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-circle-question me-2"></i>Hướng dẫn mua hàng
                     </a>
-                    <a href="/policies/privacy" class="nav-link ${activePolicy == 'privacy' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
-                        <i class="fa-solid fa-user-shield me-2"></i>Chính sách bảo mật
+                    <a href="/policies/payment" class="nav-link ${activePolicy == 'payment' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-credit-card me-2"></i>Hướng dẫn thanh toán online
+                    </a>
+                    <a href="/policies/shipping" class="nav-link ${activePolicy == 'shipping' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-truck-fast me-2"></i>Chính sách giao hàng &amp; phí ship
                     </a>
                     <a href="/policies/returns" class="nav-link ${activePolicy == 'returns' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
                         <i class="fa-solid fa-rotate-left me-2"></i>Chính sách đổi trả/hoàn tiền
                     </a>
-                    <a href="/policies/guide" class="nav-link ${activePolicy == 'guide' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
-                        <i class="fa-solid fa-circle-question me-2"></i>Hướng dẫn mua hàng
+                    <a href="/policies/privacy" class="nav-link ${activePolicy == 'privacy' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-user-shield me-2"></i>Chính sách bảo mật
+                    </a>
+                    <a href="/policies/terms" class="nav-link ${activePolicy == 'terms' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-scale-balanced me-2"></i>Điều khoản sử dụng
                     </a>
                     <a href="/policies/wholesale" class="nav-link ${activePolicy == 'wholesale' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
                         <i class="fa-solid fa-boxes-packing me-2"></i>Chính sách khách sỉ
+                    </a>
+                    <a href="/policies/sell-books" class="nav-link ${activePolicy == 'sell-books' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
+                        <i class="fa-solid fa-hand-holding-dollar me-2"></i>Dịch vụ thu mua sách cũ
                     </a>
                     <a href="/policies/about" class="nav-link ${activePolicy == 'about' ? 'active bg-warning text-dark fw-bold' : 'text-secondary'}">
                         <i class="fa-solid fa-building me-2"></i>Giới thiệu Sách Cũ Việt
@@ -133,7 +142,71 @@
                         <p class="text-secondary">Hệ thống sẽ <strong>tự động tách thành các đơn hàng riêng biệt</strong> tương ứng với từng chi nhánh/cửa hàng cung cấp sách để đảm bảo quy trình đóng gói và vận chuyển nhanh nhất.</p>
                     </c:when>
 
-                    <%-- 5. Chính sách khách sỉ --%>
+                    <%-- 5. Chính sách giao hàng & phí ship --%>
+                    <c:when test="${activePolicy == 'shipping'}">
+                        <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Chính Sách Giao Hàng &amp; Phí Ship</h3>
+                        <p class="text-muted small">Dịch vụ vận chuyển chuyên nghiệp qua các đơn vị hàng đầu (GHN, SPX Express...)</p>
+                        <hr>
+                        <h5 class="fw-bold text-dark mt-3">1. Phạm vi và Đối tác vận chuyển</h5>
+                        <p>Sách Cũ Việt phục vụ giao hàng trên toàn quốc (63 tỉnh/thành phố) thông qua các đối tác vận chuyển liên kết tin cậy như <strong>Giao Hàng Nhanh (GHN Express)</strong>, <strong>Shopee Xpress (SPX Express)</strong> hoặc đội ngũ shipper nội bộ tại các chi nhánh.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">2. Thời gian giao hàng dự kiến</h5>
+                        <ul>
+                            <li><strong>Nội thành TP. Hồ Chí Minh:</strong> Từ 1 - 2 ngày làm việc kể từ lúc xác nhận đơn hàng.</li>
+                            <li><strong>Các tỉnh và thành phố khác:</strong> Từ 2 - 4 ngày làm việc tùy thuộc vào địa chỉ nhận hàng.</li>
+                        </ul>
+
+                        <h5 class="fw-bold text-dark mt-3">3. Biểu phí giao hàng (Phí ship)</h5>
+                        <p>- Phí giao hàng tiêu chuẩn được áp dụng theo từng gói hàng của chi nhánh (thông thường từ <strong>25.000 ₫ - 35.000 ₫</strong> tùy khu vực).<br>
+                           - Áp dụng các voucher miễn phí hoặc giảm phí vận chuyển (FreeShip) trong các chương trình khuyến mãi hiện hành của sàn.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">4. Quy định đồng kiểm khi nhận sách</h5>
+                        <p>Khách hàng được quyền kiểm tra gói bọc bên ngoài và đối chiếu thông tin người nhận, số lượng sách theo hóa đơn đính kèm trước khi thanh toán cho nhân viên giao hàng.</p>
+                        <p>Mọi vướng mắc về vận chuyển vui lòng liên hệ: Hotline <strong>0376 131 883</strong> hoặc email <strong>minhkhuyen779@gmail.com</strong>.</p>
+                    </c:when>
+
+                    <%-- 6. Hướng dẫn thanh toán online --%>
+                    <c:when test="${activePolicy == 'payment'}">
+                        <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Hướng Dẫn Thanh Toán Online</h3>
+                        <p class="text-muted small">Đa dạng hình thức thanh toán an toàn, bảo mật và tiện lợi</p>
+                        <hr>
+                        <h5 class="fw-bold text-dark mt-3">1. Thanh toán khi nhận hàng (COD)</h5>
+                        <p>Khách hàng kiểm tra thông tin đơn hàng và thanh toán tiền mặt trực tiếp cho nhân viên giao hàng khi nhận sách.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">2. Thanh toán trực tuyến qua cổng VNPAY</h5>
+                        <p>Hỗ trợ quét mã VNPAY-QR qua hơn 30 ứng dụng Mobile Banking của các ngân hàng lớn tại Việt Nam, thanh toán bằng thẻ ATM nội địa hoặc thẻ quốc tế Visa/Mastercard/JCB một cách nhanh chóng.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">3. Thanh toán qua Ví điện tử MoMo</h5>
+                        <p>Quét mã QR MoMo để xác nhận giao dịch tức thời trong vòng vài giây, thuận tiện và hoàn toàn miễn phí giao dịch.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">4. Cam kết bảo mật thanh toán</h5>
+                        <p>Tất cả các giao dịch thanh toán trực tuyến đều được mã hóa bằng giao thức SSL/TLS an toàn. Hệ thống không lưu trữ thông tin số thẻ hay mã bảo mật của quý khách.</p>
+                    </c:when>
+
+                    <%-- 7. Dịch vụ thu mua sách cũ tận nhà --%>
+                    <c:when test="${activePolicy == 'sell-books'}">
+                        <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Dịch Vụ Thu Mua Sách Cũ Tận Nhà</h3>
+                        <p class="text-muted small">Thu gom và tái sinh sách cũ - Định giá minh bạch, nhận tiền ngay</p>
+                        <hr>
+                        <h5 class="fw-bold text-dark mt-3">1. Ý nghĩa và Mục đích dịch vụ</h5>
+                        <p>Nhằm lan tỏa tình yêu sách và tối ưu hóa vòng đời của tri thức, <strong>Sách Cũ Việt</strong> triển khai dịch vụ thu mua sách cũ, sách sưu tầm, sách xưa và ngoại văn tận nhà đối với khách hàng có số lượng sách lớn hoặc không tiện di chuyển đến các chi nhánh.</p>
+
+                        <h5 class="fw-bold text-dark mt-3">2. Quy trình 4 bước thu mua tận nhà</h5>
+                        <ol>
+                            <li><strong>Liên hệ &amp; Cung cấp thông tin:</strong> Quý khách gửi danh sách, hình ảnh chụp bìa và gáy sách qua Hotline/Zalo: <strong>0376 131 883</strong> hoặc email <strong>minhkhuyen779@gmail.com</strong>.</li>
+                            <li><strong>Thẩm định &amp; Báo giá:</strong> Nhân viên phụ trách thu mua của Sách Cũ Việt sẽ liên hệ lại trong vòng 24h để thẩm định và gửi mức giá đề nghị minh bạch.</li>
+                            <li><strong>Giao nhận sách:</strong> Đội ngũ nhân viên đến tận nơi đóng gói và nhận sách tại khu vực TP.HCM, hoặc hỗ trợ chi phí gửi bưu phẩm qua bưu điện đối với các tỉnh thành xa.</li>
+                            <li><strong>Thanh toán nhanh gọn:</strong> Thanh toán chuyển khoản 100% ngay khi nhận và kiểm đếm đủ số lượng sách.</li>
+                        </ol>
+
+                        <h5 class="fw-bold text-dark mt-3">3. Danh mục sách ưu tiên thu mua</h5>
+                        <p>- Sách văn học kinh điển, sách triết học, lịch sử, văn hóa.<br>
+                           - Sách chuyên ngành y dược, kiến trúc, mỹ thuật, kinh tế.<br>
+                           - Sách xuất bản trước năm 1975, sách quý hiếm, sách có chữ ký tác giả.<br>
+                           - Sách ngoại văn, truyện tranh nguyên bộ.</p>
+                    </c:when>
+
+                    <%-- 8. Chính sách khách sỉ --%>
                     <c:when test="${activePolicy == 'wholesale'}">
                         <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Chính Sách Khách Sỉ &amp; Thư Viện</h3>
                         <p class="text-muted small">Ưu đãi dành cho tổ chức, nhà sưu tầm và các đơn vị mua số lượng lớn</p>
@@ -144,10 +217,10 @@
                             <li>Hỗ trợ đóng gói chuyên dụng chống ẩm mốc cho sách xuất bản trước năm 1975.</li>
                             <li>Hỗ trợ xuất hóa đơn và chứng từ hợp lệ cho cơ quan, tổ chức.</li>
                         </ul>
-                        <p>Vui lòng liên hệ trực tiếp Hotline: <strong>0358.414.848</strong> hoặc email <strong>huykirito@gmail.com</strong> để được tư vấn báo giá chi tiết.</p>
+                        <p>Vui lòng liên hệ trực tiếp Hotline: <strong>0376 131 883</strong> hoặc email <strong>minhkhuyen779@gmail.com</strong> để được tư vấn báo giá chi tiết.</p>
                     </c:when>
 
-                    <%-- 6. Giới thiệu --%>
+                    <%-- 9. Giới thiệu --%>
                     <c:otherwise>
                         <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Về Chúng Tôi - Sách Cũ Việt</h3>
                         <p class="text-muted small">Nơi lưu giữ giá trị tri thức và hồi sinh những trang sách cũ</p>
