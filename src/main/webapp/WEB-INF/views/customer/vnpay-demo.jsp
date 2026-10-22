@@ -18,10 +18,13 @@
         </div>
 
         <div class="d-grid gap-2">
-            <a href="/orders/${orderId}?success=true" class="btn btn-success btn-lg rounded-pill fw-bold">
-                <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán Thành Công
+            <a href="/checkout/vnpay-callback?orderIds=${orderIds}&status=SUCCESS" class="btn btn-success btn-lg rounded-pill fw-bold">
+                <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán VNPAY Thành Công (Callback)
             </a>
-            <a href="/orders/${orderId}" class="btn btn-outline-secondary rounded-pill">Quay lại chi tiết đơn hàng</a>
+            <a href="/checkout/vnpay-callback?orderIds=${orderIds}&status=FAILED" class="btn btn-outline-danger rounded-pill">
+                <i class="fa-solid fa-xmark me-2"></i>Mô Phỏng Hủy Thanh Toán VNPAY (Thất Bại)
+            </a>
+            <a href="/orders" class="btn btn-outline-secondary rounded-pill">Quay lại danh sách đơn hàng</a>
         </div>
     </div>
 </div>

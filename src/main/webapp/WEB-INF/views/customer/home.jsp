@@ -36,11 +36,11 @@
         </div>
     </div>
 
-    <!-- Top 10 sản phẩm cho Guest (hiển thị theo giá cao đến thấp) -->
+    <!-- Top 10 sản phẩm cho Guest (bán trên 10 cuốn hoặc bán chạy theo số lượng giảm dần) -->
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
-                <i class="fa-solid fa-fire text-danger me-2"></i>Top 10 Sản Phẩm Nổi Bật
+                <i class="fa-solid fa-fire text-danger me-2"></i>Top 10 Sách Bán Chạy Nhất
             </h3>
             <a href="/books" class="btn btn-outline-warning text-dark btn-sm rounded-pill fw-bold">Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i></a>
         </div>

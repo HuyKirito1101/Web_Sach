@@ -9,6 +9,20 @@
 <div class="container py-4">
     <h3 class="fw-bold mb-4"><i class="fa-solid fa-receipt text-warning me-2"></i>Lịch Sử Mua Hàng</h3>
 
+    <c:if test="${not empty param.multiSuccess}">
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><strong>Đặt hàng thành công!</strong> Giỏ hàng đã được tách thành <strong>${param.multiSuccess}</strong> đơn hàng theo từng cửa hàng/chi nhánh tương ứng.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
     <!-- Status Tabs - hiển thị đầy đủ 7 trạng thái -->
     <div class="card border-0 shadow-sm rounded-3 p-2 mb-4">
         <div class="d-flex flex-wrap gap-1 justify-content-start">

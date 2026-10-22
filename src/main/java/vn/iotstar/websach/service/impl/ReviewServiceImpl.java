@@ -24,10 +24,20 @@ public class ReviewServiceImpl implements ReviewService {
     private final OrderItemRepository orderItemRepository;
 
     @Override
+    public boolean canUserReviewBook(User user, Long bookId) {
+        if (user == null || bookId == null) return false;
+        return orderItemRepository.hasUserPurchasedBook(user.getId(), bookId);
+    }
+
+    @Override
     public Review addReview(User user, Long bookId, Long orderItemId, Integer rating, String comment, String imageUrl) {
         if (user == null) throw new IllegalArgumentException("Vui lòng đăng nhập!");
-        if (comment == null || comment.trim().length() < 10) {
-            throw new IllegalArgumentException("Nội dung đánh giá phải có ít nhất 10 ký tự!");
+        if (comment == null || comment.trim().length() < 50) {
+            throw new IllegalArgumentException("Nội dung đánh giá phải có tối thiểu 50 ký tự!");
+        }
+
+        if (!canUserReviewBook(user, bookId)) {
+            throw new IllegalStateException("Bạn chỉ có thể đánh giá những cuốn sách đã mua và nhận hàng thành công (trạng thái Đã giao)!");
         }
 
         Book book = bookRepository.findById(bookId)
@@ -36,6 +46,11 @@ public class ReviewServiceImpl implements ReviewService {
         OrderItem orderItem = null;
         if (orderItemId != null) {
             orderItem = orderItemRepository.findById(orderItemId).orElse(null);
+        } else {
+            List<OrderItem> deliveredItems = orderItemRepository.findDeliveredOrderItemsByUserAndBook(user.getId(), bookId);
+            if (!deliveredItems.isEmpty()) {
+                orderItem = deliveredItems.get(0);
+            }
         }
 
         int r = (rating != null && rating >= 1 && rating <= 5) ? rating : 5;

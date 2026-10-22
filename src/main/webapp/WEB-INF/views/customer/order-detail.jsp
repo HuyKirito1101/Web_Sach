@@ -14,6 +14,20 @@
         </div>
     </c:if>
 
+    <c:if test="${param.paymentSuccess}">
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><strong>Thanh toán trực tuyến thành công!</strong> Đơn hàng đã được xác nhận thanh toán.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
+    <c:if test="${param.paymentFailed}">
+        <div class="alert alert-warning alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Thanh toán chưa hoàn tất / đã bị hủy!</strong> Bạn có thể chọn thanh toán lại hoặc liên hệ hỗ trợ.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold mb-0">Chi Tiết Đơn Hàng #${order.orderCode}</h3>
         <a href="/orders" class="btn btn-outline-secondary btn-sm rounded-pill"><i class="fa-solid fa-arrow-left me-1"></i>Quay lại danh sách</a>

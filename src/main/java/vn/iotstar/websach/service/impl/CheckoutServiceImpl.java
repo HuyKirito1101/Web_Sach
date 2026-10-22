@@ -29,16 +29,34 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final BookCopyRepository bookCopyRepository;
+    private final BranchRepository branchRepository;
     private final PromotionService promotionService;
 
     @Override
-    public Order processCheckout(User user, Long addressId, String recipientName, String phone, String shippingAddress, Long shippingProviderId, String voucherCode, String paymentMethodStr, String note) {
+    public List<Order> processCheckout(User user, Long addressId, String recipientName, String phone, String shippingAddress, Long shippingProviderId, String voucherCode, String paymentMethodStr, String note) {
         List<CartItem> cartItems = cartService.getCartItems(user);
         if (cartItems.isEmpty()) {
             throw new IllegalStateException("Giỏ hàng của bạn đang trống!");
         }
 
-        // Determine address info
+        // 1. Chặn mua vượt số lượng tồn kho
+        for (CartItem item : cartItems) {
+            BookCopy copy = item.getBookCopy();
+            Integer available = copy != null ? copy.getQuantity() : 0;
+            String bookTitle = (copy != null && copy.getBook() != null) ? copy.getBook().getTitle() : "Sách";
+            if (available == null || available <= 0) {
+                throw new IllegalStateException("Sản phẩm '" + bookTitle + "' hiện đã hết hàng!");
+            }
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalStateException("Số lượng sản phẩm đặt không hợp lệ!");
+            }
+            if (item.getQuantity() > available) {
+                throw new IllegalStateException("Sản phẩm '" + bookTitle + "' chỉ còn " + available
+                        + " cuốn trong kho, không đủ số lượng bạn đặt (" + item.getQuantity() + " cuốn)!");
+            }
+        }
+
+        // 2. Xác định thông tin địa chỉ giao hàng
         String finalName = recipientName;
         String finalPhone = phone;
         String finalAddressStr = shippingAddress;
@@ -57,68 +75,47 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (finalAddressStr == null || finalAddressStr.trim().isEmpty()) finalAddressStr = "Địa chỉ nhận hàng mặc định";
 
         ShippingProvider provider = null;
-        double shipFee = 20000.0;
+        double baseShipFee = 20000.0;
         if (shippingProviderId != null) {
             provider = shippingProviderRepository.findById(shippingProviderId).orElse(null);
             if (provider != null && provider.getBaseFee() != null) {
-                shipFee = provider.getBaseFee();
+                baseShipFee = provider.getBaseFee();
             }
         }
 
-        // Calculate subtotal
-        double subtotal = cartItems.stream()
+        double totalCartSubtotal = cartItems.stream()
                 .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
                 .sum();
 
-        Branch branch = cartItems.get(0).getBookCopy().getBranch();
-        boolean containsMultipleBranches = cartItems.stream()
-                .anyMatch(item -> item.getBookCopy().getBranch() == null
-                        || !item.getBookCopy().getBranch().getId().equals(branch.getId()));
-        if (containsMultipleBranches) {
-            throw new IllegalStateException("Vui lòng thanh toán riêng sản phẩm của từng cửa hàng.");
-        }
-
-        for (CartItem item : cartItems) {
-            Integer available = item.getBookCopy().getQuantity();
-            if (available == null || item.getQuantity() == null || item.getQuantity() <= 0
-                    || item.getQuantity() > available) {
-                throw new IllegalStateException("Sản phẩm " + item.getBookCopy().getBook().getTitle()
-                        + " không đủ số lượng tồn kho.");
-            }
-        }
-
-        // Check voucher
-        double discount = 0.0;
+        // 3. Kiểm tra Voucher (ngày bắt đầu, hết hạn, min order value)
+        AppDiscount promo = null;
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            AppDiscount promo = appDiscountRepository.findByCodeAndActiveTrue(voucherCode.trim()).orElse(null);
-            if (promo != null
-                    && (promo.getStartDate() == null || !LocalDate.now().isBefore(promo.getStartDate()))
-                    && (promo.getEndDate() == null || !LocalDate.now().isAfter(promo.getEndDate()))
-                    && (promo.getMinOrderValue() == null || subtotal >= promo.getMinOrderValue())) {
-                if (promo.getDiscountPercent() != null) {
-                    discount = subtotal * (promo.getDiscountPercent() / 100.0);
-                    if (promo.getMaxDiscountAmount() != null && discount > promo.getMaxDiscountAmount()) {
-                        discount = promo.getMaxDiscountAmount();
-                    }
-                }
+            promo = appDiscountRepository.findByCodeAndActiveTrue(voucherCode.trim()).orElse(null);
+            if (promo == null) {
+                throw new IllegalArgumentException("Mã voucher '" + voucherCode.trim() + "' không tồn tại hoặc đã bị khóa!");
+            }
+            LocalDate today = LocalDate.now();
+            if (promo.getStartDate() != null && today.isBefore(promo.getStartDate())) {
+                throw new IllegalArgumentException("Mã voucher '" + promo.getCode() + "' chưa có hiệu lực (bắt đầu từ " + promo.getStartDate() + ")!");
+            }
+            if (promo.getEndDate() != null && today.isAfter(promo.getEndDate())) {
+                throw new IllegalArgumentException("Mã voucher '" + promo.getCode() + "' đã hết hạn vào ngày " + promo.getEndDate() + "!");
+            }
+            if (promo.getMinOrderValue() != null && totalCartSubtotal < promo.getMinOrderValue()) {
+                throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu "
+                        + String.format("%,.0f đ", promo.getMinOrderValue())
+                        + " để áp dụng mã này (giá trị hiện tại: "
+                        + String.format("%,.0f đ", totalCartSubtotal) + ")!");
             }
         }
 
-        List<Promotion> applicablePromotions = promotionService.findApplicablePromotions(
-                branch.getId(), LocalDate.now(), subtotal);
-        double productPromotionDiscount = applicablePromotions.stream()
-                .filter(p -> p.getType() == null || p.getType() == PromotionType.PRODUCT_PERCENT)
-                .mapToDouble(p -> cappedDiscount(subtotal, p))
-                .max().orElse(0.0);
-        double baseShippingFee = shipFee;
-        double shippingPromotionDiscount = applicablePromotions.stream()
-                .filter(p -> p.getType() == PromotionType.SHIPPING_PERCENT)
-                .mapToDouble(p -> cappedDiscount(baseShippingFee, p))
-                .max().orElse(0.0);
-        discount += productPromotionDiscount;
-        shipFee = Math.max(0, shipFee - shippingPromotionDiscount);
-
-        double finalAmount = Math.max(0, subtotal + shipFee - discount);
+        // 4. Nhóm sản phẩm theo từng chi nhánh / Shop (Tách đơn theo shop)
+        Branch defaultBranch = branchRepository.findAll().stream().findFirst().orElse(null);
+        java.util.Map<Branch, List<CartItem>> itemsByBranch = new java.util.LinkedHashMap<>();
+        for (CartItem ci : cartItems) {
+            Branch b = ci.getBookCopy().getBranch() != null ? ci.getBookCopy().getBranch() : defaultBranch;
+            itemsByBranch.computeIfAbsent(b, k -> new java.util.ArrayList<>()).add(ci);
+        }
 
         PaymentMethod pm = PaymentMethod.COD;
         try {
@@ -127,55 +124,101 @@ public class CheckoutServiceImpl implements CheckoutService {
             }
         } catch (Exception ignored) {}
 
-        PaymentStatus ps = PaymentStatus.PENDING;
+        List<Order> createdOrders = new java.util.ArrayList<>();
 
-        double appCommission = subtotal * (branch.getAppDiscountPercent() != null ? branch.getAppDiscountPercent() / 100.0 : 0.1);
+        for (java.util.Map.Entry<Branch, List<CartItem>> entry : itemsByBranch.entrySet()) {
+            Branch branch = entry.getKey();
+            List<CartItem> branchItems = entry.getValue();
 
-        String orderCode = "WS-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+            double branchSubtotal = branchItems.stream()
+                    .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
+                    .sum();
 
-        Order order = Order.builder()
-                .orderCode(orderCode)
-                .customer(user)
-                .branch(branch)
-                .shippingProvider(provider)
-                .receiverName(finalName)
-                .receiverPhone(finalPhone)
-                .shippingAddress(finalAddressStr)
-                .totalAmount(subtotal)
-                .shippingFee(shipFee)
-                .discountAmount(discount)
-                .appCommissionAmount(appCommission)
-                .finalAmount(finalAmount)
-                .paymentMethod(pm)
-                .paymentStatus(ps)
-                .orderStatus(OrderStatus.NEW)
-                .note(note)
-                .build();
+            double branchShipFee = baseShipFee;
+            double branchDiscount = 0.0;
 
-        Order savedOrder = orderRepository.save(order);
-
-        // Save order items & update inventory
-        for (CartItem ci : cartItems) {
-            BookCopy copy = ci.getBookCopy();
-            OrderItem item = OrderItem.builder()
-                    .order(savedOrder)
-                    .bookCopy(copy)
-                    .quantity(ci.getQuantity())
-                    .price(copy.getSellingPrice())
-                    .build();
-            orderItemRepository.save(item);
-
-            // Reduce stock
-            if (copy.getQuantity() != null) {
-                copy.setQuantity(Math.max(0, copy.getQuantity() - ci.getQuantity()));
-                bookCopyRepository.save(copy);
+            // Áp dụng voucher chia theo tỷ lệ hoặc trực tiếp nếu chỉ có 1 shop
+            if (promo != null && promo.getDiscountPercent() != null) {
+                double voucherDiscount = branchSubtotal * (promo.getDiscountPercent() / 100.0);
+                if (promo.getMaxDiscountAmount() != null && voucherDiscount > promo.getMaxDiscountAmount()) {
+                    voucherDiscount = promo.getMaxDiscountAmount();
+                }
+                branchDiscount += voucherDiscount;
             }
+
+            // Áp dụng khuyến mãi theo chi nhánh nếu có
+            if (branch != null && branch.getId() != null) {
+                List<Promotion> applicablePromotions = promotionService.findApplicablePromotions(
+                        branch.getId(), LocalDate.now(), branchSubtotal);
+                double productPromo = applicablePromotions.stream()
+                        .filter(p -> p.getType() == null || p.getType() == PromotionType.PRODUCT_PERCENT)
+                        .mapToDouble(p -> cappedDiscount(branchSubtotal, p))
+                        .max().orElse(0.0);
+                final double currentShipFee = branchShipFee;
+                double shippingPromo = applicablePromotions.stream()
+                        .filter(p -> p.getType() == PromotionType.SHIPPING_PERCENT)
+                        .mapToDouble(p -> cappedDiscount(currentShipFee, p))
+                        .max().orElse(0.0);
+                branchDiscount += productPromo;
+                branchShipFee = Math.max(0, branchShipFee - shippingPromo);
+            }
+
+            double branchFinalAmount = Math.max(0, branchSubtotal + branchShipFee - branchDiscount);
+            double appCommission = branchSubtotal * ((branch != null && branch.getAppDiscountPercent() != null)
+                    ? branch.getAppDiscountPercent() / 100.0 : 0.1);
+
+            String orderCode = "WS-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+
+            // Lưu ý: PaymentStatus khởi tạo LUÔN LÀ PENDING (kể cả VNPAY / MOMO)
+            Order order = Order.builder()
+                    .orderCode(orderCode)
+                    .customer(user)
+                    .branch(branch)
+                    .shippingProvider(provider)
+                    .receiverName(finalName)
+                    .receiverPhone(finalPhone)
+                    .shippingAddress(finalAddressStr)
+                    .totalAmount(branchSubtotal)
+                    .shippingFee(branchShipFee)
+                    .discountAmount(branchDiscount)
+                    .appCommissionAmount(appCommission)
+                    .finalAmount(branchFinalAmount)
+                    .paymentMethod(pm)
+                    .paymentStatus(PaymentStatus.PENDING)
+                    .orderStatus(OrderStatus.NEW)
+                    .note(note)
+                    .build();
+
+            Order savedOrder = orderRepository.save(order);
+
+            // Lưu các order item và trừ tồn kho
+            for (CartItem ci : branchItems) {
+                BookCopy copy = ci.getBookCopy();
+                OrderItem item = OrderItem.builder()
+                        .order(savedOrder)
+                        .bookCopy(copy)
+                        .quantity(ci.getQuantity())
+                        .price(copy.getSellingPrice())
+                        .build();
+                orderItemRepository.save(item);
+
+                if (copy.getQuantity() != null) {
+                    int remaining = Math.max(0, copy.getQuantity() - ci.getQuantity());
+                    copy.setQuantity(remaining);
+                    if (remaining == 0) {
+                        copy.setStatus(vn.iotstar.websach.entity.enums.BookCopyStatus.SOLD);
+                    }
+                    bookCopyRepository.save(copy);
+                }
+            }
+
+            createdOrders.add(savedOrder);
         }
 
-        // Clear cart
+        // Xóa giỏ hàng sau khi đặt thành công tất cả các đơn
         cartService.clearCart(user);
 
-        return savedOrder;
+        return createdOrders;
     }
 
     private double cappedDiscount(double amount, Promotion promotion) {

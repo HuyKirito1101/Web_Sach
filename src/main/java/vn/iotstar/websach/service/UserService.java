@@ -12,6 +12,8 @@ public interface UserService {
     User register(RegisterRequest request);
     void resendRegistrationOtp(String email);
     boolean verifyOtp(String email, String otpCode);
+    void sendForgotPasswordOtp(String email);
+    void resetPasswordWithOtp(String email, String otpCode, String newPassword);
     String login(LoginRequest request);
     Optional<User> findByEmail(String email);
     List<User> findAllUsers();

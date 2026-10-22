@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface CustomerBookService {
     List<Book> getTop10ByPriceDesc();
+    List<Book> getTop10BestSellers();
     List<Book> getTop20NewBooks();
     List<Book> getTop20BestSellers();
     List<Book> getTop20TopRated();
