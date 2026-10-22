@@ -34,6 +34,7 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private static final String REGISTER_OTP_TYPE = "REGISTER";
+    private static final String FORGOT_PASSWORD_OTP_TYPE = "FORGOT_PASSWORD";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
@@ -139,6 +140,59 @@ public class UserServiceImpl implements UserService {
             }
         }
         return false;
+    }
+
+    @Override
+    @Transactional
+    public void sendForgotPasswordOtp(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
+
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new IllegalStateException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        }
+
+        otpTokenRepository.deleteByEmailAndType(normalizedEmail, FORGOT_PASSWORD_OTP_TYPE);
+
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(900000) + 100000);
+        OtpToken otpToken = OtpToken.builder()
+                .email(normalizedEmail)
+                .otpCode(otpCode)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .used(false)
+                .type(FORGOT_PASSWORD_OTP_TYPE)
+                .build();
+
+        otpTokenRepository.saveAndFlush(otpToken);
+        emailService.sendOtpEmail(normalizedEmail, otpCode);
+    }
+
+    @Override
+    @Transactional
+    public void resetPasswordWithOtp(String email, String otpCode, String newPassword) {
+        String normalizedEmail = normalizeEmail(email);
+        User user = userRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
+
+        OtpToken otpToken = otpTokenRepository
+                .findByEmailAndOtpCodeAndTypeAndUsedFalse(
+                        normalizedEmail, otpCode == null ? "" : otpCode.trim(), FORGOT_PASSWORD_OTP_TYPE)
+                .orElseThrow(() -> new IllegalArgumentException("Mã OTP không đúng hoặc đã được sử dụng."));
+
+        if (otpToken.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới.");
+        }
+
+        if (newPassword == null || newPassword.trim().length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải có tối thiểu 6 ký tự.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword.trim()));
+        userRepository.save(user);
+
+        otpToken.setUsed(true);
+        otpTokenRepository.saveAndFlush(otpToken);
     }
 
     @Override

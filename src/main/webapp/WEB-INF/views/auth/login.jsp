@@ -53,7 +53,10 @@
             </div>
 
             <div class="mb-4">
-                <label class="form-label font-weight-bold">Mật khẩu</label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label font-weight-bold mb-0">Mật khẩu</label>
+                    <a href="/auth/forgot-password" class="small text-decoration-none text-muted">Quên mật khẩu?</a>
+                </div>
                 <form:input path="password" type="password" class="form-control" placeholder="••••••••" required="true" />
             </div>
 

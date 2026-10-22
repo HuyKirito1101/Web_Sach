@@ -26,11 +26,14 @@
         </div>
 
         <div class="d-grid gap-2">
-            <a href="/orders/${orderId}?success=true" class="btn btn-lg rounded-pill fw-bold text-white"
+            <a href="/checkout/momo-callback?orderIds=${orderIds}&status=SUCCESS" class="btn btn-lg rounded-pill fw-bold text-white"
                style="background:#ae2070;">
-                <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán MoMo Thành Công
+                <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán MoMo Thành Công (Callback)
             </a>
-            <a href="/orders/${orderId}" class="btn btn-outline-secondary rounded-pill">Quay lại chi tiết đơn hàng</a>
+            <a href="/checkout/momo-callback?orderIds=${orderIds}&status=FAILED" class="btn btn-outline-danger rounded-pill">
+                <i class="fa-solid fa-xmark me-2"></i>Mô Phỏng Hủy Thanh Toán MoMo (Thất Bại)
+            </a>
+            <a href="/orders" class="btn btn-outline-secondary rounded-pill">Quay lại danh sách đơn hàng</a>
         </div>
     </div>
 </div>

@@ -9,6 +9,20 @@
 <div class="container py-4">
     <h3 class="fw-bold mb-4"><i class="fa-solid fa-cart-shopping text-warning me-2"></i>Giỏ Hàng Của Bạn</h3>
 
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi:</strong> ${errorMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
     <c:choose>
         <c:when test="${empty cartItems}">
             <div class="card border-0 shadow-sm text-center py-5 rounded-3">

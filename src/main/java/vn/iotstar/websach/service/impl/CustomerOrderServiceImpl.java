@@ -63,7 +63,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     public boolean requestReturnOrder(User user, Long orderId, String reason) {
         Order order = getOrderById(user, orderId);
         if (order != null && order.getOrderStatus() == OrderStatus.DELIVERED) {
-            order.setOrderStatus(OrderStatus.CANCELLED);
+            order.setOrderStatus(OrderStatus.RETURN_REQUESTED);
             order.setNote((order.getNote() != null ? order.getNote() + " | " : "") + "Yêu cầu trả hàng: " + reason);
             orderRepository.save(order);
             return true;

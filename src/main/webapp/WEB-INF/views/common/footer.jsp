@@ -39,13 +39,13 @@
                 <div class="col-lg-4 col-md-6">
                     <h5 class="fw-bold text-uppercase mb-3 pb-2 text-dark" style="border-bottom: 2px solid #e5a024; display: inline-block;">THÔNG TIN</h5>
                     <ul class="list-unstyled small mb-0">
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Giới thiệu</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Hệ thống cửa hàng</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Chính sách khách sỉ</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Điều khoản sử dụng</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Chính sách bảo mật</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Chính sách đổi trả/hoàn tiền</a></li>
-                        <li class="mb-2"><a href="#" class="text-dark text-decoration-none">Hướng dẫn mua hàng</a></li>
+                        <li class="mb-2"><a href="/policies/about" class="text-dark text-decoration-none">Giới thiệu</a></li>
+                        <li class="mb-2"><a href="/books" class="text-dark text-decoration-none">Hệ thống cửa hàng</a></li>
+                        <li class="mb-2"><a href="/policies/wholesale" class="text-dark text-decoration-none">Chính sách khách sỉ</a></li>
+                        <li class="mb-2"><a href="/policies/terms" class="text-dark text-decoration-none">Điều khoản sử dụng</a></li>
+                        <li class="mb-2"><a href="/policies/privacy" class="text-dark text-decoration-none">Chính sách bảo mật</a></li>
+                        <li class="mb-2"><a href="/policies/returns" class="text-dark text-decoration-none">Chính sách đổi trả/hoàn tiền</a></li>
+                        <li class="mb-2"><a href="/policies/guide" class="text-dark text-decoration-none">Hướng dẫn mua hàng</a></li>
                     </ul>
                 </div>
 

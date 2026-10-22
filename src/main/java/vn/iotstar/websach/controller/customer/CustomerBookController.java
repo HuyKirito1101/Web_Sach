@@ -73,11 +73,14 @@ public class CustomerBookController {
         Double avgRating = customerBookService.getAverageRating(id);
         Long reviewCount = customerBookService.getReviewCount(id);
 
+        boolean canReview = user != null && reviewService.canUserReviewBook(user, id);
+
         model.addAttribute("book", book);
         model.addAttribute("copies", copies);
         model.addAttribute("avgRating", avgRating);
         model.addAttribute("reviewCount", reviewCount);
         model.addAttribute("reviews", reviewService.getBookReviews(id));
+        model.addAttribute("canReview", canReview);
 
         return "customer/book-detail";
     }

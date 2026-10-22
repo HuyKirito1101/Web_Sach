@@ -16,8 +16,8 @@ public class HomeController {
 
     @GetMapping({"/", "/home"})
     public String home(Model model) {
-        // Top 10 sản phẩm sắp xếp giá cao → thấp (cho cả Guest)
-        model.addAttribute("topBooks", customerBookService.getTop10ByPriceDesc());
+        // Top 10 sản phẩm bán trên 10 cuốn hoặc bán chạy theo số lượng giảm dần (cho cả Guest)
+        model.addAttribute("topBooks", customerBookService.getTop10BestSellers());
         // Top 20 theo các tiêu chí
         model.addAttribute("newBooks", customerBookService.getTop20NewBooks());
         model.addAttribute("bestSellers", customerBookService.getTop20BestSellers());

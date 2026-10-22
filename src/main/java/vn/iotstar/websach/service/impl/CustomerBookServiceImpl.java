@@ -10,6 +10,7 @@ import vn.iotstar.websach.entity.enums.BookCopyStatus;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BookRepository;
 import vn.iotstar.websach.repository.FavoriteRepository;
+import vn.iotstar.websach.repository.OrderItemRepository;
 import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.service.CustomerBookService;
 
@@ -25,6 +26,42 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     private final BookCopyRepository bookCopyRepository;
     private final ReviewRepository reviewRepository;
     private final FavoriteRepository favoriteRepository;
+    private final OrderItemRepository orderItemRepository;
+
+    @Override
+    public List<Book> getTop10BestSellers() {
+        List<Book> all = bookRepository.findAll();
+        Map<Long, Long> soldMap = new HashMap<>();
+        for (Book b : all) {
+            Long soldOrders = orderItemRepository.getSoldQuantityByBookId(b.getId());
+            long soldFromOrders = soldOrders != null ? soldOrders : 0L;
+            long soldCopies = bookCopyRepository.findByBookId(b.getId()).stream()
+                    .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+            soldMap.put(b.getId(), Math.max(soldFromOrders, soldCopies));
+        }
+
+        // Lọc các sách bán trên 10 cuốn, xếp theo số lượng bán giảm dần
+        List<Book> over10Sold = all.stream()
+                .filter(b -> soldMap.getOrDefault(b.getId(), 0L) >= 10)
+                .sorted((b1, b2) -> Long.compare(soldMap.getOrDefault(b2.getId(), 0L), soldMap.getOrDefault(b1.getId(), 0L)))
+                .limit(10)
+                .collect(Collectors.toList());
+
+        if (over10Sold.size() >= 10) {
+            return over10Sold;
+        }
+
+        // Bổ sung các cuốn bán chạy theo số lượng giảm dần để đủ top 10
+        Set<Long> pickedIds = over10Sold.stream().map(Book::getId).collect(Collectors.toSet());
+        List<Book> remainingBestSellers = all.stream()
+                .filter(b -> !pickedIds.contains(b.getId()))
+                .sorted((b1, b2) -> Long.compare(soldMap.getOrDefault(b2.getId(), 0L), soldMap.getOrDefault(b1.getId(), 0L)))
+                .limit(10 - over10Sold.size())
+                .collect(Collectors.toList());
+
+        over10Sold.addAll(remainingBestSellers);
+        return over10Sold;
+    }
 
     /**
      * Top 10 sản phẩm sắp xếp giá bán cao → thấp (dựa trên giá cao nhất của các bản copy)

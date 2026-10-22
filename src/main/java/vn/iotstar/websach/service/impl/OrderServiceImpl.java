@@ -30,6 +30,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final vn.iotstar.websach.repository.OrderItemRepository orderItemRepository;
+    private final vn.iotstar.websach.repository.BookCopyRepository bookCopyRepository;
 
     @Override
     public List<Order> findAllOrders() {
@@ -65,6 +67,20 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderStatus(status);
         if (status == OrderStatus.DELIVERED && order.getPaymentMethod() == PaymentMethod.COD) {
             order.setPaymentStatus(PaymentStatus.PAID);
+        } else if (status == OrderStatus.REFUNDED) {
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+        } else if (status == OrderStatus.RETURNED) {
+            List<vn.iotstar.websach.entity.OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            for (vn.iotstar.websach.entity.OrderItem item : items) {
+                vn.iotstar.websach.entity.BookCopy copy = item.getBookCopy();
+                if (copy != null && copy.getQuantity() != null && item.getQuantity() != null) {
+                    copy.setQuantity(copy.getQuantity() + item.getQuantity());
+                    if (copy.getStatus() == vn.iotstar.websach.entity.enums.BookCopyStatus.SOLD && copy.getQuantity() > 0) {
+                        copy.setStatus(vn.iotstar.websach.entity.enums.BookCopyStatus.AVAILABLE);
+                    }
+                    bookCopyRepository.save(copy);
+                }
+            }
         }
 
         Order saved = orderRepository.save(order);

@@ -10,9 +10,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import vn.iotstar.websach.dto.ForgotPasswordRequest;
 import vn.iotstar.websach.dto.LoginRequest;
 import vn.iotstar.websach.dto.OtpVerificationRequest;
 import vn.iotstar.websach.dto.RegisterRequest;
+import vn.iotstar.websach.dto.ResetPasswordRequest;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.UserService;
 
@@ -111,6 +113,65 @@ public class AuthController {
         model.addAttribute("email", request.getEmail());
         model.addAttribute("otpRequest", request);
         return "auth/verify-otp";
+    }
+
+    @GetMapping("/forgot-password")
+    public String showForgotPasswordForm(Model model) {
+        model.addAttribute("forgotRequest", new ForgotPasswordRequest());
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String handleForgotPassword(@Valid @ModelAttribute("forgotRequest") ForgotPasswordRequest request,
+                                       BindingResult bindingResult,
+                                       Model model) {
+        if (bindingResult.hasErrors()) {
+            return "auth/forgot-password";
+        }
+        try {
+            userService.sendForgotPasswordOtp(request.getEmail());
+            return "redirect:/auth/reset-password?email=" + java.net.URLEncoder.encode(request.getEmail().trim(), java.nio.charset.StandardCharsets.UTF_8) + "&sent=true";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            return "auth/forgot-password";
+        }
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(@RequestParam(value = "email", required = false) String email,
+                                        @RequestParam(value = "sent", required = false) Boolean sent,
+                                        Model model) {
+        ResetPasswordRequest req = new ResetPasswordRequest();
+        if (email != null) {
+            req.setEmail(email.trim());
+        }
+        model.addAttribute("resetRequest", req);
+        if (Boolean.TRUE.equals(sent)) {
+            model.addAttribute("successMessage", "Mã xác thực OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư!");
+        }
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String handleResetPassword(@Valid @ModelAttribute("resetRequest") ResetPasswordRequest request,
+                                      BindingResult bindingResult,
+                                      Model model) {
+        if (bindingResult.hasErrors()) {
+            return "auth/reset-password";
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            model.addAttribute("errorMessage", "Mật khẩu xác nhận không khớp!");
+            return "auth/reset-password";
+        }
+        try {
+            userService.resetPasswordWithOtp(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+            model.addAttribute("successMessage", "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.");
+            model.addAttribute("loginRequest", new LoginRequest());
+            return "auth/login";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            return "auth/reset-password";
+        }
     }
 
     @GetMapping("/logout")

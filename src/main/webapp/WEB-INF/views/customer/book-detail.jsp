@@ -201,61 +201,92 @@
             </div>
         </div>
 
-        <!-- Add Review Form -->
-        <div class="bg-light p-4 rounded-3 mb-4 border">
-            <h6 class="fw-bold mb-3"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Viết Đánh Giá &amp; Bình Luận (tối thiểu 50 ký tự)</h6>
-            <form action="/reviews/add" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="bookId" value="${book.id}"/>
+        <c:if test="${not empty param.reviewError}">
+            <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi gửi đánh giá:</strong> ${param.reviewError}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+        <c:if test="${not empty param.reviewSuccess}">
+            <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+                <i class="fa-solid fa-circle-check me-2"></i>Cảm ơn bạn đã gửi đánh giá cho cuốn sách này!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
 
-                <!-- Star rating -->
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Đánh giá của bạn:</label>
-                    <div class="d-flex gap-2">
-                        <c:forEach begin="1" end="5" var="s">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="rating" id="star${s}" value="${s}" ${s == 5 ? 'checked' : ''}>
-                                <label class="form-check-label text-warning" for="star${s}">
-                                    <i class="fa-solid fa-star"></i>${s}
-                                </label>
+        <c:choose>
+            <c:when test="${canReview}">
+                <!-- Add Review Form -->
+                <div class="bg-light p-4 rounded-3 mb-4 border">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Viết Đánh Giá &amp; Bình Luận (tối thiểu 50 ký tự)</h6>
+                    <form action="/reviews/add" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="bookId" value="${book.id}"/>
+
+                        <!-- Star rating -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">Đánh giá của bạn:</label>
+                            <div class="d-flex gap-2">
+                                <c:forEach begin="1" end="5" var="s">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="rating" id="star${s}" value="${s}" ${s == 5 ? 'checked' : ''}>
+                                        <label class="form-check-label text-warning" for="star${s}">
+                                            <i class="fa-solid fa-star"></i>${s}
+                                        </label>
+                                    </div>
+                                </c:forEach>
                             </div>
-                        </c:forEach>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Text comment -->
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">Nội dung đánh giá (tối thiểu 50 ký tự):</label>
-                    <textarea name="comment" class="form-control" rows="4"
-                              placeholder="Chia sẻ cảm nhận của bạn về cuốn sách cũ này: tình trạng thực tế, chất lượng in ấn, nội dung hay dở, giao hàng nhanh không?..."
-                              required minlength="50" maxlength="2000" id="reviewComment" onkeyup="updateCharCount()"></textarea>
-                    <div class="d-flex justify-content-between mt-1">
-                        <small class="text-muted">Tối thiểu 50 ký tự</small>
-                        <small class="text-muted" id="charCount">0/2000</small>
-                    </div>
-                </div>
+                        <!-- Text comment -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">Nội dung đánh giá (tối thiểu 50 ký tự):</label>
+                            <textarea name="comment" class="form-control" rows="4"
+                                      placeholder="Chia sẻ cảm nhận của bạn về cuốn sách cũ này: tình trạng thực tế, chất lượng in ấn, nội dung hay dở, thời gian giao hàng... (tối thiểu 50 ký tự)"
+                                      required minlength="50" maxlength="2000" id="reviewComment" onkeyup="updateCharCount()"></textarea>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Tối thiểu 50 ký tự</small>
+                                <small class="text-muted" id="charCount">0/2000</small>
+                            </div>
+                        </div>
 
-                <!-- Image URL -->
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">
-                        <i class="fa-solid fa-image me-1 text-warning"></i>Link ảnh đính kèm (nếu có):
-                    </label>
-                    <input type="text" name="imageUrl" class="form-control" placeholder="https://... (URL ảnh review của bạn)">
-                    <div class="form-text">Bạn có thể upload ảnh lên imgur.com sau đó dán link vào đây</div>
-                </div>
+                        <!-- Upload ảnh / video Cloudinary -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">
+                                <i class="fa-solid fa-cloud-arrow-up me-1 text-primary"></i>Tải ảnh đánh giá (Upload Cloudinary):
+                            </label>
+                            <input type="file" name="imageFile" accept="image/*" class="form-control mb-1">
+                            <div class="form-text">Chọn ảnh thực tế của sách để tải trực tiếp lên Cloudinary</div>
+                        </div>
 
-                <!-- Video URL -->
-                <div class="mb-3">
-                    <label class="form-label fw-medium small">
-                        <i class="fa-brands fa-youtube me-1 text-danger"></i>Link video đánh giá (YouTube, TikTok...):
-                    </label>
-                    <input type="text" name="videoUrl" class="form-control" placeholder="https://youtu.be/... hoặc https://www.tiktok.com/@...">
-                </div>
+                        <!-- Image URL fallback -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">
+                                <i class="fa-solid fa-image me-1 text-secondary"></i>Hoặc dán Link ảnh (URL):
+                            </label>
+                            <input type="text" name="imageUrl" class="form-control" placeholder="https://... (URL ảnh)">
+                        </div>
 
-                <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">
-                    <i class="fa-solid fa-paper-plane me-1"></i>Gửi Đánh Giá
-                </button>
-            </form>
-        </div>
+                        <!-- Video URL -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium small">
+                                <i class="fa-brands fa-youtube me-1 text-danger"></i>Link video đánh giá (YouTube, TikTok...):
+                            </label>
+                            <input type="text" name="videoUrl" class="form-control" placeholder="https://youtu.be/... hoặc https://www.tiktok.com/@...">
+                        </div>
+
+                        <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">
+                            <i class="fa-solid fa-paper-plane me-1"></i>Gửi Đánh Giá
+                        </button>
+                    </form>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <div class="alert alert-light border rounded-3 p-3 mb-4 text-muted">
+                    <i class="fa-solid fa-circle-info me-2 text-primary"></i>
+                    <strong>Chính sách đánh giá:</strong> Bạn cần đăng nhập, đặt mua cuốn sách này và nhận hàng thành công (trạng thái đơn <b>Đã giao</b>) thì mới có thể viết đánh giá &amp; bình luận.
+                </div>
+            </c:otherwise>
+        </c:choose>
 
         <!-- Review List -->
         <c:choose>

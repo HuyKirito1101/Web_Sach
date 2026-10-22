@@ -33,9 +33,20 @@ public class CartServiceImpl implements CartService {
         BookCopy copy = bookCopyRepository.findById(bookCopyId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm bản sao sách!"));
 
+        int availableStock = copy.getQuantity() != null ? copy.getQuantity() : 0;
+        if (availableStock <= 0) {
+            throw new IllegalArgumentException("Sản phẩm này hiện đã hết hàng!");
+        }
+
         int qtyToAdd = (quantity != null && quantity > 0) ? quantity : 1;
 
         CartItem item = cartItemRepository.findByUserAndBookCopy(user, copy).orElse(null);
+        int currentQty = (item != null && item.getQuantity() != null) ? item.getQuantity() : 0;
+        if (currentQty + qtyToAdd > availableStock) {
+            throw new IllegalArgumentException("Không thể thêm vào giỏ. Tổng số lượng (" 
+                    + (currentQty + qtyToAdd) + ") vượt quá tồn kho hiện có (" + availableStock + ")!");
+        }
+
         if (item != null) {
             item.setQuantity(item.getQuantity() + qtyToAdd);
         } else {
@@ -56,6 +67,11 @@ public class CartServiceImpl implements CartService {
         if (quantity == null || quantity <= 0) {
             cartItemRepository.delete(item);
             return null;
+        }
+
+        int availableStock = item.getBookCopy().getQuantity() != null ? item.getBookCopy().getQuantity() : 0;
+        if (quantity > availableStock) {
+            throw new IllegalArgumentException("Số lượng yêu cầu (" + quantity + ") vượt quá tồn kho hiện có (" + availableStock + ")!");
         }
 
         item.setQuantity(quantity);

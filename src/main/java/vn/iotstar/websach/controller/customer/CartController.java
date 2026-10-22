@@ -37,22 +37,33 @@ public class CartController {
     @PostMapping("/add")
     public String addToCart(@RequestParam("bookCopyId") Long bookCopyId,
                             @RequestParam(value = "quantity", defaultValue = "1") Integer quantity,
+                            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
                             Authentication authentication) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
-        cartService.addToCart(user, bookCopyId, quantity);
+        try {
+            cartService.addToCart(user, bookCopyId, quantity);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thêm sản phẩm vào giỏ hàng thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/cart";
     }
 
     @PostMapping("/update")
     public String updateQuantity(@RequestParam("cartItemId") Long cartItemId,
                                  @RequestParam("quantity") Integer quantity,
+                                 org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
                                  Authentication authentication) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
-        cartService.updateCartItemQuantity(user, cartItemId, quantity);
+        try {
+            cartService.updateCartItemQuantity(user, cartItemId, quantity);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
         return "redirect:/cart";
     }
 
