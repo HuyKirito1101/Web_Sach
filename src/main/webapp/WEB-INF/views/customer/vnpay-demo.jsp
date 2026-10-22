@@ -18,12 +18,20 @@
         </div>
 
         <div class="d-grid gap-2">
-            <a href="/checkout/vnpay-callback?orderIds=${orderIds}&status=SUCCESS" class="btn btn-success btn-lg rounded-pill fw-bold">
-                <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán VNPAY Thành Công (Callback)
-            </a>
-            <a href="/checkout/vnpay-callback?orderIds=${orderIds}&status=FAILED" class="btn btn-outline-danger rounded-pill">
-                <i class="fa-solid fa-xmark me-2"></i>Mô Phỏng Hủy Thanh Toán VNPAY (Thất Bại)
-            </a>
+            <form action="/checkout/vnpay-demo-result" method="post" class="d-grid">
+                <input type="hidden" name="orderIds" value="<c:out value='${orderIds}'/>" />
+                <input type="hidden" name="status" value="SUCCESS" />
+                <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold">
+                    <i class="fa-solid fa-check-circle me-2"></i>Mô Phỏng Thanh Toán VNPAY Thành Công
+                </button>
+            </form>
+            <form action="/checkout/vnpay-demo-result" method="post" class="d-grid">
+                <input type="hidden" name="orderIds" value="<c:out value='${orderIds}'/>" />
+                <input type="hidden" name="status" value="FAILED" />
+                <button type="submit" class="btn btn-outline-danger rounded-pill">
+                    <i class="fa-solid fa-xmark me-2"></i>Mô Phỏng Hủy Thanh Toán VNPAY
+                </button>
+            </form>
             <a href="/orders" class="btn btn-outline-secondary rounded-pill">Quay lại danh sách đơn hàng</a>
         </div>
     </div>

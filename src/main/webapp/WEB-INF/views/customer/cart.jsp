@@ -11,14 +11,14 @@
 
     <c:if test="${not empty errorMessage}">
         <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi:</strong> ${errorMessage}
+            <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi:</strong> <c:out value="${errorMessage}"/>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </c:if>
 
     <c:if test="${not empty successMessage}">
         <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+            <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </c:if>
@@ -55,14 +55,14 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <img src="${item.bookCopy.book.coverUrl != null ? item.bookCopy.book.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}" width="50" height="65" class="rounded" style="object-fit: cover;">
+                                                    <img src="<c:out value='${item.bookCopy.book.coverUrl != null ? item.bookCopy.book.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>" width="50" height="65" class="rounded" style="object-fit: cover;">
                                                     <div>
-                                                        <h6 class="mb-0 text-dark fw-bold">${item.bookCopy.book.title}</h6>
+                                                        <h6 class="mb-0 text-dark fw-bold"><c:out value="${item.bookCopy.book.title}"/></h6>
                                                         <small class="badge bg-light text-dark border">Tình trạng: ${item.bookCopy.conditionRating}</small>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td class="small fw-medium text-secondary">${item.bookCopy.branch.name}</td>
+                                            <td class="small fw-medium text-secondary"><c:out value="${item.bookCopy.branch.name}"/></td>
                                             <td class="fw-bold text-danger">
                                                 <fmt:formatNumber value="${item.bookCopy.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
                                             </td>

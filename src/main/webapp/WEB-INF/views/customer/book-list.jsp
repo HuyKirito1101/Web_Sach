@@ -14,12 +14,12 @@
                 <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="fa-solid fa-filter text-warning me-2"></i>Bộ Lọc Sách Cũ</h5>
                 <form action="/books" method="GET" id="filterForm">
                     <!-- Preserve sortBy -->
-                    <input type="hidden" name="sortBy" value="${sortBy}">
+                    <input type="hidden" name="sortBy" value="<c:out value='${sortBy}'/>">
 
                     <!-- Keyword -->
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Từ khóa</label>
-                        <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tên, Tác giả, ISBN" value="${keyword}">
+                        <input type="text" name="keyword" class="form-control form-control-sm" placeholder="Tên, Tác giả, ISBN" value="<c:out value='${keyword}'/>">
                     </div>
 
                     <!-- Category -->
@@ -28,7 +28,7 @@
                         <select name="categoryId" class="form-select form-select-sm">
                             <option value="">-- Tất cả danh mục --</option>
                             <c:forEach var="cat" items="${categories}">
-                                <option value="${cat.id}" ${selectedCategory == cat.id ? 'selected' : ''}>${cat.name}</option>
+                                <option value="${cat.id}" ${selectedCategory == cat.id ? 'selected' : ''}><c:out value="${cat.name}"/></option>
                             </c:forEach>
                         </select>
                     </div>
@@ -39,7 +39,7 @@
                         <select name="branchId" class="form-select form-select-sm">
                             <option value="">-- Tất cả chi nhánh --</option>
                             <c:forEach var="br" items="${branches}">
-                                <option value="${br.id}" ${selectedBranch == br.id ? 'selected' : ''}>${br.name}</option>
+                                <option value="${br.id}" ${selectedBranch == br.id ? 'selected' : ''}><c:out value="${br.name}"/></option>
                             </c:forEach>
                         </select>
                     </div>
@@ -77,27 +77,27 @@
             <!-- Sort Tabs -->
             <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
                 <span class="fw-bold text-dark me-2">Sắp xếp:</span>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=newest"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=newest"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'newest' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     <i class="fa-solid fa-sparkles me-1"></i>Mới nhất
                 </a>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=best_seller"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=best_seller"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'best_seller' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     <i class="fa-solid fa-fire me-1"></i>Bán chạy
                 </a>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=top_rated"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=top_rated"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'top_rated' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     <i class="fa-solid fa-star me-1"></i>Đánh giá cao
                 </a>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=most_favorite"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=most_favorite"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'most_favorite' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     <i class="fa-solid fa-heart me-1"></i>Yêu thích
                 </a>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=price_asc"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=price_asc"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'price_asc' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     Giá thấp → cao
                 </a>
-                <a href="/books?keyword=${keyword}&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=price_desc"
+                <a href="/books?keyword=<c:out value='${keyword}'/>&categoryId=${selectedCategory}&branchId=${selectedBranch}&condition=${selectedCondition}&minPrice=${minPrice}&maxPrice=${maxPrice}&sortBy=price_desc"
                    class="btn btn-sm rounded-pill fw-bold ${sortBy == 'price_desc' ? 'btn-warning text-dark' : 'btn-outline-secondary'}">
                     Giá cao → thấp
                 </a>
@@ -124,13 +124,13 @@
                 <c:forEach var="b" items="${books}" varStatus="status">
                     <div class="col book-item" data-index="${status.index}">
                         <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                            <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                                 class="card-img-top" alt="${b.title}" style="height: 220px; object-fit: cover;"
+                            <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                                 class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 220px; object-fit: cover;"
                                  onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                             <div class="card-body d-flex flex-column p-3">
-                                <span class="badge bg-secondary mb-2 align-self-start">${b.category != null ? b.category.name : 'Sách Cũ'}</span>
-                                <h6 class="card-title fw-bold text-dark text-truncate mb-1" title="${b.title}">${b.title}</h6>
-                                <small class="text-muted mb-2"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                                <span class="badge bg-secondary mb-2 align-self-start"><c:out value="${b.category != null ? b.category.name : 'Sách Cũ'}"/></span>
+                                <h6 class="card-title fw-bold text-dark text-truncate mb-1" title="<c:out value='${b.title}'/>"><c:out value="${b.title}"/></h6>
+                                <small class="text-muted mb-2"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                                 <div class="mt-auto">
                                     <a href="/books/${b.id}" class="btn btn-warning btn-sm w-100 rounded-pill fw-bold text-dark">
                                         <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết & Mua

@@ -13,6 +13,8 @@ import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.service.ReviewService;
 
 import java.util.List;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,9 @@ public class ReviewServiceImpl implements ReviewService {
         if (comment == null || comment.trim().length() < 50) {
             throw new IllegalArgumentException("Nội dung đánh giá phải có tối thiểu 50 ký tự!");
         }
+        if (comment.trim().length() > 2000) {
+            throw new IllegalArgumentException("Nội dung đánh giá không được vượt quá 2000 ký tự!");
+        }
 
         if (!canUserReviewBook(user, bookId)) {
             throw new IllegalStateException("Bạn chỉ có thể đánh giá những cuốn sách đã mua và nhận hàng thành công (trạng thái Đã giao)!");
@@ -43,14 +48,16 @@ public class ReviewServiceImpl implements ReviewService {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sách!"));
 
-        OrderItem orderItem = null;
-        if (orderItemId != null) {
-            orderItem = orderItemRepository.findById(orderItemId).orElse(null);
-        } else {
-            List<OrderItem> deliveredItems = orderItemRepository.findDeliveredOrderItemsByUserAndBook(user.getId(), bookId);
-            if (!deliveredItems.isEmpty()) {
-                orderItem = deliveredItems.get(0);
-            }
+        List<OrderItem> deliveredItems = orderItemRepository
+                .findDeliveredOrderItemsByUserAndBook(user.getId(), bookId);
+        OrderItem orderItem = orderItemId == null
+                ? deliveredItems.stream().findFirst().orElse(null)
+                : deliveredItems.stream()
+                        .filter(item -> orderItemId.equals(item.getId()))
+                        .findFirst()
+                        .orElse(null);
+        if (orderItem == null) {
+            throw new IllegalArgumentException("Đơn hàng dùng để đánh giá không hợp lệ.");
         }
 
         int r = (rating != null && rating >= 1 && rating <= 5) ? rating : 5;
@@ -61,7 +68,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .orderItem(orderItem)
                 .rating(r)
                 .comment(comment.trim())
-                .imageUrl(imageUrl)
+                .imageUrl(validateMediaUrl(imageUrl))
                 .build();
 
         return reviewRepository.save(review);
@@ -80,5 +87,22 @@ public class ReviewServiceImpl implements ReviewService {
     public List<Review> getUserReviews(User user) {
         if (user == null) return List.of();
         return reviewRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+
+    private String validateMediaUrl(String value) {
+        if (value == null || value.isBlank()) return null;
+        if (value.length() > 500) {
+            throw new IllegalArgumentException("Đường dẫn ảnh/video quá dài.");
+        }
+        try {
+            URI uri = new URI(value.trim());
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
+                    || uri.getUserInfo() != null) {
+                throw new IllegalArgumentException("Đường dẫn ảnh/video phải là URL HTTPS hợp lệ.");
+            }
+            return uri.toASCIIString();
+        } catch (URISyntaxException ex) {
+            throw new IllegalArgumentException("Đường dẫn ảnh/video không hợp lệ.");
+        }
     }
 }

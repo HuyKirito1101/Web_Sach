@@ -28,7 +28,7 @@
                     <a href="/books?categoryId=${cat.id}" class="card h-100 border-0 shadow-sm text-decoration-none">
                         <div class="card-body text-center p-3">
                             <i class="fa-solid fa-bookmark text-warning mb-2 fs-4"></i>
-                            <h6 class="fw-bold text-dark mb-0 small">${cat.name}</h6>
+                            <h6 class="fw-bold text-dark mb-0 small"><c:out value="${cat.name}"/></h6>
                         </div>
                     </a>
                 </div>
@@ -49,16 +49,16 @@
                 <div class="col">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
                         <div class="position-relative">
-                            <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                                 class="card-img-top" alt="${b.title}" style="height: 200px; object-fit: cover;"
+                            <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                                 class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 200px; object-fit: cover;"
                                  onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                         </div>
                         <div class="card-body d-flex flex-column p-2">
-                            <span class="badge bg-secondary mb-1 align-self-start" style="font-size:10px;">${b.category != null ? b.category.name : 'Sách Cũ'}</span>
+                            <span class="badge bg-secondary mb-1 align-self-start" style="font-size:10px;"><c:out value="${b.category != null ? b.category.name : 'Sách Cũ'}"/></span>
                             <h6 class="card-title fw-bold text-dark mb-1 small" style="font-size:12px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                                <a href="/books/${b.id}" class="text-decoration-none text-dark">${b.title}</a>
+                                <a href="/books/${b.id}" class="text-decoration-none text-dark"><c:out value="${b.title}"/></a>
                             </h6>
-                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                             <div class="mt-auto">
                                 <a href="/books/${b.id}" class="btn btn-warning btn-sm rounded-pill w-100 fw-bold text-dark" style="font-size:11px;">
                                     <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết
@@ -83,15 +83,15 @@
             <c:forEach var="b" items="${newBooks}" varStatus="status">
                 <div class="col book-card-item ${status.index >= 10 ? 'lazy-hidden' : ''}">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                             class="card-img-top" alt="${b.title}" style="height: 200px; object-fit: cover;"
+                        <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                             class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 200px; object-fit: cover;"
                              onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                         <div class="card-body d-flex flex-column p-2">
-                            <span class="badge bg-secondary mb-1 align-self-start" style="font-size:10px;">${b.category != null ? b.category.name : 'Sách Cũ'}</span>
+                            <span class="badge bg-secondary mb-1 align-self-start" style="font-size:10px;"><c:out value="${b.category != null ? b.category.name : 'Sách Cũ'}"/></span>
                             <h6 class="card-title fw-bold text-dark mb-1 small" style="font-size:12px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                                <a href="/books/${b.id}" class="text-decoration-none text-dark">${b.title}</a>
+                                <a href="/books/${b.id}" class="text-decoration-none text-dark"><c:out value="${b.title}"/></a>
                             </h6>
-                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                             <div class="mt-auto">
                                 <a href="/books/${b.id}" class="btn btn-warning btn-sm rounded-pill w-100 fw-bold text-dark" style="font-size:11px;">
                                     <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết
@@ -123,15 +123,15 @@
             <c:forEach var="b" items="${bestSellers}" varStatus="status">
                 <div class="col book-card-item ${status.index >= 10 ? 'lazy-hidden' : ''}">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                             class="card-img-top" alt="${b.title}" style="height: 200px; object-fit: cover;"
+                        <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                             class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 200px; object-fit: cover;"
                              onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                         <div class="card-body d-flex flex-column p-2">
                             <span class="badge bg-danger mb-1 align-self-start" style="font-size:10px;"><i class="fa-solid fa-fire me-1"></i>Bán chạy</span>
                             <h6 class="card-title fw-bold text-dark mb-1 small" style="font-size:12px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                                <a href="/books/${b.id}" class="text-decoration-none text-dark">${b.title}</a>
+                                <a href="/books/${b.id}" class="text-decoration-none text-dark"><c:out value="${b.title}"/></a>
                             </h6>
-                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                             <div class="mt-auto">
                                 <a href="/books/${b.id}" class="btn btn-warning btn-sm rounded-pill w-100 fw-bold text-dark" style="font-size:11px;">
                                     <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết
@@ -163,15 +163,15 @@
             <c:forEach var="b" items="${topRated}" varStatus="status">
                 <div class="col book-card-item ${status.index >= 10 ? 'lazy-hidden' : ''}">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                             class="card-img-top" alt="${b.title}" style="height: 200px; object-fit: cover;"
+                        <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                             class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 200px; object-fit: cover;"
                              onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                         <div class="card-body d-flex flex-column p-2">
                             <span class="badge bg-warning text-dark mb-1 align-self-start" style="font-size:10px;"><i class="fa-solid fa-star me-1"></i>Top đánh giá</span>
                             <h6 class="card-title fw-bold text-dark mb-1 small" style="font-size:12px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                                <a href="/books/${b.id}" class="text-decoration-none text-dark">${b.title}</a>
+                                <a href="/books/${b.id}" class="text-decoration-none text-dark"><c:out value="${b.title}"/></a>
                             </h6>
-                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                             <div class="mt-auto">
                                 <a href="/books/${b.id}" class="btn btn-warning btn-sm rounded-pill w-100 fw-bold text-dark" style="font-size:11px;">
                                     <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết
@@ -203,15 +203,15 @@
             <c:forEach var="b" items="${topFavorites}" varStatus="status">
                 <div class="col book-card-item ${status.index >= 10 ? 'lazy-hidden' : ''}">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                        <img src="${b.coverUrl != null ? b.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                             class="card-img-top" alt="${b.title}" style="height: 200px; object-fit: cover;"
+                        <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                             class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 200px; object-fit: cover;"
                              onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
                         <div class="card-body d-flex flex-column p-2">
                             <span class="badge bg-danger mb-1 align-self-start" style="font-size:10px;"><i class="fa-solid fa-heart me-1"></i>Yêu thích</span>
                             <h6 class="card-title fw-bold text-dark mb-1 small" style="font-size:12px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                                <a href="/books/${b.id}" class="text-decoration-none text-dark">${b.title}</a>
+                                <a href="/books/${b.id}" class="text-decoration-none text-dark"><c:out value="${b.title}"/></a>
                             </h6>
-                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i>${b.author != null ? b.author.name : 'Nhiều tác giả'}</small>
+                            <small class="text-muted mb-2" style="font-size:11px;"><i class="fa-solid fa-feather me-1"></i><c:out value="${b.author != null ? b.author.name : 'Nhiều tác giả'}"/></small>
                             <div class="mt-auto">
                                 <a href="/books/${b.id}" class="btn btn-warning btn-sm rounded-pill w-100 fw-bold text-dark" style="font-size:11px;">
                                     <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết

@@ -23,10 +23,10 @@
                 <c:forEach var="f" items="${favorites}">
                     <div class="col">
                         <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                            <img src="${f.book.coverUrl != null ? f.book.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}" class="card-img-top" alt="${f.book.title}" style="height: 220px; object-fit: cover;">
+                            <img src="<c:out value='${f.book.coverUrl != null ? f.book.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>" class="card-img-top" alt="<c:out value='${f.book.title}'/>" style="height: 220px; object-fit: cover;">
                             <div class="card-body d-flex flex-column p-3">
-                                <h6 class="card-title fw-bold text-dark text-truncate mb-1">${f.book.title}</h6>
-                                <small class="text-muted mb-2">${f.book.author != null ? f.book.author.name : 'Nhiều tác giả'}</small>
+                                <h6 class="card-title fw-bold text-dark text-truncate mb-1"><c:out value="${f.book.title}"/></h6>
+                                <small class="text-muted mb-2"><c:out value="${f.book.author != null ? f.book.author.name : 'Nhiều tác giả'}"/></small>
                                 <div class="mt-auto">
                                     <a href="/books/${f.book.id}" class="btn btn-warning btn-sm w-100 rounded-pill fw-bold text-dark">
                                         <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết

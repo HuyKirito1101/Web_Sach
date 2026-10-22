@@ -54,9 +54,9 @@
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
-                                            <img src="${item.bookCopy.book.coverUrl != null ? item.bookCopy.book.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}" width="40" height="50" class="rounded" style="object-fit: cover;">
+                                            <img src="<c:out value='${item.bookCopy.book.coverUrl != null ? item.bookCopy.book.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>" width="40" height="50" class="rounded" style="object-fit: cover;">
                                             <div>
-                                                <h6 class="mb-0 text-dark fw-bold">${item.bookCopy.book.title}</h6>
+                                                <h6 class="mb-0 text-dark fw-bold"><c:out value="${item.bookCopy.book.title}"/></h6>
                                                 <small class="text-muted">Tình trạng: ${item.bookCopy.conditionRating}</small>
                                             </div>
                                         </div>
@@ -113,13 +113,13 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-3 p-4">
                 <h5 class="fw-bold mb-3 border-bottom pb-2">Thông Tin Giao Hàng</h5>
-                <p class="mb-1"><strong>Người nhận:</strong> ${order.receiverName}</p>
-                <p class="mb-1"><strong>Điện thoại:</strong> ${order.receiverPhone}</p>
-                <p class="mb-3"><strong>Địa chỉ:</strong> ${order.shippingAddress}</p>
+                <p class="mb-1"><strong>Người nhận:</strong> <c:out value="${order.receiverName}"/></p>
+                <p class="mb-1"><strong>Điện thoại:</strong> <c:out value="${order.receiverPhone}"/></p>
+                <p class="mb-3"><strong>Địa chỉ:</strong> <c:out value="${order.shippingAddress}"/></p>
 
                 <hr>
-                <p class="mb-1"><strong>Chi nhánh bán:</strong> ${order.branch.name}</p>
-                <p class="mb-1"><strong>Nhà vận chuyển:</strong> ${order.shippingProvider != null ? order.shippingProvider.name : 'Giao hàng tiêu chuẩn'}</p>
+                <p class="mb-1"><strong>Chi nhánh bán:</strong> <c:out value="${order.branch.name}"/></p>
+                <p class="mb-1"><strong>Nhà vận chuyển:</strong> <c:out value="${order.shippingProvider != null ? order.shippingProvider.name : 'Giao hàng tiêu chuẩn'}"/></p>
                 <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod}</p>
                 <p class="mb-3"><strong>Trạng thái thanh toán:</strong> <span class="badge bg-secondary">${order.paymentStatus}</span></p>
 

@@ -36,9 +36,9 @@
                                 <c:forEach var="c" items="${categories}">
                                     <tr>
                                         <td>${c.id}</td>
-                                        <td class="fw-bold text-primary">${c.name}</td>
+                                        <td class="fw-bold text-primary"><c:out value="${c.name}"/></td>
                                         <td><code>${c.slug}</code></td>
-                                        <td>${c.description}</td>
+                                        <td><c:out value="${c.description}"/></td>
                                         <td><span class="badge ${c.active ? 'bg-success' : 'bg-secondary'}">${c.active ? 'HIỂN THỊ' : 'ẨN'}</span></td>
                                         <td class="text-end">
                                             <form action="/admin/categories/delete/${c.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>

@@ -37,8 +37,8 @@
                                 <c:forEach var="p" items="${providers}">
                                     <tr>
                                         <td>${p.id}</td>
-                                        <td class="fw-bold text-dark">${p.name}</td>
-                                        <td>${p.phone}</td>
+                                        <td class="fw-bold text-dark"><c:out value="${p.name}"/></td>
+                                        <td><c:out value="${p.phone}"/></td>
                                         <td class="fw-bold text-success"><fmt:formatNumber value="${p.baseFee}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${p.active ? 'bg-success' : 'bg-secondary'}">${p.active ? 'HOẠT ĐỘNG' : 'TẠM DỪNG'}</span></td>
                                         <td class="text-end">

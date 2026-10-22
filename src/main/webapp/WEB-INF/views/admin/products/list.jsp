@@ -12,16 +12,16 @@
         <div class="main-content container-fluid">
             <h3 class="fw-bold mb-4"><i class="fa-solid fa-book-open text-primary me-2"></i>Sản Phẩm Toàn Hệ Thống</h3>
 
-            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
-            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
 
             <form action="/admin/products" method="get" class="card border-0 shadow-sm mb-4">
                 <div class="card-body row g-2">
-                    <div class="col-lg-4"><input name="keyword" value="${keyword}" class="form-control" placeholder="Tên sách, ISBN hoặc email người bán"></div>
+                    <div class="col-lg-4"><input name="keyword" value="<c:out value='${keyword}'/>" class="form-control" placeholder="Tên sách, ISBN hoặc email người bán"></div>
                     <div class="col-lg-3">
                         <select name="branchId" class="form-select">
                             <option value="">Tất cả chi nhánh</option>
-                            <c:forEach var="b" items="${branches}"><option value="${b.id}" ${selectedBranch == b.id ? 'selected' : ''}>${b.name}</option></c:forEach>
+                            <c:forEach var="b" items="${branches}"><option value="${b.id}" ${selectedBranch == b.id ? 'selected' : ''}><c:out value="${b.name}"/></option></c:forEach>
                         </select>
                     </div>
                     <div class="col-lg-2">
@@ -47,9 +47,9 @@
                         <tbody>
                             <c:forEach var="p" items="${products}">
                                 <tr>
-                                    <td><div class="fw-bold">${p.book.title}</div><small class="text-muted">ISBN: ${p.book.isbn}</small></td>
-                                    <td>${p.branch.name}</td>
-                                    <td>${p.seller != null ? p.seller.email : '-'}</td>
+                                    <td><div class="fw-bold"><c:out value="${p.book.title}"/></div><small class="text-muted">ISBN: <c:out value="${p.book.isbn}"/></small></td>
+                                    <td><c:out value="${p.branch.name}"/></td>
+                                    <td><c:out value="${p.seller != null ? p.seller.email : '-'}"/></td>
                                     <td>${p.conditionRating}</td>
                                     <td class="fw-bold text-success"><fmt:formatNumber value="${p.sellingPrice}" pattern="#,##0 ₫" /></td>
                                     <td>${p.quantity}</td>
@@ -64,7 +64,7 @@
                                 <div class="modal fade" id="editProduct${p.id}" tabindex="-1">
                                     <div class="modal-dialog"><div class="modal-content">
                                         <form action="/admin/products/${p.id}/update" method="post">
-                                            <div class="modal-header"><h5 class="modal-title fw-bold">Cập nhật ${p.book.title}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                            <div class="modal-header"><h5 class="modal-title fw-bold">Cập nhật <c:out value="${p.book.title}"/></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                                             <div class="modal-body">
                                                 <div class="mb-3"><label class="form-label">Giá bán</label><input type="number" min="0" step="1000" name="sellingPrice" value="${p.sellingPrice}" class="form-control" required></div>
                                                 <div class="mb-3"><label class="form-label">Số lượng</label><input type="number" min="0" name="quantity" value="${p.quantity}" class="form-control" required></div>

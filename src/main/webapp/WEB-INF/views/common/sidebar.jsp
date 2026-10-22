@@ -105,8 +105,11 @@
     </ul>
 
     <div class="mt-auto pt-4 border-top border-secondary">
-        <a href="/auth/logout" class="nav-link text-danger">
-            <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng Xuất
-        </a>
+        <form action="/auth/logout" method="post" class="m-0">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+            <button type="submit" class="nav-link text-danger border-0 bg-transparent w-100 text-start">
+                <i class="fa-solid fa-arrow-right-from-bracket me-2"></i> Đăng Xuất
+            </button>
+        </form>
     </div>
 </div>

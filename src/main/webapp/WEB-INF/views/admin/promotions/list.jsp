@@ -12,13 +12,13 @@
                 <div><h3 class="fw-bold mb-1"><i class="fa-solid fa-percent text-primary me-2"></i>Khuyến Mãi Hệ Thống</h3><div class="text-muted">Giảm giá sản phẩm hoặc phí vận chuyển, áp dụng toàn hệ thống hay từng chi nhánh.</div></div>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#promotionModal"><i class="fa-solid fa-plus me-1"></i>Tạo khuyến mãi</button>
             </div>
-            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
-            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
             <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
                 <thead class="table-light"><tr><th>Tên</th><th>Phạm vi</th><th>Loại</th><th>Mức giảm</th><th>Đơn tối thiểu</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead>
                 <tbody>
                     <c:forEach var="p" items="${promotions}"><tr>
-                        <td class="fw-bold">${p.title}</td><td>${p.branch == null ? 'Toàn hệ thống' : p.branch.name}</td>
+                        <td class="fw-bold"><c:out value="${p.title}"/></td><td><c:out value="${p.branch == null ? 'Toàn hệ thống' : p.branch.name}"/></td>
                         <td><span class="badge bg-info text-dark">${p.type == 'SHIPPING_PERCENT' ? 'Phí vận chuyển' : 'Sản phẩm'}</span></td>
                         <td>${p.discountPercent}% <c:if test="${p.maxDiscountAmount != null}"><small class="text-muted">(tối đa <fmt:formatNumber value="${p.maxDiscountAmount}" pattern="#,##0 ₫" />)</small></c:if></td>
                         <td><fmt:formatNumber value="${p.minOrderValue}" pattern="#,##0 ₫" /></td><td>${p.startDate} → ${p.endDate}</td>

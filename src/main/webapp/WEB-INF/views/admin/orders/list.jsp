@@ -36,11 +36,11 @@
                                     <tr>
                                         <td class="fw-bold text-primary">${o.orderCode}</td>
                                         <td>
-                                            <div class="fw-bold">${o.receiverName}</div>
+                                            <div class="fw-bold"><c:out value="${o.receiverName}"/></div>
                                             <span class="text-muted small">${o.receiverPhone}</span>
                                         </td>
-                                        <td class="small" style="max-width: 200px;">${o.shippingAddress}</td>
-                                        <td><span class="badge bg-secondary">${o.branch.name}</span></td>
+                                        <td class="small" style="max-width: 200px;"><c:out value="${o.shippingAddress}"/></td>
+                                        <td><span class="badge bg-secondary"><c:out value="${o.branch.name}"/></span></td>
                                         <td class="fw-bold text-dark"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td>
                                             <form action="/admin/orders/update-status" method="post" class="d-inline">
@@ -78,7 +78,7 @@
                                                             <label class="form-label">Chọn Shipper Giao Hàng</label>
                                                             <select name="shipperId" class="form-select" required>
                                                                 <c:forEach var="s" items="${shippers}">
-                                                                    <option value="${s.id}">${s.fullName} (${s.phone}) - Chi Nhánh: ${s.branch != null ? s.branch.name : 'Chung'}</option>
+                                                                    <option value="${s.id}"><c:out value="${s.fullName}"/> (<c:out value="${s.phone}"/>) - Chi Nhánh: <c:out value="${s.branch != null ? s.branch.name : 'Chung'}"/></option>
                                                                 </c:forEach>
                                                             </select>
                                                         </div>

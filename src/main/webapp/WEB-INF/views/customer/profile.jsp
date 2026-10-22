@@ -8,6 +8,9 @@
 <div class="container py-4">
     <h3 class="fw-bold mb-4"><i class="fa-solid fa-user text-warning me-2"></i>Hồ Sơ Cá Nhân & Địa Chỉ</h3>
 
+    <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+    <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
+
     <div class="row g-4">
         <!-- Update Profile -->
         <div class="col-lg-6">
@@ -16,15 +19,15 @@
                 <form action="/profile/update" method="POST">
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Họ và tên</label>
-                        <input type="text" name="fullName" class="form-control" value="${user.fullName}" required>
+                        <input type="text" name="fullName" class="form-control" value="<c:out value='${user.fullName}'/>" required maxlength="100">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Email (không thể thay đổi)</label>
-                        <input type="email" class="form-control bg-light" value="${user.email}" readonly>
+                        <input type="email" class="form-control bg-light" value="<c:out value='${user.email}'/>" readonly>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Số điện thoại</label>
-                        <input type="text" name="phone" class="form-control" value="${user.phone}">
+                        <input type="text" name="phone" class="form-control" value="<c:out value='${user.phone}'/>" maxlength="20">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Link ảnh đại diện (Avatar URL)</label>
@@ -36,7 +39,7 @@
                                  class="rounded-circle border border-warning flex-shrink-0"
                                  width="64" height="64" alt="Xem trước ảnh đại diện"
                                  style="object-fit: cover;">
-                            <input id="avatarUrl" type="url" name="avatarUrl" class="form-control" value="<c:out value='${user.avatarUrl}'/>" placeholder="https://...">
+                            <input id="avatarUrl" type="url" name="avatarUrl" class="form-control" value="<c:out value='${user.avatarUrl}'/>" maxlength="500" pattern="https://.*" placeholder="https://...">
                         </div>
                     </div>
                     <button type="submit" class="btn btn-warning rounded-pill fw-bold px-4">Cập Nhật Thông Tin</button>
@@ -61,22 +64,22 @@
                         <form action="/profile/address/add" method="POST">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
-                                    <input type="text" name="recipientName" class="form-control form-control-sm" placeholder="Tên người nhận" required>
+                                    <input type="text" name="recipientName" class="form-control form-control-sm" maxlength="100" placeholder="Tên người nhận" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" name="phone" class="form-control form-control-sm" placeholder="Số điện thoại" required>
+                                    <input type="text" name="phone" class="form-control form-control-sm" maxlength="20" placeholder="Số điện thoại" required>
                                 </div>
                                 <div class="col-12">
-                                    <input type="text" name="street" class="form-control form-control-sm" placeholder="Số nhà, Tên đường" required>
+                                    <input type="text" name="street" class="form-control form-control-sm" maxlength="255" placeholder="Số nhà, Tên đường" required>
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="text" name="ward" class="form-control form-control-sm" placeholder="Phường/Xã">
+                                    <input type="text" name="ward" class="form-control form-control-sm" maxlength="100" placeholder="Phường/Xã">
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="text" name="district" class="form-control form-control-sm" placeholder="Quận/Huyện">
+                                    <input type="text" name="district" class="form-control form-control-sm" maxlength="100" placeholder="Quận/Huyện">
                                 </div>
                                 <div class="col-md-4">
-                                    <input type="text" name="city" class="form-control form-control-sm" placeholder="Tỉnh/Thành phố" required>
+                                    <input type="text" name="city" class="form-control form-control-sm" maxlength="100" placeholder="Tỉnh/Thành phố" required>
                                 </div>
                             </div>
                             <div class="form-check mb-2">
@@ -98,12 +101,12 @@
                             <div class="border rounded-3 p-3 mb-2">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <strong class="text-dark">${addr.recipientName}</strong> | <span class="text-muted">${addr.phone}</span>
+                                        <strong class="text-dark"><c:out value="${addr.recipientName}"/></strong> | <span class="text-muted"><c:out value="${addr.phone}"/></span>
                                         <c:if test="${addr.isDefault}">
                                             <span class="badge bg-warning text-dark ms-2">Mặc định</span>
                                         </c:if>
                                         <br>
-                                        <small class="text-secondary">${addr.street}, ${addr.ward != null ? addr.ward : ''}, ${addr.district != null ? addr.district : ''}, ${addr.city}</small>
+                                        <small class="text-secondary"><c:out value="${addr.street}"/>, <c:out value="${addr.ward != null ? addr.ward : ''}"/>, <c:out value="${addr.district != null ? addr.district : ''}"/>, <c:out value="${addr.city}"/></small>
                                     </div>
                                     <div class="d-flex gap-1">
                                         <c:if test="${!addr.isDefault}">

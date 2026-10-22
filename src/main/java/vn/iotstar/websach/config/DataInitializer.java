@@ -3,6 +3,7 @@ package vn.iotstar.websach.config;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import vn.iotstar.websach.entity.*;
@@ -48,10 +49,25 @@ public class DataInitializer implements CommandLineRunner {
     private final SellRequestItemRepository sellRequestItemRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.demo-data.enabled:false}")
+    private boolean demoDataEnabled;
+
     @Override
     public void run(String... args) throws Exception {
+        // Role là dữ liệu hệ thống bắt buộc, không phải dữ liệu demo.
+        for (RoleName roleName : RoleName.values()) {
+            roleRepository.findByName(roleName).orElseGet(() ->
+                    roleRepository.save(Role.builder().name(roleName)
+                            .description("Role " + roleName.name()).build())
+            );
+        }
+
+        if (!demoDataEnabled) {
+            log.info("Dữ liệu mẫu đang tắt; không tạo hoặc đặt lại mật khẩu tài khoản demo.");
+            return;
+        }
+
         repairLegacyDemoPasswords();
-        ensureDemoLoginAccounts();
 
         // Dọn dẹp các tài khoản cũ không còn dùng (vendor@websach.com, shipper@websach.com, customer.test@websach.com)
         List<String> deprecatedEmails = List.of("vendor@websach.com", "shipper@websach.com", "customer.test@websach.com");
@@ -74,6 +90,7 @@ public class DataInitializer implements CommandLineRunner {
                 log.info("Đã xóa {} bản copy sách không thuộc về Vendor nào.", orphans.size());
                 bookCopyRepository.deleteAll(orphans);
             }
+            ensureDemoLoginAccounts();
             return;
         }
 
@@ -551,6 +568,7 @@ public class DataInitializer implements CommandLineRunner {
                     .expectedPrice(50000.0).imageUrl(book2.getCoverUrl()).build());
         }
 
+        ensureDemoLoginAccounts();
         log.info("Khởi tạo dữ liệu mẫu thành công! Sẵn sàng sử dụng.");
     }
 

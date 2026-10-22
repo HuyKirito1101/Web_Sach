@@ -5,8 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Xác Thực Mã OTP - Sách Cũ</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" integrity="sha384-blOohCVdhjmtROpu8+CfTnUWham9nkX7P7OZQMst+RUnhtoY/9qemFAkIKOYxDI3" crossorigin="anonymous">
     <style>
         body {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -29,22 +29,23 @@
     <div class="otp-card text-center">
         <i class="fa-solid fa-envelope-circle-check fa-3x text-primary mb-3"></i>
         <h3 class="fw-bold">XÁC THỰC MÃ OTP</h3>
-        <p class="text-muted small">Mã 6 chữ số đã được gửi tới email <b>${email}</b></p>
+        <p class="text-muted small">Mã 6 chữ số đã được gửi tới email <b><c:out value="${email}"/></b></p>
 
         <c:if test="${not empty errorMessage}">
             <div class="alert alert-danger" role="alert">
-                ${errorMessage}
+                <c:out value="${errorMessage}"/>
             </div>
         </c:if>
 
         <c:if test="${not empty successMessage}">
             <div class="alert alert-success" role="alert">
-                ${successMessage}
+                <c:out value="${successMessage}"/>
             </div>
         </c:if>
 
         <form action="/auth/verify-otp" method="post" class="mt-4">
-            <input type="hidden" name="email" value="${email}" />
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+            <input type="hidden" name="email" value="<c:out value='${email}'/>" />
 
             <div class="mb-4">
                 <input type="text" name="otpCode" class="form-control text-center fs-3 fw-bold tracking-widest" placeholder="123456" maxlength="6" required autofocus />
@@ -56,7 +57,8 @@
         </form>
 
         <form action="/auth/resend-otp" method="post" class="mt-3">
-            <input type="hidden" name="email" value="${email}" />
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+            <input type="hidden" name="email" value="<c:out value='${email}'/>" />
             <button type="submit" class="btn btn-link text-decoration-none">
                 <i class="fa-solid fa-rotate me-1"></i> Gửi lại mã OTP
             </button>

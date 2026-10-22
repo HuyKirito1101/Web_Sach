@@ -16,8 +16,8 @@
                 <h3 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i>Quản Lý Đơn Hàng Của Cửa Hàng</h3>
             </div>
 
-            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
-            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
@@ -38,10 +38,10 @@
                                     <tr>
                                         <td class="fw-bold text-primary">${o.orderCode}</td>
                                         <td>
-                                            <div class="fw-bold">${o.receiverName}</div>
+                                            <div class="fw-bold"><c:out value="${o.receiverName}"/></div>
                                             <span class="text-muted small">${o.receiverPhone}</span>
                                         </td>
-                                        <td class="small">${o.shippingAddress}</td>
+                                        <td class="small"><c:out value="${o.shippingAddress}"/></td>
                                         <td class="fw-bold text-dark"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td>
                                             <form action="/manager/orders/update-status" method="post" class="d-inline">
@@ -80,7 +80,7 @@
                                                             <label class="form-label">Chọn Shipper Chi Nhánh</label>
                                                             <select name="shipperId" class="form-select" required>
                                                                 <c:forEach var="s" items="${shippers}">
-                                                                    <option value="${s.id}">${s.fullName} (${s.phone})</option>
+                                                                    <option value="${s.id}"><c:out value="${s.fullName}"/> (<c:out value="${s.phone}"/>)</option>
                                                                 </c:forEach>
                                                             </select>
                                                         </div>

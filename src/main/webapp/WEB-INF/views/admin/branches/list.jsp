@@ -18,20 +18,20 @@
                 </button>
             </div>
 
-            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
-            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
 
             <div class="row g-4">
                 <c:forEach var="b" items="${branches}">
                     <div class="col-md-4">
                         <div class="card h-100 border-0 shadow-sm rounded-3">
-                            <img src="${b.imageUrl != null ? b.imageUrl : 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=500&q=80'}" class="card-img-top" alt="Branch Image" style="height: 180px; object-fit: cover;">
+                            <img src="<c:out value='${b.imageUrl != null ? b.imageUrl : "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=500"}'/>" class="card-img-top" alt="Branch Image" style="height: 180px; object-fit: cover;">
                             <div class="card-body">
                                 <span class="badge bg-success float-end">${b.status}</span>
-                                <h5 class="fw-bold text-dark mb-2">${b.name}</h5>
-                                <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i>${b.address}</p>
-                                <p class="text-muted small mb-1"><i class="fa-solid fa-phone me-2 text-primary"></i>${b.phone}</p>
-                                <p class="text-muted small mb-3"><i class="fa-solid fa-envelope me-2 text-info"></i>${b.email}</p>
+                                <h5 class="fw-bold text-dark mb-2"><c:out value="${b.name}"/></h5>
+                                <p class="text-muted small mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i><c:out value="${b.address}"/></p>
+                                <p class="text-muted small mb-1"><i class="fa-solid fa-phone me-2 text-primary"></i><c:out value="${b.phone}"/></p>
+                                <p class="text-muted small mb-3"><i class="fa-solid fa-envelope me-2 text-info"></i><c:out value="${b.email}"/></p>
                                 <div class="pt-2 border-top">
                                     <form action="/admin/branches/${b.id}/commission" method="post" class="input-group input-group-sm mb-2">
                                         <span class="input-group-text">Chiết khấu App</span>
@@ -39,12 +39,86 @@
                                         <span class="input-group-text">%</span>
                                         <button class="btn btn-outline-primary" title="Lưu chiết khấu"><i class="fa-solid fa-floppy-disk"></i></button>
                                     </form>
-                                    <div class="text-end">
-                                    <div>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-warning"
+                                                data-bs-toggle="modal" data-bs-target="#editBranchModal${b.id}">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i>Chỉnh sửa
+                                        </button>
                                         <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                     </div>
-                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Edit Branch -->
+                    <div class="modal fade" id="editBranchModal${b.id}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <form action="/admin/branches/save" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="id" value="${b.id}" />
+                                    <div class="modal-header">
+                                        <h5 class="modal-title fw-bold">
+                                            <i class="fa-solid fa-pen-to-square text-warning me-2"></i>Chỉnh Sửa Chi Nhánh
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-8">
+                                                <label class="form-label">Tên Chi Nhánh</label>
+                                                <input type="text" name="name" class="form-control" value="<c:out value='${b.name}'/>" required />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Trạng Thái</label>
+                                                <select name="status" class="form-select" required>
+                                                    <c:forEach var="status" items="${branchStatuses}">
+                                                        <option value="${status}" ${b.status == status ? 'selected' : ''}>${status}</option>
+                                                    </c:forEach>
+                                                </select>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Địa Chỉ</label>
+                                                <input type="text" name="address" class="form-control" value="<c:out value='${b.address}'/>" required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Số Điện Thoại</label>
+                                                <input type="text" name="phone" class="form-control" value="<c:out value='${b.phone}'/>" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Email</label>
+                                                <input type="email" name="email" class="form-control" value="<c:out value='${b.email}'/>" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Mô Tả</label>
+                                                <textarea name="description" class="form-control" rows="3"><c:out value="${b.description}"/></textarea>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <label class="form-label">Chiết Khấu Ứng Dụng (%)</label>
+                                                <input type="number" min="0" max="100" step="0.1" name="appDiscountPercent"
+                                                       class="form-control" value="${b.appDiscountPercent}" required />
+                                            </div>
+                                            <div class="col-md-7">
+                                                <label class="form-label">Thay Ảnh Chi Nhánh</label>
+                                                <input type="file" name="imageFile" class="form-control" accept="image/*" />
+                                                <div class="form-text">Không chọn tệp nếu muốn giữ ảnh hiện tại.</div>
+                                            </div>
+                                            <c:if test="${not empty b.imageUrl}">
+                                                <div class="col-12">
+                                                    <div class="small text-muted mb-2">Ảnh hiện tại</div>
+                                                    <img src="<c:out value='${b.imageUrl}'/>" alt="Ảnh chi nhánh <c:out value='${b.name}'/>" class="rounded border"
+                                                         style="width: 180px; height: 100px; object-fit: cover;" />
+                                                </div>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                        <button type="submit" class="btn btn-warning fw-bold">
+                                            <i class="fa-solid fa-floppy-disk me-1"></i>Lưu Thay Đổi
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -57,7 +131,7 @@
                     <div class="modal-content">
                         <form action="/admin/branches/save" method="post" enctype="multipart/form-data">
                             <div class="modal-header">
-                                <h5 class="modal-title fw-bold">Thêm / Sửa Chi Nhánh</h5>
+                                <h5 class="modal-title fw-bold">Thêm Chi Nhánh Mới</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
@@ -76,6 +150,18 @@
                                 <div class="mb-3">
                                     <label class="form-label">Email</label>
                                     <input type="email" name="email" class="form-control" placeholder="q3@websach.com" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Mô Tả</label>
+                                    <textarea name="description" class="form-control" rows="3" placeholder="Thông tin giới thiệu chi nhánh"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng Thái</label>
+                                    <select name="status" class="form-select" required>
+                                        <c:forEach var="status" items="${branchStatuses}">
+                                            <option value="${status}" ${status == 'ACTIVE' ? 'selected' : ''}>${status}</option>
+                                        </c:forEach>
+                                    </select>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">% Chiết Khấu App Cho Cửa Hàng</label>

@@ -12,15 +12,15 @@
 
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <div><h3 class="fw-bold mb-0"><i class="fa-solid fa-user-group text-primary me-2"></i>Người Dùng Chi Nhánh</h3><small class="text-muted">${branch.name}</small></div>
+                <div><h3 class="fw-bold mb-0"><i class="fa-solid fa-user-group text-primary me-2"></i>Người Dùng Chi Nhánh</h3><small class="text-muted"><c:out value="${branch.name}"/></small></div>
                 <form action="/manager/staff" method="get" class="d-flex gap-2">
-                    <input name="keyword" value="${keyword}" class="form-control" placeholder="Tên, email, số điện thoại">
+                    <input name="keyword" value="<c:out value='${keyword}'/>" class="form-control" placeholder="Tên, email, số điện thoại">
                     <button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
                 </form>
             </div>
 
-            <c:if test="${not empty successMessage}"><div class="alert alert-success">${successMessage}</div></c:if>
-            <c:if test="${not empty errorMessage}"><div class="alert alert-danger">${errorMessage}</div></c:if>
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
@@ -41,10 +41,10 @@
                                 <c:forEach var="s" items="${staffList}">
                                     <tr>
                                         <td>${s.id}</td>
-                                        <td class="fw-bold text-dark">${s.fullName}</td>
-                                        <td>${s.email}</td>
-                                        <td>${s.phone}</td>
-                                        <td><span class="badge bg-primary">${s.role.name}</span></td>
+                                        <td class="fw-bold text-dark"><c:out value="${s.fullName}"/></td>
+                                        <td><c:out value="${s.email}"/></td>
+                                        <td><c:out value="${s.phone}"/></td>
+                                        <td><span class="badge bg-primary"><c:out value="${s.role.name}"/></span></td>
                                         <td><span class="badge ${s.status == 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${s.status}</span></td>
                                         <td class="text-end">
                                             <c:choose>

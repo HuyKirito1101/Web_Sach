@@ -116,6 +116,16 @@ public class VendorController {
                                    @RequestParam(value = "coverFile", required = false) MultipartFile coverFile,
                                    RedirectAttributes redirect) {
         try {
+            String finalCover = coverUrl;
+            if (coverFile != null && !coverFile.isEmpty()) {
+                // Upload trước khi ghi Author/Publisher để tránh dữ liệu dở dang
+                // nếu Cloudinary gặp lỗi.
+                finalCover = cloudinaryService.uploadFile(coverFile);
+            }
+            if (finalCover == null || finalCover.trim().isEmpty()) {
+                finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
+            }
+
             Category category = (categoryId != null) ? categoryService.findById(categoryId).orElse(null) : null;
             Author author = null;
             if (authorName != null && !authorName.trim().isEmpty()) {
@@ -128,14 +138,6 @@ public class VendorController {
                 publisher = publisherRepository.findByName(publisherName.trim()).orElseGet(() ->
                         publisherRepository.save(Publisher.builder().name(publisherName.trim()).build())
                 );
-            }
-
-            String finalCover = coverUrl;
-            if (coverFile != null && !coverFile.isEmpty()) {
-                finalCover = cloudinaryService.uploadFile(coverFile);
-            }
-            if (finalCover == null || finalCover.trim().isEmpty()) {
-                finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
             }
 
             Book book = Book.builder()

@@ -9,12 +9,16 @@ import vn.iotstar.websach.repository.AddressRepository;
 import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.CustomerProfileService;
 
+import java.net.URI;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class CustomerProfileServiceImpl implements CustomerProfileService {
+
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9+().\\s-]{8,20}$");
 
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
@@ -22,9 +26,9 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Override
     public User updateProfile(User user, String fullName, String phone, String avatarUrl) {
         if (user == null) return null;
-        if (fullName != null && !fullName.trim().isEmpty()) user.setFullName(fullName.trim());
-        if (phone != null) user.setPhone(phone.trim());
-        if (avatarUrl != null && !avatarUrl.trim().isEmpty()) user.setAvatarUrl(avatarUrl.trim());
+        user.setFullName(requiredText(fullName, "Họ tên", 100));
+        user.setPhone(optionalPhone(phone));
+        user.setAvatarUrl(optionalHttpsUrl(avatarUrl));
         return userRepository.save(user);
     }
 
@@ -38,6 +42,13 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
     @Override
     public Address addAddress(User user, String recipientName, String phone, String street, String ward, String district, String city, Boolean isDefault) {
         if (user == null) throw new IllegalArgumentException("User null");
+
+        String safeRecipientName = requiredText(recipientName, "Tên người nhận", 100);
+        String safePhone = requiredPhone(phone);
+        String safeStreet = requiredText(street, "Địa chỉ", 255);
+        String safeWard = optionalText(ward, "Phường/xã", 100);
+        String safeDistrict = optionalText(district, "Quận/huyện", 100);
+        String safeCity = requiredText(city, "Tỉnh/thành phố", 100);
 
         boolean makeDefault = Boolean.TRUE.equals(isDefault);
         List<Address> existing = addressRepository.findByUserOrderByIsDefaultDescCreatedAtDesc(user);
@@ -54,12 +65,12 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
         Address address = Address.builder()
                 .user(user)
-                .recipientName(recipientName)
-                .phone(phone)
-                .street(street)
-                .ward(ward)
-                .district(district)
-                .city(city)
+                .recipientName(safeRecipientName)
+                .phone(safePhone)
+                .street(safeStreet)
+                .ward(safeWard)
+                .district(safeDistrict)
+                .city(safeCity)
                 .isDefault(makeDefault)
                 .build();
 
@@ -76,10 +87,53 @@ public class CustomerProfileServiceImpl implements CustomerProfileService {
 
     @Override
     public void setDefaultAddress(User user, Long addressId) {
+        if (user == null || addressId == null || addressRepository.findByIdAndUser(addressId, user).isEmpty()) {
+            throw new IllegalArgumentException("Địa chỉ không hợp lệ.");
+        }
         List<Address> existing = addressRepository.findByUserOrderByIsDefaultDescCreatedAtDesc(user);
         existing.forEach(a -> {
             a.setIsDefault(a.getId().equals(addressId));
             addressRepository.save(a);
         });
+    }
+
+    private String requiredText(String value, String fieldName, int maxLength) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isEmpty() || normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " phải có từ 1 đến " + maxLength + " ký tự.");
+        }
+        return normalized;
+    }
+
+    private String optionalText(String value, String fieldName, int maxLength) {
+        if (value == null || value.isBlank()) return null;
+        return requiredText(value, fieldName, maxLength);
+    }
+
+    private String requiredPhone(String value) {
+        String normalized = requiredText(value, "Số điện thoại", 20);
+        if (!PHONE_PATTERN.matcher(normalized).matches()) {
+            throw new IllegalArgumentException("Số điện thoại không đúng định dạng.");
+        }
+        return normalized;
+    }
+
+    private String optionalPhone(String value) {
+        if (value == null || value.isBlank()) return null;
+        return requiredPhone(value);
+    }
+
+    private String optionalHttpsUrl(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = requiredText(value, "URL ảnh đại diện", 500);
+        try {
+            URI uri = URI.create(normalized);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getUserInfo() != null) {
+                throw new IllegalArgumentException("URL ảnh đại diện phải là liên kết HTTPS hợp lệ.");
+            }
+            return uri.toASCIIString();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("URL ảnh đại diện phải là liên kết HTTPS hợp lệ.");
+        }
     }
 }

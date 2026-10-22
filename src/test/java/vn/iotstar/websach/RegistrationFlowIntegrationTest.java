@@ -30,7 +30,7 @@ class RegistrationFlowIntegrationTest {
     @Test
     void accountStaysInactiveUntilTheCorrectOtpIsEntered() {
         String email = "otp-flow@example.com";
-        User registered = userService.register(registerRequest(email, "Người dùng OTP", "123456"));
+        User registered = userService.register(registerRequest(email, "Người dùng OTP", "TestPass123!"));
 
         assertThat(registered.getStatus()).isEqualTo(UserStatus.INACTIVE);
         assertThat(userService.verifyOtp(email, "000000")).isFalse();
@@ -51,7 +51,7 @@ class RegistrationFlowIntegrationTest {
         doThrow(new IllegalStateException("SMTP error"))
                 .when(emailService).sendOtpEmail(eq(email), org.mockito.ArgumentMatchers.anyString());
 
-        assertThatThrownBy(() -> userService.register(registerRequest(email, "SMTP lỗi", "123456")))
+        assertThatThrownBy(() -> userService.register(registerRequest(email, "SMTP lỗi", "TestPass123!")))
                 .isInstanceOf(IllegalStateException.class);
         assertThat(userRepository.findByEmail(email)).isEmpty();
     }
@@ -59,8 +59,8 @@ class RegistrationFlowIntegrationTest {
     @Test
     void inactiveEmailCanRegisterAgainAndAdminCanDeleteIt() {
         String email = "retry-otp@example.com";
-        User firstRegistration = userService.register(registerRequest(email, "Tên cũ", "123456"));
-        User retriedRegistration = userService.register(registerRequest(email, "Tên mới", "654321"));
+        User firstRegistration = userService.register(registerRequest(email, "Tên cũ", "TestPass123!"));
+        User retriedRegistration = userService.register(registerRequest(email, "Tên mới", "AnotherPass456!"));
 
         assertThat(retriedRegistration.getId()).isEqualTo(firstRegistration.getId());
         assertThat(retriedRegistration.getFullName()).isEqualTo("Tên mới");

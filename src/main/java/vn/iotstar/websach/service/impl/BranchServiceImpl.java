@@ -35,6 +35,7 @@ public class BranchServiceImpl implements BranchService {
         Branch branch = branchRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Chi nhánh không tồn tại: " + id));
         branch.setName(details.getName());
+        branch.setDescription(details.getDescription());
         branch.setAddress(details.getAddress());
         branch.setPhone(details.getPhone());
         branch.setEmail(details.getEmail());

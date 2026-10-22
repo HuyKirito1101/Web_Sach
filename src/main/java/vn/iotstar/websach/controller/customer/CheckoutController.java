@@ -89,13 +89,12 @@ public class CheckoutController {
         }
     }
 
-    @GetMapping("/payment-callback")
-    public String paymentCallback(@RequestParam(value = "orderId", required = false) Long orderId,
-                                  @RequestParam(value = "orderIds", required = false) String orderIds,
-                                  @RequestParam("status") String status,
-                                  @RequestParam(value = "method", defaultValue = "VNPAY") String method,
-                                  Authentication authentication,
-                                  org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+    private String handleDemoPayment(@RequestParam(value = "orderId", required = false) Long orderId,
+                                     @RequestParam(value = "orderIds", required = false) String orderIds,
+                                     @RequestParam("status") String status,
+                                     String method,
+                                     Authentication authentication,
+                                     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -107,43 +106,45 @@ public class CheckoutController {
             }
         }
 
+        // Trang này chỉ mô phỏng giao diện ví điện tử. Tuyệt đối không tin tham
+        // số status từ trình duyệt để đánh dấu PAID. Tích hợp thật phải xác minh
+        // chữ ký/IPN do VNPAY hoặc MoMo gửi từ máy chủ của nhà cung cấp.
+        List<Long> ownedIds = ids.stream()
+                .distinct()
+                .filter(id -> orderRepository.findById(id)
+                        .map(order -> order.getCustomer().getId().equals(user.getId()))
+                        .orElse(false))
+                .toList();
+
         if ("SUCCESS".equalsIgnoreCase(status)) {
-            for (Long id : ids) {
-                Order order = orderRepository.findById(id).orElse(null);
-                if (order != null && order.getCustomer().getId().equals(user.getId())) {
-                    order.setPaymentStatus(vn.iotstar.websach.entity.enums.PaymentStatus.PAID);
-                    orderRepository.save(order);
-                }
-            }
-            if (ids.size() == 1) {
-                return "redirect:/orders/" + ids.get(0) + "?paymentSuccess=true";
-            }
-            redirectAttributes.addFlashAttribute("successMessage", "Thanh toán qua " + method + " thành công cho " + ids.size() + " đơn hàng!");
-            return "redirect:/orders";
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã mô phỏng thanh toán " + method
+                            + ". Đơn vẫn CHỜ THANH TOÁN vì chưa có chữ ký xác thực từ cổng thanh toán thật.");
         } else {
-            if (!ids.isEmpty()) {
-                return "redirect:/orders/" + ids.get(0) + "?paymentFailed=true";
-            }
-            return "redirect:/orders";
+            redirectAttributes.addFlashAttribute("errorMessage", "Bạn đã hủy mô phỏng thanh toán " + method + ".");
         }
+        if (ownedIds.size() == 1) {
+            return "redirect:/orders/" + ownedIds.getFirst();
+        }
+        return "redirect:/orders";
     }
 
-    @GetMapping("/vnpay-callback")
+    @PostMapping("/vnpay-demo-result")
     public String vnpayCallback(@RequestParam(value = "orderId", required = false) Long orderId,
                                 @RequestParam(value = "orderIds", required = false) String orderIds,
                                 @RequestParam(value = "status", defaultValue = "SUCCESS") String status,
                                 Authentication authentication,
                                 org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        return paymentCallback(orderId, orderIds, status, "VNPAY", authentication, redirectAttributes);
+        return handleDemoPayment(orderId, orderIds, status, "VNPAY", authentication, redirectAttributes);
     }
 
-    @GetMapping("/momo-callback")
+    @PostMapping("/momo-demo-result")
     public String momoCallback(@RequestParam(value = "orderId", required = false) Long orderId,
                                @RequestParam(value = "orderIds", required = false) String orderIds,
                                @RequestParam(value = "status", defaultValue = "SUCCESS") String status,
                                Authentication authentication,
                                org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        return paymentCallback(orderId, orderIds, status, "MoMo", authentication, redirectAttributes);
+        return handleDemoPayment(orderId, orderIds, status, "MoMo", authentication, redirectAttributes);
     }
 
     @GetMapping("/vnpay-demo")

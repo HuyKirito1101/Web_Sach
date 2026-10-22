@@ -1,6 +1,7 @@
 package vn.iotstar.websach.config;
 
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -44,11 +47,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf
+                        // JWT được lưu trong cookie nên vẫn phải chống CSRF. SockJS có
+                        // nhiều POST transport nội bộ; phần này được bảo vệ bằng xác
+                        // thực handshake + kiểm tra quyền STOMP trong WebSocketConfig.
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/ws/**"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/", "/home", "/about", "/policies/**", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**", "/ws/**", "/WEB-INF/**").permitAll()
+                        .requestMatchers("/", "/home", "/about", "/policies/**", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/ws/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasRole("MANAGER")
                         .requestMatchers("/vendor/**").hasAnyRole("VENDOR", "ADMIN")
@@ -61,8 +70,23 @@ public class SecurityConfig {
                             response.sendRedirect("/auth/login?error=unauthorized");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendRedirect("/auth/login?error=forbidden");
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN);
                         })
+                )
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; "
+                                        + "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+                                        + "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+                                        + "font-src 'self' data: https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+                                        + "img-src 'self' data: https:; "
+                                        + "connect-src 'self' ws: wss:; "
+                                        + "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"))
+                        .frameOptions(frame -> frame.deny())
+                        .referrerPolicy(referrer -> referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .permissionsPolicy(permissions -> permissions.policy(
+                                "camera=(), microphone=(), geolocation=(), payment=()"))
                 );
 
         http.authenticationProvider(authenticationProvider());

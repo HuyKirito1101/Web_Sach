@@ -1,6 +1,7 @@
 package vn.iotstar.websach;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,6 +27,9 @@ import vn.iotstar.websach.service.VendorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @ActiveProfiles("h2")
@@ -49,7 +53,7 @@ class VendorShipperWorkflowIntegrationTest {
         RegisterRequest request = new RegisterRequest();
         request.setFullName("OTP Integration User");
         request.setEmail(email);
-        request.setPassword("123456");
+        request.setPassword("TestPass123!");
         request.setPhone("0900000000");
 
         User registered = userService.register(request);
@@ -62,10 +66,14 @@ class VendorShipperWorkflowIntegrationTest {
         assertThat(currentTokens).hasSize(1);
 
         OtpToken currentToken = currentTokens.getFirst();
-        assertThat(userService.verifyOtp(email, currentToken.getOtpCode())).isTrue();
+        ArgumentCaptor<String> otpCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailService, times(2)).sendOtpEmail(eq(email), otpCaptor.capture());
+        String latestOtp = otpCaptor.getAllValues().getLast();
+        assertThat(currentToken.getOtpCode()).doesNotContain(latestOtp);
+        assertThat(userService.verifyOtp(email, latestOtp)).isTrue();
         assertThat(userRepository.findByEmail(email).orElseThrow().getStatus()).isEqualTo(UserStatus.ACTIVE);
         assertThat(otpTokenRepository.findById(currentToken.getId()).orElseThrow().isUsed()).isTrue();
-        assertThat(userService.verifyOtp(email, currentToken.getOtpCode())).isFalse();
+        assertThat(userService.verifyOtp(email, latestOtp)).isFalse();
     }
 
     @Test

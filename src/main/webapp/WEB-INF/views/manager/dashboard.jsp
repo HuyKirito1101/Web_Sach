@@ -14,7 +14,7 @@
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold mb-1"><i class="fa-solid fa-gauge-high text-primary me-2"></i>Báo Cáo Chi Nhánh: ${stats.branchName}</h3>
+                    <h3 class="fw-bold mb-1"><i class="fa-solid fa-gauge-high text-primary me-2"></i>Báo Cáo Chi Nhánh: <c:out value="${stats.branchName}"/></h3>
                     <p class="text-muted small">Thống kê hoạt động kinh doanh sách cũ tại cửa hàng</p>
                 </div>
             </div>
@@ -98,7 +98,7 @@
                                 <c:forEach var="o" items="${recentOrders}">
                                     <tr>
                                         <td class="fw-bold text-primary">${o.orderCode}</td>
-                                        <td>${o.receiverName} (${o.receiverPhone})</td>
+                                        <td><c:out value="${o.receiverName}"/> (<c:out value="${o.receiverPhone}"/>)</td>
                                         <td class="fw-bold"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge bg-info">${o.orderStatus}</span></td>
                                     </tr>

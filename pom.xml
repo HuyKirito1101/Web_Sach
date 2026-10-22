@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.5</version>
+		<version>3.5.16</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>vn.iotstar</groupId>
@@ -17,7 +17,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<lombok.version>1.18.38</lombok.version>
-		<jjwt.version>0.11.5</jjwt.version>
+		<jjwt.version>0.13.0</jjwt.version>
 	</properties>
 
 	<dependencies>
@@ -97,8 +97,8 @@
 		<!-- Cloudinary -->
 		<dependency>
 			<groupId>com.cloudinary</groupId>
-			<artifactId>cloudinary-http44</artifactId>
-			<version>1.36.0</version>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>2.5.0</version>
 		</dependency>
 
 		<!-- Lombok -->
@@ -150,4 +150,38 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<!-- Chạy thủ công/CI bằng: mvn -Psecurity-audit verify -->
+	<profiles>
+		<profile>
+			<id>security-audit</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<!-- 13.0.0 có lỗi cập nhật NVD khi không cấp API key;
+						     dùng bản ổn định gần nhất cho máy phát triển. -->
+						<version>12.2.2</version>
+						<executions>
+							<execution>
+								<goals><goal>check</goal></goals>
+							</execution>
+						</executions>
+						<configuration>
+							<failBuildOnCVSS>7</failBuildOnCVSS>
+							<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+							<!-- CISA KEV chặn một số mạng phát triển bằng HTTP 403;
+							     NVD/CVE vẫn là nguồn chính cho lần quét này. -->
+							<knownExploitedEnabled>false</knownExploitedEnabled>
+							<formats>
+								<format>HTML</format>
+								<format>JSON</format>
+							</formats>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

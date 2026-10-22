@@ -46,19 +46,19 @@ public class ManagerTransferController {
         return "redirect:/manager/transfers?created";
     }
 
-    @GetMapping("/approve/{id}")
+    @PostMapping("/approve/{id}")
     public String approveTransfer(@PathVariable("id") Long id, Authentication authentication) {
         stockTransferService.approveTransfer(id, authentication.getName());
         return "redirect:/manager/transfers?approved";
     }
 
-    @GetMapping("/reject/{id}")
+    @PostMapping("/reject/{id}")
     public String rejectTransfer(@PathVariable("id") Long id, Authentication authentication) {
         stockTransferService.rejectTransfer(id, authentication.getName());
         return "redirect:/manager/transfers?rejected";
     }
 
-    @GetMapping("/complete/{id}")
+    @PostMapping("/complete/{id}")
     public String completeTransfer(@PathVariable("id") Long id) {
         stockTransferService.completeTransfer(id);
         return "redirect:/manager/transfers?completed";

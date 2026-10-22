@@ -8,11 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.entity.BookCopy;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.Promotion;
+import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.entity.enums.PromotionType;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BranchRepository;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.PromotionService;
+import vn.iotstar.websach.service.BranchService;
 
 import java.time.LocalDate;
 
@@ -30,6 +32,33 @@ class AdminManagerWorkflowIntegrationTest {
     @Autowired private PromotionService promotionService;
     @Autowired private BookCopyRepository bookCopyRepository;
     @Autowired private BranchRepository branchRepository;
+    @Autowired private BranchService branchService;
+
+    @Test
+    void adminCanEditBranchInformationWithoutClearingCurrentImage() {
+        Branch current = branchRepository.findAll().getFirst();
+        current.setImageUrl("https://res.cloudinary.com/demo/current.jpg");
+        branchRepository.saveAndFlush(current);
+
+        Branch details = Branch.builder()
+                .name("Chi nhánh đã cập nhật")
+                .description("Mô tả mới của chi nhánh")
+                .address("123 Đường Mới, TP.HCM")
+                .phone("0901234567")
+                .email("chinhanh@example.com")
+                .status(BranchStatus.INACTIVE)
+                .appDiscountPercent(15.0)
+                .build();
+
+        Branch updated = branchService.updateBranch(current.getId(), details);
+
+        assertThat(updated.getName()).isEqualTo("Chi nhánh đã cập nhật");
+        assertThat(updated.getDescription()).isEqualTo("Mô tả mới của chi nhánh");
+        assertThat(updated.getAddress()).isEqualTo("123 Đường Mới, TP.HCM");
+        assertThat(updated.getStatus()).isEqualTo(BranchStatus.INACTIVE);
+        assertThat(updated.getAppDiscountPercent()).isEqualTo(15.0);
+        assertThat(updated.getImageUrl()).isEqualTo("https://res.cloudinary.com/demo/current.jpg");
+    }
 
     @Test
     void managerCannotManageAProductFromAnotherBranch() {

@@ -19,7 +19,7 @@
             <!-- Search bar -->
             <form class="d-flex my-2 my-lg-0 mx-auto" action="/books" method="GET" style="max-width: 450px; width: 100%;">
                 <div class="input-group">
-                    <input class="form-control border-end-0 rounded-start-pill ps-3" type="search" name="keyword" placeholder="Tìm tên sách, tác giả, ISBN..." value="${param.keyword}">
+                    <input class="form-control border-end-0 rounded-start-pill ps-3" type="search" name="keyword" placeholder="Tìm tên sách, tác giả, ISBN..." value="<c:out value='${param.keyword}'/>">
                     <button class="btn btn-warning rounded-end-pill px-3" type="submit">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -50,7 +50,7 @@
                                      class="rounded-circle border border-warning"
                                      width="35" height="35" alt="Ảnh đại diện"
                                      style="object-fit: cover;">
-                                <span>${pageContext.request.userPrincipal.name}</span>
+                                <span><c:out value="${pageContext.request.userPrincipal.name}"/></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userDropdown">
                                 <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
@@ -73,7 +73,14 @@
                                 <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>
                                 <li><a class="dropdown-item" href="/viewed-products"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Sách đã xem</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger fw-bold" href="/auth/logout"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
+                                <li>
+                                    <form action="/auth/logout" method="post" class="m-0">
+                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                                        <button type="submit" class="dropdown-item text-danger fw-bold">
+                                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                                        </button>
+                                    </form>
+                                </li>
                             </ul>
                         </li>
                     </c:when>

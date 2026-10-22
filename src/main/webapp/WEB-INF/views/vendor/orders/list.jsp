@@ -22,13 +22,13 @@
 
             <c:if test="${not empty successMessage}">
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                    <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-circle-exclamation me-2"></i>${errorMessage}
+                    <i class="fa-solid fa-circle-exclamation me-2"></i><c:out value="${errorMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
@@ -56,13 +56,13 @@
                                         </a>
                                     </td>
                                     <td>
-                                        <div class="fw-bold text-dark">${o.receiverName}</div>
+                                        <div class="fw-bold text-dark"><c:out value="${o.receiverName}"/></div>
                                         <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>${o.receiverPhone}</div>
                                     </td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${o.shippingProvider != null}">
-                                                <div class="fw-bold text-dark small mb-1">${o.shippingProvider.name}</div>
+                                                <div class="fw-bold text-dark small mb-1"><c:out value="${o.shippingProvider.name}"/></div>
                                                 <c:choose>
                                                     <c:when test="${o.shippingProvider.code == 'GHN_EXPRESS'}">
                                                         <span class="badge bg-danger"><i class="fa-solid fa-bolt me-1"></i>GHN Hỏa Tốc (Trong tỉnh)</span>

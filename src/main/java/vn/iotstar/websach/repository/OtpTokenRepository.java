@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface OtpTokenRepository extends JpaRepository<OtpToken, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<OtpToken> findByEmailAndOtpCodeAndTypeAndUsedFalse(String email, String otpCode, String type);
+    Optional<OtpToken> findTopByEmailAndTypeAndUsedFalseOrderByIdDesc(String email, String type);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from OtpToken o where o.email = :email and o.type = :type")

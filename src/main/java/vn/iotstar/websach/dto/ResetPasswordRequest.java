@@ -15,7 +15,7 @@ public class ResetPasswordRequest {
     private String otpCode;
 
     @NotBlank(message = "Mật khẩu mới không được để trống")
-    @Size(min = 6, message = "Mật khẩu mới phải có ít nhất 6 ký tự")
+    @Size(min = 8, max = 72, message = "Mật khẩu mới phải có từ 8 đến 72 ký tự")
     private String newPassword;
 
     @NotBlank(message = "Xác nhận mật khẩu không được để trống")

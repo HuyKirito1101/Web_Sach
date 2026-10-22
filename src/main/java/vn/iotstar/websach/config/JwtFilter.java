@@ -39,7 +39,9 @@ public class JwtFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            logger.error("Không thể xác thực người dùng từ JWT: {}", e);
+            // Token hỏng/hết hạn là dữ liệu không tin cậy; không ghi stack trace
+            // ở mức ERROR để tránh log flooding và lộ chi tiết nội bộ.
+            logger.debug("JWT không hợp lệ hoặc đã hết hạn.");
         }
 
         filterChain.doFilter(request, response);

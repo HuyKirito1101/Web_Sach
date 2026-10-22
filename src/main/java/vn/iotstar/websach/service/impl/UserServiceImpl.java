@@ -50,6 +50,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public User register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
+        validatePassword(request.getPassword());
 
         Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Lỗi cấu hình Role mặc định USER"));
@@ -99,7 +100,7 @@ public class UserServiceImpl implements UserService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(900000) + 100000);
         OtpToken otpToken = OtpToken.builder()
                 .email(email)
-                .otpCode(otpCode)
+                .otpCode(passwordEncoder.encode(otpCode))
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
                 .used(false)
                 .type(REGISTER_OTP_TYPE)
@@ -118,11 +119,12 @@ public class UserServiceImpl implements UserService {
     public boolean verifyOtp(String email, String otpCode) {
         String normalizedEmail = normalizeEmail(email);
         Optional<OtpToken> otpOpt = otpTokenRepository
-                .findByEmailAndOtpCodeAndTypeAndUsedFalse(
-                        normalizedEmail, otpCode == null ? "" : otpCode.trim(), REGISTER_OTP_TYPE);
+                .findTopByEmailAndTypeAndUsedFalseOrderByIdDesc(normalizedEmail, REGISTER_OTP_TYPE);
         if (otpOpt.isPresent()) {
             OtpToken otpToken = otpOpt.get();
-            if (otpToken.getExpiryTime().isAfter(LocalDateTime.now())) {
+            String submittedOtp = otpCode == null ? "" : otpCode.trim();
+            if (otpToken.getExpiryTime().isAfter(LocalDateTime.now())
+                    && passwordEncoder.matches(submittedOtp, otpToken.getOtpCode())) {
                 User user = userRepository.findByEmail(normalizedEmail)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
                 if (user.getStatus() != UserStatus.INACTIVE) {
@@ -146,11 +148,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void sendForgotPasswordOtp(String email) {
         String normalizedEmail = normalizeEmail(email);
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với email này."));
+        Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
-        if (user.getStatus() == UserStatus.LOCKED) {
-            throw new IllegalStateException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        // Không tiết lộ email nào có tài khoản (chống account enumeration).
+        if (userOpt.isEmpty() || userOpt.get().getStatus() == UserStatus.LOCKED) {
+            return;
         }
 
         otpTokenRepository.deleteByEmailAndType(normalizedEmail, FORGOT_PASSWORD_OTP_TYPE);
@@ -158,7 +160,7 @@ public class UserServiceImpl implements UserService {
         String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(900000) + 100000);
         OtpToken otpToken = OtpToken.builder()
                 .email(normalizedEmail)
-                .otpCode(otpCode)
+                .otpCode(passwordEncoder.encode(otpCode))
                 .expiryTime(LocalDateTime.now().plusMinutes(5))
                 .used(false)
                 .type(FORGOT_PASSWORD_OTP_TYPE)
@@ -176,17 +178,18 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
 
         OtpToken otpToken = otpTokenRepository
-                .findByEmailAndOtpCodeAndTypeAndUsedFalse(
-                        normalizedEmail, otpCode == null ? "" : otpCode.trim(), FORGOT_PASSWORD_OTP_TYPE)
+                .findTopByEmailAndTypeAndUsedFalseOrderByIdDesc(normalizedEmail, FORGOT_PASSWORD_OTP_TYPE)
                 .orElseThrow(() -> new IllegalArgumentException("Mã OTP không đúng hoặc đã được sử dụng."));
 
         if (otpToken.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới.");
         }
 
-        if (newPassword == null || newPassword.trim().length() < 6) {
-            throw new IllegalArgumentException("Mật khẩu mới phải có tối thiểu 6 ký tự.");
+        if (!passwordEncoder.matches(otpCode == null ? "" : otpCode.trim(), otpToken.getOtpCode())) {
+            throw new IllegalArgumentException("Mã OTP không đúng hoặc đã được sử dụng.");
         }
+
+        validatePassword(newPassword);
 
         user.setPassword(passwordEncoder.encode(newPassword.trim()));
         userRepository.save(user);
@@ -304,5 +307,11 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Email không được để trống.");
         }
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.length() < 8 || password.length() > 72) {
+            throw new IllegalArgumentException("Mật khẩu phải có từ 8 đến 72 ký tự.");
+        }
     }
 }

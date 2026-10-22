@@ -23,13 +23,13 @@
 
             <c:if test="${not empty successMessage}">
                 <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4">
-                    <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                    <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i>${errorMessage}
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
@@ -51,15 +51,23 @@
                         <tbody>
                             <c:forEach var="p" items="${products}">
                                 <tr>
-                                    <td><img src="${not empty p.imageUrl ? p.imageUrl : p.book.coverUrl}" width="48" height="64" class="rounded" style="object-fit:cover" alt="Ảnh sách"></td>
-                                    <td><strong>${p.book.title}</strong><div class="small text-muted">ISBN: ${p.book.isbn}</div></td>
-                                    <td><span class="badge bg-info text-dark">${p.conditionRating}</span><div class="small text-muted">${p.note}</div></td>
+                                    <td><img src="<c:out value='${not empty p.imageUrl ? p.imageUrl : p.book.coverUrl}'/>" width="48" height="64" class="rounded" style="object-fit:cover" alt="Ảnh sách"></td>
+                                    <td><strong><c:out value="${p.book.title}"/></strong><div class="small text-muted">ISBN: <c:out value="${p.book.isbn}"/></div></td>
+                                    <td><span class="badge bg-info text-dark"><c:out value="${p.conditionRating}"/></span><div class="small text-muted"><c:out value="${p.note}"/></div></td>
                                     <td><span class="fw-bold text-success"><fmt:formatNumber value="${p.sellingPrice}" pattern="#,#00 ₫"/></span></td>
                                     <td><span class="fw-bold">${p.quantity}</span></td>
                                     <td><span class="badge ${p.status == 'AVAILABLE' ? 'bg-success' : 'bg-secondary'}">${p.status}</span></td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-1">
-                                            <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${p.id}, ${p.book.id}, '${p.conditionRating}', ${p.purchasePrice != null ? p.purchasePrice : 0}, ${p.sellingPrice}, ${p.quantity}, '${p.status}', '${p.note != null ? p.note.replace("'", "\\'") : ''}')"><i class="fa-solid fa-pen me-1"></i>Sửa</button>
+                                            <button type="button" class="btn btn-sm btn-outline-primary product-edit-button"
+                                                    data-product-id="${p.id}"
+                                                    data-book-id="${p.book.id}"
+                                                    data-condition="<c:out value='${p.conditionRating}'/>"
+                                                    data-purchase-price="${p.purchasePrice != null ? p.purchasePrice : 0}"
+                                                    data-selling-price="${p.sellingPrice}"
+                                                    data-quantity="${p.quantity}"
+                                                    data-status="<c:out value='${p.status}'/>"
+                                                    data-note="<c:out value='${p.note}'/>"><i class="fa-solid fa-pen me-1"></i>Sửa</button>
                                             <form method="post" action="/vendor/products/${p.id}/toggle"><button class="btn btn-sm btn-outline-secondary">Ẩn/Hiện</button></form>
                                         </div>
                                     </td>
@@ -212,6 +220,20 @@
                 var modal = new bootstrap.Modal(document.getElementById('productModal'));
                 modal.show();
             }
+            document.querySelectorAll('.product-edit-button').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    openEditModal(
+                        button.dataset.productId,
+                        button.dataset.bookId,
+                        button.dataset.condition,
+                        button.dataset.purchasePrice,
+                        button.dataset.sellingPrice,
+                        button.dataset.quantity,
+                        button.dataset.status,
+                        button.dataset.note
+                    );
+                });
+            });
             </script>
         </main>
     </div>

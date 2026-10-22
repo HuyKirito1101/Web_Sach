@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Address;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.CustomerProfileService;
@@ -37,12 +38,17 @@ public class CustomerProfileController {
     public String updateProfile(@RequestParam("fullName") String fullName,
                                 @RequestParam(value = "phone", required = false) String phone,
                                 @RequestParam(value = "avatarUrl", required = false) String avatarUrl,
-                                Authentication authentication) {
+                                Authentication authentication,
+                                RedirectAttributes redirectAttributes) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
-        if (user != null) {
+        try {
+            if (user == null) return "redirect:/auth/login";
             profileService.updateProfile(user, fullName, phone, avatarUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật thông tin cá nhân.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/profile?updated=true";
+        return "redirect:/profile";
     }
 
     @PostMapping("/address/add")
@@ -53,10 +59,15 @@ public class CustomerProfileController {
                              @RequestParam(value = "district", required = false) String district,
                              @RequestParam("city") String city,
                              @RequestParam(value = "isDefault", defaultValue = "false") Boolean isDefault,
-                             Authentication authentication) {
+                             Authentication authentication,
+                             RedirectAttributes redirectAttributes) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
-        if (user != null) {
+        try {
+            if (user == null) return "redirect:/auth/login";
             profileService.addAddress(user, recipientName, phone, street, ward, district, city, isDefault);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã thêm địa chỉ nhận hàng.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/profile";
     }
@@ -73,10 +84,14 @@ public class CustomerProfileController {
 
     @PostMapping("/address/set-default")
     public String setDefaultAddress(@RequestParam("addressId") Long addressId,
-                                   Authentication authentication) {
+                                   Authentication authentication,
+                                   RedirectAttributes redirectAttributes) {
         User user = userService.findByEmail(authentication.getName()).orElse(null);
-        if (user != null) {
+        try {
+            if (user == null) return "redirect:/auth/login";
             profileService.setDefaultAddress(user, addressId);
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/profile";
     }

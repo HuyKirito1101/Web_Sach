@@ -23,10 +23,10 @@
                 <c:forEach var="vp" items="${viewedProducts}">
                     <div class="col">
                         <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
-                            <img src="${vp.book.coverUrl != null ? vp.book.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}" class="card-img-top" alt="${vp.book.title}" style="height: 220px; object-fit: cover;">
+                            <img src="<c:out value='${vp.book.coverUrl != null ? vp.book.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>" class="card-img-top" alt="<c:out value='${vp.book.title}'/>" style="height: 220px; object-fit: cover;">
                             <div class="card-body d-flex flex-column p-3">
-                                <h6 class="card-title fw-bold text-dark text-truncate mb-1">${vp.book.title}</h6>
-                                <small class="text-muted mb-2">${vp.book.author != null ? vp.book.author.name : 'Nhiều tác giả'}</small>
+                                <h6 class="card-title fw-bold text-dark text-truncate mb-1"><c:out value="${vp.book.title}"/></h6>
+                                <small class="text-muted mb-2"><c:out value="${vp.book.author != null ? vp.book.author.name : 'Nhiều tác giả'}"/></small>
                                 <div class="mt-auto">
                                     <a href="/books/${vp.book.id}" class="btn btn-warning btn-sm w-100 rounded-pill fw-bold text-dark">
                                         <i class="fa-solid fa-eye me-1"></i>Xem Chi Tiết

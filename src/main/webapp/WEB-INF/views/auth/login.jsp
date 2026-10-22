@@ -6,8 +6,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Đăng Nhập - Hệ Thống Quản Lý Sách Cũ</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" integrity="sha384-blOohCVdhjmtROpu8+CfTnUWham9nkX7P7OZQMst+RUnhtoY/9qemFAkIKOYxDI3" crossorigin="anonymous">
     <style>
         body {
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -36,13 +36,13 @@
 
         <c:if test="${not empty errorMessage}">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>${errorMessage}
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>
             </div>
         </c:if>
 
         <c:if test="${not empty successMessage}">
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
             </div>
         </c:if>
 
@@ -69,13 +69,6 @@
             <p class="small text-muted mb-0">Chưa có tài khoản? <a href="/auth/register" class="text-primary fw-bold">Đăng ký ngay</a></p>
         </div>
 
-        <div class="mt-3 text-center border-top pt-3">
-            <span class="badge bg-secondary p-2">Dev Accounts:</span>
-            <div class="small text-muted mt-1">
-                Admin: <b>admin@websachcu.vn</b> / 123456<br>
-                Manager: <b>manager@websachcu.vn</b> / 123456
-            </div>
-        </div>
     </div>
 </body>
 </html>

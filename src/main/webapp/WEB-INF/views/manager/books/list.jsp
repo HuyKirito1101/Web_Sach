@@ -35,9 +35,15 @@
                 </div>
             </div>
 
-            <c:if test="${param.bookAdded != null}">
+            <c:if test="${not empty successMessage}">
                 <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4">
-                    <i class="fa-solid fa-circle-check me-2"></i><strong>Đã thêm đầu sách mới thành công!</strong> Bây giờ bạn có thể chọn đầu sách này để nhập kho.
+                    <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+            <c:if test="${not empty errorMessage}">
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
@@ -62,17 +68,17 @@
                                 <c:forEach var="c" items="${copies}">
                                     <tr>
                                         <td>
-                                            <img src="${c.imageUrl != null ? c.imageUrl : c.book.coverUrl}" class="rounded" width="50" height="65" style="object-fit: cover;" alt="Book Cover">
+                                            <img src="<c:out value='${c.imageUrl != null ? c.imageUrl : c.book.coverUrl}'/>" class="rounded" width="50" height="65" style="object-fit: cover;" alt="Book Cover">
                                         </td>
                                         <td>
-                                            <div class="fw-bold text-dark">${c.book.title}</div>
-                                            <span class="text-muted small">ISBN: ${c.book.isbn}</span>
+                                            <div class="fw-bold text-dark"><c:out value="${c.book.title}"/></div>
+                                            <span class="text-muted small">ISBN: <c:out value="${c.book.isbn}"/></span>
                                         </td>
                                         <td>
                                             <span class="badge ${c.conditionRating == 'LIKE_NEW' ? 'bg-success' : (c.conditionRating == 'VERY_GOOD' ? 'bg-primary' : (c.conditionRating == 'GOOD' ? 'bg-info text-dark' : 'bg-warning text-dark'))}">
                                                 ${c.conditionRating}
                                             </span>
-                                            <div class="small text-muted mt-1">${c.note}</div>
+                                            <div class="small text-muted mt-1"><c:out value="${c.note}"/></div>
                                         </td>
                                         <td class="text-muted"><fmt:formatNumber value="${c.purchasePrice}" pattern="#,##0 ₫" /></td>
                                         <td class="fw-bold text-success"><fmt:formatNumber value="${c.sellingPrice}" pattern="#,##0 ₫" /></td>
@@ -127,7 +133,7 @@
                                         <select name="categoryId" class="form-select">
                                             <option value="">-- Chọn danh mục --</option>
                                             <c:forEach var="cat" items="${categories}">
-                                                <option value="${cat.id}">${cat.name}</option>
+                                                <option value="${cat.id}"><c:out value="${cat.name}"/></option>
                                             </c:forEach>
                                         </select>
                                     </div>
@@ -164,7 +170,7 @@
                                     </div>
                                     <select name="bookId" class="form-select" required>
                                         <c:forEach var="b" items="${allBooks}">
-                                            <option value="${b.id}">${b.title} (ISBN: ${b.isbn != null ? b.isbn : 'N/A'})</option>
+                                            <option value="${b.id}"><c:out value="${b.title}"/> (ISBN: <c:out value="${b.isbn != null ? b.isbn : 'N/A'}"/>)</option>
                                         </c:forEach>
                                     </select>
                                 </div>

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.repository.AuthorRepository;
@@ -54,32 +55,38 @@ public class ManagerBookController {
     public String saveBookCopy(@ModelAttribute("copyForm") BookCopy bookCopy,
                                @RequestParam("bookId") Long bookId,
                                @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
-                               Authentication authentication) {
-        String email = authentication.getName();
-        Long branchId = managerAccessService.requireManagedBranch(email).getId();
+                               Authentication authentication,
+                               RedirectAttributes redirect) {
+        try {
+            String email = authentication.getName();
+            Long branchId = managerAccessService.requireManagedBranch(email).getId();
 
-        if (bookCopy.getId() != null) {
-            managerAccessService.requireCopyInBranch(email, bookCopy.getId());
+            if (bookCopy.getId() != null) {
+                managerAccessService.requireCopyInBranch(email, bookCopy.getId());
+            }
+
+            Book book = bookService.findById(bookId).orElseThrow(() -> new RuntimeException("Đầu sách không tồn tại"));
+            Branch branch = branchService.findById(branchId).orElseThrow(() -> new RuntimeException("Chi nhánh không tồn tại"));
+
+            bookCopy.setBook(book);
+            bookCopy.setBranch(branch);
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = cloudinaryService.uploadFile(imageFile);
+                bookCopy.setImageUrl(imageUrl);
+            }
+
+            if (bookCopy.getId() == null) {
+                bookCopyService.saveCopy(bookCopy);
+            } else {
+                bookCopyService.updateCopy(bookCopy.getId(), bookCopy);
+            }
+            redirect.addFlashAttribute("successMessage", "Đã lưu bản sách thành công.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
 
-        Book book = bookService.findById(bookId).orElseThrow(() -> new RuntimeException("Đầu sách không tồn tại"));
-        Branch branch = branchService.findById(branchId).orElseThrow(() -> new RuntimeException("Chi nhánh không tồn tại"));
-
-        bookCopy.setBook(book);
-        bookCopy.setBranch(branch);
-
-        if (imageFile != null && !imageFile.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadFile(imageFile);
-            bookCopy.setImageUrl(imageUrl);
-        }
-
-        if (bookCopy.getId() == null) {
-            bookCopyService.saveCopy(bookCopy);
-        } else {
-            bookCopyService.updateCopy(bookCopy.getId(), bookCopy);
-        }
-
-        return "redirect:/manager/books?success";
+        return "redirect:/manager/books";
     }
 
     @PostMapping("/create-master-book")
@@ -90,42 +97,49 @@ public class ManagerBookController {
                                    @RequestParam(value = "publishYear", required = false) Integer publishYear,
                                    @RequestParam(value = "categoryId", required = false) Long categoryId,
                                    @RequestParam(value = "coverUrl", required = false) String coverUrl,
-                                   @RequestParam(value = "coverFile", required = false) MultipartFile coverFile) {
+                                   @RequestParam(value = "coverFile", required = false) MultipartFile coverFile,
+                                   RedirectAttributes redirect) {
+        try {
+            String finalCover = coverUrl;
+            if (coverFile != null && !coverFile.isEmpty()) {
+                // Upload trước khi ghi Author/Publisher để tránh dữ liệu dở dang
+                // nếu Cloudinary gặp lỗi.
+                finalCover = cloudinaryService.uploadFile(coverFile);
+            }
+            if (finalCover == null || finalCover.trim().isEmpty()) {
+                finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
+            }
 
-        Category category = (categoryId != null) ? categoryService.findById(categoryId).orElse(null) : null;
-        Author author = null;
-        if (authorName != null && !authorName.trim().isEmpty()) {
-            author = authorRepository.findByName(authorName.trim()).orElseGet(() ->
-                    authorRepository.save(Author.builder().name(authorName.trim()).build())
-            );
-        }
-        Publisher publisher = null;
-        if (publisherName != null && !publisherName.trim().isEmpty()) {
-            publisher = publisherRepository.findByName(publisherName.trim()).orElseGet(() ->
-                    publisherRepository.save(Publisher.builder().name(publisherName.trim()).build())
-            );
-        }
+            Category category = (categoryId != null) ? categoryService.findById(categoryId).orElse(null) : null;
+            Author author = null;
+            if (authorName != null && !authorName.trim().isEmpty()) {
+                author = authorRepository.findByName(authorName.trim()).orElseGet(() ->
+                        authorRepository.save(Author.builder().name(authorName.trim()).build())
+                );
+            }
+            Publisher publisher = null;
+            if (publisherName != null && !publisherName.trim().isEmpty()) {
+                publisher = publisherRepository.findByName(publisherName.trim()).orElseGet(() ->
+                        publisherRepository.save(Publisher.builder().name(publisherName.trim()).build())
+                );
+            }
 
-        String finalCover = coverUrl;
-        if (coverFile != null && !coverFile.isEmpty()) {
-            finalCover = cloudinaryService.uploadFile(coverFile);
-        }
-        if (finalCover == null || finalCover.trim().isEmpty()) {
-            finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
-        }
+            Book book = Book.builder()
+                    .title(title)
+                    .isbn(isbn)
+                    .author(author)
+                    .publisher(publisher)
+                    .publishYear(publishYear)
+                    .category(category)
+                    .coverUrl(finalCover)
+                    .build();
 
-        Book book = Book.builder()
-                .title(title)
-                .isbn(isbn)
-                .author(author)
-                .publisher(publisher)
-                .publishYear(publishYear)
-                .category(category)
-                .coverUrl(finalCover)
-                .build();
-
-        bookService.saveBook(book);
-        return "redirect:/manager/books?bookAdded=true";
+            bookService.saveBook(book);
+            redirect.addFlashAttribute("successMessage", "Đã thêm đầu sách mới thành công.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/manager/books";
     }
 
     @PostMapping("/delete/{id}")

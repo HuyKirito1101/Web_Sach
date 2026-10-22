@@ -18,7 +18,7 @@
 
     <c:if test="${not empty successMessage}">
         <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+            <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </c:if>
@@ -76,7 +76,7 @@
                                 <span class="fw-bold text-dark me-2">
                                     <i class="fa-solid fa-hashtag text-muted me-1"></i>${o.orderCode}
                                 </span>
-                                <small class="text-muted"><i class="fa-solid fa-store me-1"></i>${o.branch.name}</small>
+                                <small class="text-muted"><i class="fa-solid fa-store me-1"></i><c:out value="${o.branch.name}"/></small>
                             </div>
                             <!-- Status badge với màu theo trạng thái -->
                             <c:choose>
@@ -158,8 +158,8 @@
 
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <p class="mb-1 text-secondary small"><strong>Người nhận:</strong> ${o.receiverName} - ${o.receiverPhone}</p>
-                                <p class="mb-1 text-secondary small"><strong>Địa chỉ:</strong> ${o.shippingAddress}</p>
+                                <p class="mb-1 text-secondary small"><strong>Người nhận:</strong> <c:out value="${o.receiverName}"/> - <c:out value="${o.receiverPhone}"/></p>
+                                <p class="mb-1 text-secondary small"><strong>Địa chỉ:</strong> <c:out value="${o.shippingAddress}"/></p>
                                 <p class="mb-0 text-muted small"><strong>Thanh toán:</strong> ${o.paymentMethod} (<span class="${o.paymentStatus == 'PAID' ? 'text-success' : 'text-warning'}">${o.paymentStatus}</span>)</p>
                             </div>
                             <div class="col-md-4 text-md-end mt-2 mt-md-0">

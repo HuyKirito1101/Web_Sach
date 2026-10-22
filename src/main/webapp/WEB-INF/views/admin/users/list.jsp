@@ -15,21 +15,21 @@
                 <h3 class="fw-bold mb-0"><i class="fa-solid fa-users-gear text-primary me-2"></i>Quản Lý Người Dùng & Phân Quyền</h3>
                 
                 <form action="/admin/users" method="get" class="d-flex gap-2">
-                    <input type="text" name="keyword" class="form-control" placeholder="Tìm theo tên, email, sđt..." value="${keyword}" />
+                    <input type="text" name="keyword" class="form-control" placeholder="Tìm theo tên, email, sđt..." value="<c:out value='${keyword}'/>" />
                     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
                 </form>
             </div>
 
             <c:if test="${not empty successMessage}">
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-circle-check me-2"></i>${successMessage}
+                    <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
 
             <c:if test="${not empty errorMessage}">
                 <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="fa-solid fa-triangle-exclamation me-2"></i>${errorMessage}
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             </c:if>
@@ -54,15 +54,15 @@
                                 <c:forEach var="u" items="${users}">
                                     <tr>
                                         <td>${u.id}</td>
-                                        <td class="fw-bold">${u.fullName}</td>
-                                        <td>${u.email}</td>
-                                        <td>${u.phone}</td>
+                                        <td class="fw-bold"><c:out value="${u.fullName}"/></td>
+                                        <td><c:out value="${u.email}"/></td>
+                                        <td><c:out value="${u.phone}"/></td>
                                         <td>
                                             <span class="badge ${u.role.name == 'ROLE_ADMIN' ? 'bg-danger' : (u.role.name == 'ROLE_MANAGER' ? 'bg-warning text-dark' : 'bg-primary')}">
-                                                ${u.role.name}
+                                                <c:out value="${u.role.name}"/>
                                             </span>
                                         </td>
-                                        <td>${u.branch != null ? u.branch.name : '-'}</td>
+                                        <td><c:out value="${u.branch != null ? u.branch.name : '-'}"/></td>
                                         <td>
                                             <span class="badge ${u.status == 'ACTIVE' ? 'bg-success' : (u.status == 'LOCKED' ? 'bg-danger' : 'bg-secondary')}">
                                                 ${u.status}
@@ -82,7 +82,7 @@
                                                     </button>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng [${u.fullName}] khỏi hệ thống?')">
+                                                    <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này khỏi hệ thống?')">
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa người dùng">
                                                             <i class="fa-solid fa-trash me-1"></i>Xóa
                                                         </button>
@@ -99,7 +99,7 @@
                                                 <form action="/admin/users/update-role-status" method="post">
                                                     <input type="hidden" name="userId" value="${u.id}" />
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: ${u.fullName}</h5>
+                                                        <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: <c:out value="${u.fullName}"/></h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body">
@@ -107,7 +107,7 @@
                                                             <label class="form-label">Chọn Role</label>
                                                             <select name="roleId" class="form-select">
                                                                 <c:forEach var="r" items="${roles}">
-                                                                    <option value="${r.id}" ${u.role.id == r.id ? 'selected' : ''}>${r.name}</option>
+                                                                    <option value="${r.id}" ${u.role.id == r.id ? 'selected' : ''}><c:out value="${r.name}"/></option>
                                                                 </c:forEach>
                                                             </select>
                                                         </div>
@@ -117,7 +117,7 @@
                                                             <select name="branchId" class="form-select">
                                                                 <option value="">-- Không chọn --</option>
                                                                 <c:forEach var="b" items="${branches}">
-                                                                    <option value="${b.id}" ${u.branch != null && u.branch.id == b.id ? 'selected' : ''}>${b.name}</option>
+                                                                    <option value="${b.id}" ${u.branch != null && u.branch.id == b.id ? 'selected' : ''}><c:out value="${b.name}"/></option>
                                                                 </c:forEach>
                                                             </select>
                                                         </div>

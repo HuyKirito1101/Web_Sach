@@ -21,7 +21,8 @@ public class OtpToken {
     @Column(nullable = false, length = 150)
     private String email;
 
-    @Column(nullable = false, length = 10)
+    // Chỉ lưu BCrypt hash, không lưu OTP dạng rõ trong database.
+    @Column(nullable = false, length = 100)
     private String otpCode;
 
     @Column(nullable = false)

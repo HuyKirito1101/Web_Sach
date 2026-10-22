@@ -41,11 +41,11 @@
                                     <tr>
                                         <td class="fw-bold text-primary"><code>${t.transferCode}</code></td>
                                         <td>
-                                            <div class="fw-bold">${t.bookCopy.book.title}</div>
+                                            <div class="fw-bold"><c:out value="${t.bookCopy.book.title}"/></div>
                                             <span class="badge bg-secondary">${t.bookCopy.conditionRating}</span>
                                         </td>
-                                        <td>${t.fromBranch.name}</td>
-                                        <td>${t.toBranch.name}</td>
+                                        <td><c:out value="${t.fromBranch.name}"/></td>
+                                        <td><c:out value="${t.toBranch.name}"/></td>
                                         <td class="fw-bold text-dark fs-6">${t.quantity}</td>
                                         <td>
                                             <span class="badge ${t.status == 'COMPLETED' ? 'bg-success' : (t.status == 'PENDING' ? 'bg-warning text-dark' : 'bg-info')}">
@@ -54,11 +54,17 @@
                                         </td>
                                         <td class="text-end">
                                             <c:if test="${t.status == 'PENDING' && t.fromBranch.id == currentBranchId}">
-                                                <a href="/manager/transfers/approve/${t.id}" class="btn btn-sm btn-success me-1"><i class="fa-solid fa-check me-1"></i> Duyệt Chuyển</a>
-                                                <a href="/manager/transfers/reject/${t.id}" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-xmark"></i> Từ Chối</a>
+                                                <form action="/manager/transfers/approve/${t.id}" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-success me-1"><i class="fa-solid fa-check me-1"></i> Duyệt Chuyển</button>
+                                                </form>
+                                                <form action="/manager/transfers/reject/${t.id}" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-xmark"></i> Từ Chối</button>
+                                                </form>
                                             </c:if>
                                             <c:if test="${t.status == 'SHIPPING' && t.toBranch.id == currentBranchId}">
-                                                <a href="/manager/transfers/complete/${t.id}" class="btn btn-sm btn-primary"><i class="fa-solid fa-box-open me-1"></i> Xác Nhận Nhận Sách</a>
+                                                <form action="/manager/transfers/complete/${t.id}" method="post" class="d-inline">
+                                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-box-open me-1"></i> Xác Nhận Nhận Sách</button>
+                                                </form>
                                             </c:if>
                                         </td>
                                     </tr>
@@ -85,7 +91,7 @@
                                     <select name="toBranchId" class="form-select" required>
                                         <c:forEach var="b" items="${branches}">
                                             <c:if test="${b.id != currentBranchId}">
-                                                <option value="${b.id}">${b.name}</option>
+                                                <option value="${b.id}"><c:out value="${b.name}"/></option>
                                             </c:if>
                                         </c:forEach>
                                     </select>
@@ -95,7 +101,7 @@
                                     <label class="form-label">Chọn Sách Cũ Điều Chuyển</label>
                                     <select name="bookCopyId" class="form-select" required>
                                         <c:forEach var="c" items="${copies}">
-                                            <option value="${c.id}">${c.book.title} (Tình trạng: ${c.conditionRating} - Còn tồn: ${c.quantity})</option>
+                                            <option value="${c.id}"><c:out value="${c.book.title}"/> (Tình trạng: <c:out value="${c.conditionRating}"/> - Còn tồn: ${c.quantity})</option>
                                         </c:forEach>
                                     </select>
                                 </div>

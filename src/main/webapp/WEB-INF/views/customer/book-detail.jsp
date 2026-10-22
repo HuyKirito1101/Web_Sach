@@ -12,9 +12,9 @@
             <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
             <li class="breadcrumb-item"><a href="/books">Sách Cũ</a></li>
             <c:if test="${book.category != null}">
-                <li class="breadcrumb-item"><a href="/books?categoryId=${book.category.id}">${book.category.name}</a></li>
+                <li class="breadcrumb-item"><a href="/books?categoryId=${book.category.id}"><c:out value="${book.category.name}"/></a></li>
             </c:if>
-            <li class="breadcrumb-item active" aria-current="page">${book.title}</li>
+            <li class="breadcrumb-item active" aria-current="page"><c:out value="${book.title}"/></li>
         </ol>
     </nav>
 
@@ -27,7 +27,7 @@
     </c:if>
     <c:if test="${param.reviewError != null}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fa-solid fa-circle-exclamation me-2"></i>${param.reviewError}
+            <i class="fa-solid fa-circle-exclamation me-2"></i><c:out value="${param.reviewError}"/>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </c:if>
@@ -36,8 +36,8 @@
         <!-- Book Cover -->
         <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-3 p-2 text-center">
-                <img src="${book.coverUrl != null ? book.coverUrl : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'}"
-                     class="img-fluid rounded-3" style="max-height: 420px; object-fit: contain;" alt="${book.title}"
+                <img src="<c:out value='${book.coverUrl != null ? book.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
+                     class="img-fluid rounded-3" style="max-height: 420px; object-fit: contain;" alt="<c:out value='${book.title}'/>"
                      onerror="this.src='https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400'">
             </div>
 
@@ -73,26 +73,26 @@
         <!-- Book Info -->
         <div class="col-md-8">
             <div class="card border-0 shadow-sm rounded-3 p-4">
-                <h3 class="fw-bold mb-2">${book.title}</h3>
+                <h3 class="fw-bold mb-2"><c:out value="${book.title}"/></h3>
                 <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
                     <span class="text-warning fw-bold">
                         <c:forEach begin="1" end="${avgRating}"><i class="fa-solid fa-star"></i></c:forEach>
                         ${avgRating} / 5
                     </span>
                     <span class="text-muted">(${reviewCount} đánh giá)</span>
-                    <span class="badge bg-secondary">${book.category != null ? book.category.name : 'Sách Cũ'}</span>
+                    <span class="badge bg-secondary"><c:out value="${book.category != null ? book.category.name : 'Sách Cũ'}"/></span>
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col-6"><p class="mb-1 text-muted"><strong>Tác giả:</strong> ${book.author != null ? book.author.name : 'Không rõ'}</p></div>
-                    <div class="col-6"><p class="mb-1 text-muted"><strong>NXB:</strong> ${book.publisher != null ? book.publisher.name : 'Không rõ'}</p></div>
+                    <div class="col-6"><p class="mb-1 text-muted"><strong>Tác giả:</strong> <c:out value="${book.author != null ? book.author.name : 'Không rõ'}"/></p></div>
+                    <div class="col-6"><p class="mb-1 text-muted"><strong>NXB:</strong> <c:out value="${book.publisher != null ? book.publisher.name : 'Không rõ'}"/></p></div>
                     <div class="col-6"><p class="mb-1 text-muted"><strong>Năm xuất bản:</strong> ${book.publishYear != null ? book.publishYear : 'Không rõ'}</p></div>
-                    <div class="col-6"><p class="mb-1 text-muted"><strong>Mã ISBN:</strong> ${book.isbn != null ? book.isbn : 'N/A'}</p></div>
+                    <div class="col-6"><p class="mb-1 text-muted"><strong>Mã ISBN:</strong> <c:out value="${book.isbn != null ? book.isbn : 'N/A'}"/></p></div>
                 </div>
 
                 <div class="mb-4">
                     <h6 class="fw-bold">Mô tả sản phẩm:</h6>
-                    <p class="text-muted">${book.description != null ? book.description : 'Chưa có mô tả chi tiết cho cuốn sách này.'}</p>
+                    <p class="text-muted"><c:out value="${book.description != null ? book.description : 'Chưa có mô tả chi tiết cho cuốn sách này.'}"/></p>
                 </div>
 
                 <!-- Thêm vào giỏ hàng nhanh (nếu có copy) -->
@@ -138,13 +138,13 @@
                             <c:forEach var="cp" items="${copies}">
                                 <tr>
                                     <td>
-                                        <div class="fw-bold text-primary"><i class="fa-solid fa-store me-2"></i>${cp.branch.name}</div>
+                                        <div class="fw-bold text-primary"><i class="fa-solid fa-store me-2"></i><c:out value="${cp.branch.name}"/></div>
                                         <c:if test="${cp.seller != null}">
-                                            <span class="badge bg-secondary font-monospace mt-1"><i class="fa-solid fa-user-tie me-1"></i>${cp.seller.fullName}</span>
+                                            <span class="badge bg-secondary font-monospace mt-1"><i class="fa-solid fa-user-tie me-1"></i><c:out value="${cp.seller.fullName}"/></span>
                                         </c:if>
                                     </td>
                                     <td><span class="badge bg-info text-dark">${cp.conditionRating}</span></td>
-                                    <td class="small text-muted">${cp.note != null ? cp.note : 'Không có'}</td>
+                                    <td class="small text-muted"><c:out value="${cp.note != null ? cp.note : 'Không có'}"/></td>
                                     <td class="fw-bold text-danger">
                                         <fmt:formatNumber value="${cp.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
                                     </td>
@@ -203,7 +203,7 @@
 
         <c:if test="${not empty param.reviewError}">
             <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi gửi đánh giá:</strong> ${param.reviewError}
+                <i class="fa-solid fa-triangle-exclamation me-2"></i><strong>Lỗi gửi đánh giá:</strong> <c:out value="${param.reviewError}"/>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         </c:if>
@@ -305,19 +305,18 @@
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="fw-bold text-dark">${rev.user.fullName}</span>
+                                    <span class="fw-bold text-dark"><c:out value="${rev.user.fullName}"/></span>
                                     <span class="text-warning small">
                                         <c:forEach begin="1" end="${rev.rating}"><i class="fa-solid fa-star"></i></c:forEach>
                                         (${rev.rating}/5)
                                     </span>
                                 </div>
-                                <p class="mb-2 text-secondary">${rev.comment}</p>
+                                <p class="mb-2 text-secondary"><c:out value="${rev.comment}"/></p>
                                 <!-- Hình ảnh đính kèm -->
                                 <c:if test="${rev.imageUrl != null && !rev.imageUrl.isEmpty()}">
                                     <div class="mb-2">
-                                        <img src="${rev.imageUrl}" alt="Ảnh đánh giá"
-                                             class="rounded-3 border" style="max-height:200px; max-width:300px; object-fit:cover; cursor:pointer;"
-                                             onclick="window.open('${rev.imageUrl}','_blank')"
+                                        <img src="<c:out value='${rev.imageUrl}'/>" alt="Ảnh đánh giá"
+                                             class="rounded-3 border" style="max-height:200px; max-width:300px; object-fit:cover;"
                                              onerror="this.style.display='none'">
                                     </div>
                                 </c:if>

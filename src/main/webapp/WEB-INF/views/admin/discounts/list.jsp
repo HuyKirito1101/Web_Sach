@@ -38,7 +38,7 @@
                                 <c:forEach var="d" items="${discounts}">
                                     <tr>
                                         <td>${d.id}</td>
-                                        <td class="fw-bold text-primary"><code>${d.code}</code></td>
+                                        <td class="fw-bold text-primary"><code><c:out value="${d.code}"/></code></td>
                                         <td class="fw-bold text-success">${d.discountPercent}%</td>
                                         <td><fmt:formatNumber value="${d.maxDiscountAmount}" pattern="#,##0 ₫" /></td>
                                         <td><fmt:formatNumber value="${d.minOrderValue}" pattern="#,##0 ₫" /></td>

@@ -22,23 +22,43 @@ public class AdminBranchController {
     @GetMapping
     public String listBranches(Model model) {
         model.addAttribute("branches", branchService.findAllBranches());
+        model.addAttribute("branchStatuses", BranchStatus.values());
         model.addAttribute("branchForm", new Branch());
         return "admin/branches/list";
     }
 
     @PostMapping("/save")
     public String saveBranch(@ModelAttribute("branchForm") Branch branch,
-                             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
-        if (imageFile != null && !imageFile.isEmpty()) {
-            String imageUrl = cloudinaryService.uploadFile(imageFile);
-            branch.setImageUrl(imageUrl);
+                             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+                             RedirectAttributes redirect) {
+        try {
+            if (branch.getName() == null || branch.getName().isBlank()) {
+                throw new IllegalArgumentException("Tên chi nhánh không được để trống.");
+            }
+            if (branch.getAddress() == null || branch.getAddress().isBlank()) {
+                throw new IllegalArgumentException("Địa chỉ chi nhánh không được để trống.");
+            }
+            if (branch.getAppDiscountPercent() != null
+                    && (branch.getAppDiscountPercent() < 0 || branch.getAppDiscountPercent() > 100)) {
+                throw new IllegalArgumentException("Chiết khấu ứng dụng phải nằm trong khoảng 0 đến 100%.");
+            }
+            branch.setName(branch.getName().trim());
+            branch.setAddress(branch.getAddress().trim());
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+                String imageUrl = cloudinaryService.uploadFile(imageFile);
+                branch.setImageUrl(imageUrl);
+            }
+            if (branch.getId() == null) {
+                branchService.saveBranch(branch);
+            } else {
+                branchService.updateBranch(branch.getId(), branch);
+            }
+            redirect.addFlashAttribute("successMessage", "Đã lưu chi nhánh thành công.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
-        if (branch.getId() == null) {
-            branchService.saveBranch(branch);
-        } else {
-            branchService.updateBranch(branch.getId(), branch);
-        }
-        return "redirect:/admin/branches?success";
+        return "redirect:/admin/branches";
     }
 
     @PostMapping("/delete/{id}")

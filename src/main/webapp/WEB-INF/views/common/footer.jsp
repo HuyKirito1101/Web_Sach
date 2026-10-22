@@ -81,15 +81,39 @@
     </footer>
 
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
     <!-- SockJS & Stomp JS cho WebSocket -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" integrity="sha384-svdnwiXBL+Js+yUneJSRFy24NgGiOfDM/vkQl/vCeVrcbYD6yW8EwPr1FnxTEZsR" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js" integrity="sha384-clKAk7WaYNQiu/pGVWisoFQcSK2VL7YweoI1gim9/HFbMsRvD2ZtLWNoZoL4df65" crossorigin="anonymous"></script>
 
     <script>
+        // Gắn CSRF token cho mọi form POST thường và form được tạo động.
+        (function () {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            const parameter = document.querySelector('meta[name="csrf-parameter"]')?.content;
+            if (!token || !parameter) return;
+
+            function ensureCsrf(form) {
+                if ((form.method || 'get').toLowerCase() !== 'post') return;
+                let input = form.querySelector('input[data-csrf-token="true"]');
+                if (!input) {
+                    input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.dataset.csrfToken = 'true';
+                    form.appendChild(input);
+                }
+                input.name = parameter;
+                input.value = token;
+            }
+
+            document.querySelectorAll('form').forEach(ensureCsrf);
+            document.addEventListener('submit', event => ensureCsrf(event.target), true);
+        })();
+
         // Kết nối WebSocket Real-time
+        <c:if test="${pageContext.request.userPrincipal != null}">
         try {
             var socket = new SockJS('/ws');
             var stompClient = Stomp.over(socket);
@@ -108,6 +132,7 @@
         } catch (e) {
             console.log('WebSocket connect error:', e);
         }
+        </c:if>
 
         function showToastNotification(text) {
             var badge = document.getElementById('wsBadge');

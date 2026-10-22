@@ -16,15 +16,15 @@
                     <div class="card border-0 shadow-sm rounded-3">
                         <div class="card-body p-4">
                             <h5 class="fw-bold mb-3 border-bottom pb-2"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i>Thông tin giao hàng</h5>
-                            <p class="mb-1"><strong>Người nhận:</strong> ${order.receiverName}</p>
-                            <p class="mb-1"><strong>SĐT:</strong> ${order.receiverPhone}</p>
-                            <p class="mb-3"><strong>Địa chỉ:</strong> ${order.shippingAddress}</p>
+                            <p class="mb-1"><strong>Người nhận:</strong> <c:out value="${order.receiverName}"/></p>
+                            <p class="mb-1"><strong>SĐT:</strong> <c:out value="${order.receiverPhone}"/></p>
+                            <p class="mb-3"><strong>Địa chỉ:</strong> <c:out value="${order.shippingAddress}"/></p>
 
                             <hr>
                             <p class="mb-2"><strong>Phương thức giao:</strong></p>
                             <c:choose>
                                 <c:when test="${order.shippingProvider != null}">
-                                    <div class="fw-bold text-dark mb-1">${order.shippingProvider.name}</div>
+                                    <div class="fw-bold text-dark mb-1"><c:out value="${order.shippingProvider.name}"/></div>
                                     <c:choose>
                                         <c:when test="${order.shippingProvider.code == 'GHN_EXPRESS'}">
                                             <span class="badge bg-danger me-1"><i class="fa-solid fa-bolt me-1"></i>GHN Hỏa Tốc (Trong tỉnh)</span>
@@ -70,7 +70,7 @@
                                     <tbody>
                                         <c:forEach var="i" items="${items}">
                                             <tr>
-                                                <td class="fw-bold text-dark">${i.bookCopy.book.title}</td>
+                                                <td class="fw-bold text-dark"><c:out value="${i.bookCopy.book.title}"/></td>
                                                 <td><span class="badge bg-info text-dark">${i.bookCopy.conditionRating}</span></td>
                                                 <td>${i.quantity}</td>
                                                 <td><fmt:formatNumber value="${i.price}" pattern="#,#00 ₫"/></td>
