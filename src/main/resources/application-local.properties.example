@@ -1,0 +1,19 @@
+# Sao chep file nay thanh application-local.properties tren moi may.
+# application-local.properties da duoc .gitignore, khong day mat khau len Git.
+
+# MySQL
+spring.datasource.url=jdbc:mysql://localhost:3306/web_sach_cu?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+spring.datasource.username=root
+spring.datasource.password=THAY_MAT_KHAU_MYSQL
+
+# JWT: dung chuoi ngau nhien toi thieu 32 ky tu.
+jwt.secret=THAY_KHOA_JWT_TOI_THIEU_32_KY_TU
+
+# Gmail SMTP
+spring.mail.username=THAY_EMAIL_GUI_OTP
+spring.mail.password=THAY_GMAIL_APP_PASSWORD
+
+# Cloudinary
+cloudinary.cloud-name=THAY_CLOUD_NAME
+cloudinary.api-key=THAY_API_KEY
+cloudinary.api-secret=THAY_API_SECRET
