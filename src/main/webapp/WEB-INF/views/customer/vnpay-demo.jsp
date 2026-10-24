@@ -19,6 +19,7 @@
 
         <div class="d-grid gap-2">
             <form action="/checkout/vnpay-demo-result" method="post" class="d-grid">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <input type="hidden" name="orderIds" value="<c:out value='${orderIds}'/>" />
                 <input type="hidden" name="status" value="SUCCESS" />
                 <button type="submit" class="btn btn-success btn-lg rounded-pill fw-bold">
@@ -26,6 +27,7 @@
                 </button>
             </form>
             <form action="/checkout/vnpay-demo-result" method="post" class="d-grid">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <input type="hidden" name="orderIds" value="<c:out value='${orderIds}'/>" />
                 <input type="hidden" name="status" value="FAILED" />
                 <button type="submit" class="btn btn-outline-danger rounded-pill">

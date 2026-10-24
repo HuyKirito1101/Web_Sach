@@ -17,6 +17,7 @@
             <div class="card border-0 shadow-sm rounded-3 p-4">
                 <h5 class="fw-bold mb-3 border-bottom pb-2">Thông Tin Cá Nhân</h5>
                 <form action="/profile/update" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                     <div class="mb-3">
                         <label class="form-label fw-medium small">Họ và tên</label>
                         <input type="text" name="fullName" class="form-control" value="<c:out value='${user.fullName}'/>" required maxlength="100">
@@ -62,6 +63,7 @@
                     <div class="bg-light p-3 rounded-3">
                         <h6 class="fw-bold mb-2">Thêm Địa Chỉ Mới</h6>
                         <form action="/profile/address/add" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
                                     <input type="text" name="recipientName" class="form-control form-control-sm" maxlength="100" placeholder="Tên người nhận" required>
@@ -111,11 +113,13 @@
                                     <div class="d-flex gap-1">
                                         <c:if test="${!addr.isDefault}">
                                             <form action="/profile/address/set-default" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                 <input type="hidden" name="addressId" value="${addr.id}"/>
                                                 <button type="submit" class="btn btn-outline-warning text-dark btn-sm rounded-pill px-2">Đặt mặc định</button>
                                             </form>
                                         </c:if>
                                         <form action="/profile/address/delete" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                             <input type="hidden" name="addressId" value="${addr.id}"/>
                                             <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle" title="Xóa"><i class="fa-solid fa-trash"></i></button>
                                         </form>

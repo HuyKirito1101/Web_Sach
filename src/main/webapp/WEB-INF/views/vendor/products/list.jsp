@@ -68,7 +68,8 @@
                                                     data-quantity="${p.quantity}"
                                                     data-status="<c:out value='${p.status}'/>"
                                                     data-note="<c:out value='${p.note}'/>"><i class="fa-solid fa-pen me-1"></i>Sửa</button>
-                                            <form method="post" action="/vendor/products/${p.id}/toggle"><button class="btn btn-sm btn-outline-secondary">Ẩn/Hiện</button></form>
+                                            <form method="post" action="/vendor/products/${p.id}/toggle">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-secondary">Ẩn/Hiện</button></form>
                                         </div>
                                     </td>
                                 </tr>
@@ -86,6 +87,7 @@
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <form action="/vendor/create-master-book" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header bg-success text-white">
                                 <h5 class="modal-title fw-bold"><i class="fa-solid fa-book-medical me-2"></i>Thêm Đầu Sách Mới Vẫn Chưa Có Trực Tiếp Về Hệ Thống</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -143,6 +145,7 @@
             <div class="modal fade" id="productModal">
                 <div class="modal-dialog modal-lg">
                     <form class="modal-content" method="post" action="/vendor/products/save" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                         <input type="hidden" name="id" id="productId">
                         <div class="modal-header">
                             <h5 class="modal-title fw-bold" id="modalTitle">Đăng Bán Sản Phẩm Sách Cũ</h5>

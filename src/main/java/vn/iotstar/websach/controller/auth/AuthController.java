@@ -101,6 +101,10 @@ public class AuthController {
             return "auth/verify-otp";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
+            if (e instanceof IllegalStateException
+                    && "Email đã được đăng ký và kích hoạt trong hệ thống!".equals(e.getMessage())) {
+                model.addAttribute("accountExists", true);
+            }
             return "auth/register";
         }
     }
@@ -180,7 +184,9 @@ public class AuthController {
         }
         model.addAttribute("resetRequest", req);
         if (Boolean.TRUE.equals(sent)) {
-            model.addAttribute("successMessage", "Mã xác thực OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư!");
+            model.addAttribute("successMessage",
+                    "Yêu cầu đã được tiếp nhận. Nếu email tồn tại và đang hoạt động, "
+                            + "mã OTP sẽ được gửi trong vài phút. Vui lòng kiểm tra cả thư rác.");
         }
         return "auth/reset-password";
     }

@@ -32,6 +32,27 @@ public class DataInitializer implements CommandLineRunner {
     private static final String INVALID_LEGACY_DEMO_PASSWORD_HASH =
             "$2a$10$8.UnVuG9HHgffUDAlk8qfOUVGkqRzgVym5pE6tqE/m/m14wU50y/.";
 
+    /**
+     * Chỉ các tài khoản minh họa do project tạo sẵn mới được phép đặt lại
+     * mật khẩu khi chạy ở môi trường phát triển.
+     */
+    private static final List<String> DEMO_ACCOUNT_EMAILS = List.of(
+            "admin@websachcu.vn",
+            "manager@websachcu.vn",
+            "user@websachcu.vn",
+            "vendor.thuduc1@websachcu.vn",
+            "vendor.thuduc2@websachcu.vn",
+            "vendor.phunhuan1@websachcu.vn",
+            "vendor.quan1_1@websachcu.vn",
+            "vendor.quan1_2@websachcu.vn",
+            "shipper.thuduc1@websachcu.vn",
+            "shipper.thuduc2@websachcu.vn",
+            "shipper.thuduc3@websachcu.vn",
+            "shipper.quan1_1@websachcu.vn",
+            "shipper.quan1_2@websachcu.vn",
+            "shipper.quan1_3@websachcu.vn"
+    );
+
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final BranchRepository branchRepository;
@@ -52,6 +73,9 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.demo-data.enabled:false}")
     private boolean demoDataEnabled;
 
+    @Value("${app.demo-accounts.reset-passwords:false}")
+    private boolean resetDemoAccountPasswords;
+
     @Override
     public void run(String... args) throws Exception {
         // Role là dữ liệu hệ thống bắt buộc, không phải dữ liệu demo.
@@ -60,6 +84,10 @@ public class DataInitializer implements CommandLineRunner {
                     roleRepository.save(Role.builder().name(roleName)
                             .description("Role " + roleName.name()).build())
             );
+        }
+
+        if (resetDemoAccountPasswords) {
+            resetExistingDemoAccountPasswords();
         }
 
         if (!demoDataEnabled) {
@@ -584,6 +612,36 @@ public class DataInitializer implements CommandLineRunner {
                     userRepository.save(user);
                     log.info("Đã sửa mật khẩu tài khoản mẫu: {}", user.getEmail());
                 });
+    }
+
+    /**
+     * Dành riêng cho môi trường local/demo. Không đặt lại tất cả người dùng và
+     * không nhận email từ request, nhờ đó tài khoản thật không bị ảnh hưởng.
+     */
+    private void resetExistingDemoAccountPasswords() {
+        int updated = 0;
+        for (String email : DEMO_ACCOUNT_EMAILS) {
+            Optional<User> userOptional = userRepository.findByEmail(email);
+            if (userOptional.isEmpty()) {
+                continue;
+            }
+
+            User user = userOptional.get();
+            boolean changed = false;
+            if (!passwordEncoder.matches("123456", user.getPassword())) {
+                user.setPassword(passwordEncoder.encode("123456"));
+                changed = true;
+            }
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                user.setStatus(UserStatus.ACTIVE);
+                changed = true;
+            }
+            if (changed) {
+                userRepository.save(user);
+                updated++;
+            }
+        }
+        log.info("Đã đồng bộ mật khẩu cho {} tài khoản demo local.", updated);
     }
 
     /**

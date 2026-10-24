@@ -73,6 +73,7 @@
                                                 <i class="fa-solid fa-user-pen"></i> Sửa Role
                                             </button>
                                             <form action="/admin/users/toggle-lock/${u.id}" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                 <button class="btn btn-sm ${u.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1" title="${u.status == 'LOCKED' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}"><i class="fa-solid ${u.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i></button>
                                             </form>
                                             <c:choose>
@@ -83,6 +84,7 @@
                                                 </c:when>
                                                 <c:otherwise>
                                                     <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này khỏi hệ thống?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa người dùng">
                                                             <i class="fa-solid fa-trash me-1"></i>Xóa
                                                         </button>
@@ -97,6 +99,7 @@
                                         <div class="modal-dialog">
                                             <div class="modal-content text-start">
                                                 <form action="/admin/users/update-role-status" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <input type="hidden" name="userId" value="${u.id}" />
                                                     <div class="modal-header">
                                                         <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: <c:out value="${u.fullName}"/></h5>

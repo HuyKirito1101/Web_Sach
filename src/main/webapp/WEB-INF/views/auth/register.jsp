@@ -36,28 +36,40 @@
         <c:if test="${not empty errorMessage}">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <c:out value="${errorMessage}"/>
+                <c:if test="${accountExists}">
+                    <div class="mt-2">
+                        <a href="/auth/forgot-password" class="alert-link">Quên mật khẩu? Nhận OTP để đặt lại</a>
+                    </div>
+                </c:if>
             </div>
         </c:if>
 
         <form:form action="/auth/register" method="post" modelAttribute="registerRequest">
             <div class="mb-3">
                 <label class="form-label">Họ và Tên</label>
-                <form:input path="fullName" class="form-control" placeholder="Nguyen Van A" required="true" />
+                <form:input path="fullName" cssClass="form-control" cssErrorClass="form-control is-invalid"
+                            placeholder="Nguyen Van A" required="true" />
+                <form:errors path="fullName" cssClass="invalid-feedback d-block" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Email (Sẽ nhận mã OTP kích hoạt)</label>
-                <form:input path="email" type="email" class="form-control" placeholder="name@example.com" required="true" />
+                <form:input path="email" type="email" cssClass="form-control" cssErrorClass="form-control is-invalid"
+                            placeholder="name@example.com" required="true" />
+                <form:errors path="email" cssClass="invalid-feedback d-block" />
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Số điện thoại</label>
-                <form:input path="phone" class="form-control" placeholder="0901234567" />
+                <form:input path="phone" cssClass="form-control" placeholder="0901234567" />
             </div>
 
             <div class="mb-4">
                 <label class="form-label">Mật khẩu</label>
-                <form:input path="password" type="password" class="form-control" placeholder="••••••••" required="true" />
+                <form:input path="password" type="password" cssClass="form-control" cssErrorClass="form-control is-invalid"
+                            placeholder="••••••••" minlength="8" maxlength="72" required="true" />
+                <form:errors path="password" cssClass="invalid-feedback d-block" />
+                <div class="form-text">Mật khẩu phải có từ 8 đến 72 ký tự.</div>
             </div>
 
             <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-3">

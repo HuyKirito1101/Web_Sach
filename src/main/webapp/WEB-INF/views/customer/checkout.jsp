@@ -18,6 +18,7 @@
     </c:if>
 
     <form action="/checkout/place-order" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="row g-4">
             <!-- Left col: Address, Shipping, Payment -->
             <div class="col-lg-7">

@@ -59,6 +59,9 @@
             <button type="submit" class="btn btn-warning w-100 py-2 fw-bold rounded-3 text-dark">
                 <i class="fa-solid fa-paper-plane me-2"></i> Gửi Mã OTP Qua Email
             </button>
+            <div class="form-text text-center mt-2">
+                Vì lý do bảo mật, hệ thống không xác nhận email có tồn tại hay không.
+            </div>
         </form:form>
 
         <div class="mt-4 text-center border-top pt-3">

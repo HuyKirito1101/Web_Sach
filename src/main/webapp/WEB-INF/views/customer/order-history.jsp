@@ -176,6 +176,7 @@
                                 <c:if test="${o.orderStatus == 'NEW'}">
                                     <form action="/orders/${o.id}/cancel" method="POST" class="d-inline ms-1"
                                           onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                         <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill fw-bold">
                                             <i class="fa-solid fa-ban me-1"></i>Hủy đơn
                                         </button>
@@ -196,6 +197,7 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                 </div>
                                                 <form action="/orders/${o.id}/return" method="POST">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <div class="modal-body">
                                                         <label class="form-label fw-medium small">Lý do trả hàng:</label>
                                                         <textarea name="reason" class="form-control" rows="3" required

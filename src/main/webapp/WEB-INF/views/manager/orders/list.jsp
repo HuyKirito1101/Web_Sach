@@ -45,6 +45,7 @@
                                         <td class="fw-bold text-dark"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td>
                                             <form action="/manager/orders/update-status" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                 <input type="hidden" name="orderId" value="${o.id}" />
                                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                                     <option value="${o.orderStatus}" selected>${o.orderStatus}</option>
@@ -70,6 +71,7 @@
                                         <div class="modal-dialog">
                                             <div class="modal-content text-start">
                                                 <form action="/manager/orders/assign-shipper" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <input type="hidden" name="orderId" value="${o.id}" />
                                                     <div class="modal-header">
                                                         <h5 class="modal-title fw-bold">Phân Shipper Cho Đơn Hàng: ${o.orderCode}</h5>

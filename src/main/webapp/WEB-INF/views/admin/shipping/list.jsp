@@ -42,7 +42,8 @@
                                         <td class="fw-bold text-success"><fmt:formatNumber value="${p.baseFee}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${p.active ? 'bg-success' : 'bg-secondary'}">${p.active ? 'HOẠT ĐỘNG' : 'TẠM DỪNG'}</span></td>
                                         <td class="text-end">
-                                            <form action="/admin/shipping/delete/${p.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                            <form action="/admin/shipping/delete/${p.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -57,6 +58,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form action="/admin/shipping/save" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold">Thêm Nhà Vận Chuyển</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

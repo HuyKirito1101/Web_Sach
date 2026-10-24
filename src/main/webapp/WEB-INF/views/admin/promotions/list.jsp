@@ -23,7 +23,8 @@
                         <td>${p.discountPercent}% <c:if test="${p.maxDiscountAmount != null}"><small class="text-muted">(tối đa <fmt:formatNumber value="${p.maxDiscountAmount}" pattern="#,##0 ₫" />)</small></c:if></td>
                         <td><fmt:formatNumber value="${p.minOrderValue}" pattern="#,##0 ₫" /></td><td>${p.startDate} → ${p.endDate}</td>
                         <td><span class="badge ${p.active ? 'bg-success' : 'bg-secondary'}">${p.active ? 'HOẠT ĐỘNG' : 'TẠM DỪNG'}</span></td>
-                        <td class="text-end"><form action="/admin/promotions/${p.id}/delete" method="post" onsubmit="return confirm('Xóa chương trình này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form></td>
+                        <td class="text-end"><form action="/admin/promotions/${p.id}/delete" method="post" onsubmit="return confirm('Xóa chương trình này?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form></td>
                     </tr></c:forEach>
                     <c:if test="${empty promotions}"><tr><td colspan="8" class="text-center text-muted py-5">Chưa có chương trình khuyến mãi.</td></tr></c:if>
                 </tbody>
@@ -34,6 +35,7 @@
 
 <div class="modal fade" id="promotionModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
     <form action="/admin/promotions/save" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="modal-header"><h5 class="modal-title fw-bold">Tạo chương trình khuyến mãi</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
             <div class="mb-3"><label class="form-label">Tên chương trình</label><input name="title" class="form-control" required></div>

@@ -7,6 +7,7 @@
 <div class="card border-0 shadow-sm"><div class="card-body p-4">
     <c:if test="${hasShop}"><div class="alert alert-info">Trạng thái duyệt: <strong>${shop.status}</strong></div></c:if>
     <form method="post" action="/vendor/shop" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
         <div class="row g-3"><div class="col-md-6"><label class="form-label">Tên cửa hàng</label><input class="form-control" name="name" value="<c:out value='${shop.name}'/>" required maxlength="150"></div>
         <div class="col-md-6"><label class="form-label">Email cửa hàng</label><input class="form-control" type="email" name="email" value="<c:out value='${shop.email}'/>"></div>
         <div class="col-md-6"><label class="form-label">Số điện thoại</label><input class="form-control" name="phone" value="<c:out value='${shop.phone}'/>" maxlength="20"></div>

@@ -10,6 +10,10 @@ spring.datasource.password=THAY_MAT_KHAU_MYSQL
 # ngan de ung dung tu choi khoi dong neu quen cau hinh.
 jwt.secret=CHANGE_ME
 
+# Chi dung khi demo local. Dat lai mat khau cac tai khoan @websachcu.vn ve 123456.
+# Khong bat tuy chon nay tren server that.
+app.demo-accounts.reset-passwords=true
+
 # Gmail SMTP
 spring.mail.username=THAY_EMAIL_GUI_OTP
 spring.mail.password=THAY_GMAIL_APP_PASSWORD

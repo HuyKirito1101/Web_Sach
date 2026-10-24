@@ -14,9 +14,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.session.SessionManagementFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -90,7 +90,13 @@ public class SecurityConfig {
                 );
 
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        // JWT là xác thực stateless. Nếu đặt filter trước SessionManagementFilter,
+        // Spring coi mỗi request JWT là một lần xác thực mới và
+        // CsrfAuthenticationStrategy sẽ xóa cookie XSRF-TOKEN. Khi đó form JSP
+        // (đặc biệt form đăng xuất) luôn bị 403 dù gửi đúng token. Đặt JWT sau
+        // quản lý session nhưng vẫn trước AuthorizationFilter để CSRF cookie
+        // được giữ nguyên và phân quyền vẫn nhận đúng Authentication.
+        http.addFilterAfter(jwtFilter, SessionManagementFilter.class);
 
         return http.build();
     }

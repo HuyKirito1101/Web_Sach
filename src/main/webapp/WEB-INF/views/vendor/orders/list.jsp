@@ -92,6 +92,7 @@
                                     </td>
                                     <td>
                                         <form method="post" action="/vendor/orders/${o.id}/status" class="d-flex gap-1">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                             <c:if test="${o.orderStatus == 'NEW'}">
                                                 <button name="status" value="CONFIRMED" class="btn btn-sm btn-success rounded-pill fw-bold px-2">Xác nhận</button>
                                                 <button name="status" value="CANCELLED" class="btn btn-sm btn-outline-danger rounded-pill px-2">Hủy</button>

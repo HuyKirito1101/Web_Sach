@@ -86,6 +86,7 @@
                 <c:choose>
                     <c:when test="${order.orderStatus == 'NEW' || order.orderStatus == 'CONFIRMED'}">
                         <form action="/orders/${order.id}/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="mb-2">
                                 <label class="form-label small fw-medium">Lý do hủy đơn:</label>
                                 <input type="text" name="reason" class="form-control form-control-sm" placeholder="Đổi ý, chọn nhầm sách..." required>
@@ -95,6 +96,7 @@
                     </c:when>
                     <c:when test="${order.orderStatus == 'DELIVERED'}">
                         <form action="/orders/${order.id}/return" method="POST" onsubmit="return confirm('Gửi yêu cầu trả hàng/hoàn tiền cho đơn này?');">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="mb-2">
                                 <label class="form-label small fw-medium">Lý do yêu cầu trả hàng/hoàn tiền:</label>
                                 <input type="text" name="reason" class="form-control form-control-sm" placeholder="Sách bị rách, sai tình trạng..." required>
