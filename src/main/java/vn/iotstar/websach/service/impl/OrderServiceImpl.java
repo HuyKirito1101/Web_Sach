@@ -118,32 +118,6 @@ public class OrderServiceImpl implements OrderService {
         return saved;
     }
 
-    @Override
-    @Transactional
-    public Order confirmManualMomoPayment(Long orderId, String managerEmail) {
-        Order order = managerAccessService.requireOrderInBranch(managerEmail, orderId);
-        if (order.getPaymentMethod() != PaymentMethod.MOMO) {
-            throw new IllegalStateException("Đơn hàng này không thanh toán bằng MoMo.");
-        }
-        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.REFUNDED) {
-            throw new IllegalStateException("Không thể xác nhận thanh toán cho đơn hàng đã hủy hoặc hoàn tiền.");
-        }
-        if (order.getPaymentStatus() != PaymentStatus.AWAITING_CONFIRMATION) {
-            throw new IllegalStateException(order.getPaymentStatus() == PaymentStatus.PAID
-                    ? "Đơn hàng đã được xác nhận thanh toán."
-                    : "Khách hàng chưa báo đã chuyển tiền.");
-        }
-        order.setPaymentStatus(PaymentStatus.PAID);
-        order.setPaymentConfirmedAt(LocalDateTime.now());
-        order.setPaymentConfirmedBy(managerEmail);
-        Order saved = orderRepository.save(order);
-        try {
-            messagingTemplate.convertAndSend("/topic/orders",
-                    "Đơn hàng " + order.getOrderCode() + " đã được xác nhận thanh toán MoMo.");
-        } catch (Exception ignored) {}
-        return saved;
-    }
-
     private boolean isAllowedTransition(OrderStatus current, OrderStatus target) {
         return switch (current) {
             case NEW -> target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED;

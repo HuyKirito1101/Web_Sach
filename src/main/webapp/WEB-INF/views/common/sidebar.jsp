@@ -70,7 +70,7 @@
             </li>
             <li class="nav-item">
                 <a href="/manager/orders" class="nav-link ${pageContext.request.requestURI.contains('/manager/orders') ? 'active' : ''}">
-                    <i class="fa-solid fa-receipt"></i> Đơn Hàng Chi Nhánh
+                    <i class="fa-solid fa-receipt"></i> Giám Sát Đơn Hàng
                 </a>
             </li>
             <li class="nav-item">

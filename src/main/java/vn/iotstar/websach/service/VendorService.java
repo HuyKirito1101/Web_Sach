@@ -25,6 +25,7 @@ public interface VendorService {
     List<Order> getOrders(String vendorEmail, OrderStatus status);
     Order getOrder(String vendorEmail, Long orderId);
     List<OrderItem> getOrderItems(String vendorEmail, Long orderId);
+    Order confirmManualMomoPayment(String vendorEmail, Long orderId);
     Order updateOrderStatus(String vendorEmail, Long orderId, OrderStatus target);
     List<Promotion> getPromotions(String vendorEmail);
     Promotion savePromotion(String vendorEmail, Promotion promotion);

@@ -29,6 +29,7 @@ class CustomerWorkflowIntegrationTest {
     @Autowired private CheckoutService checkoutService;
     @Autowired private CustomerOrderService customerOrderService;
     @Autowired private OrderService orderService;
+    @Autowired private VendorService vendorService;
     @Autowired private ReviewService reviewService;
     @Autowired private UserService userService;
     @Autowired private CustomerBookService customerBookService;
@@ -44,6 +45,7 @@ class CustomerWorkflowIntegrationTest {
     @Autowired private ShippingProviderRepository shippingProviderRepository;
     @Autowired private PromotionRepository promotionRepository;
     @Autowired private DeliveryAssignmentRepository deliveryAssignmentRepository;
+    @Autowired private vn.iotstar.websach.controller.customer.CheckoutController checkoutController;
     @Autowired private vn.iotstar.websach.controller.customer.CustomerOrderController customerOrderController;
 
     @MockBean private EmailService emailService;
@@ -181,12 +183,11 @@ class CustomerWorkflowIntegrationTest {
     }
 
     @Test
-    void momoDemoRequiresCustomerClaimThenBranchManagerConfirmation() {
-        User manager = userRepository.findByEmail("manager@websachcu.vn").orElseThrow();
+    void momoDemoRequiresCustomerClaimThenVendorConfirmation() {
+        User vendor = userRepository.findByEmail("vendor.thuduc1@websachcu.vn").orElseThrow();
         User user = getOrCreateCustomer("momo-demo-user@example.com");
         BookCopy copy = bookCopyRepository.findAll().stream()
-                .filter(c -> c.getBranch() != null && manager.getBranch() != null
-                        && c.getBranch().getId().equals(manager.getBranch().getId()))
+                .filter(c -> c.getSeller() != null && c.getSeller().getId().equals(vendor.getId()))
                 .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
                 .findFirst().orElseThrow();
 
@@ -197,7 +198,7 @@ class CustomerWorkflowIntegrationTest {
 
         assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.MOMO);
         assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
-        assertThatThrownBy(() -> orderService.confirmManualMomoPayment(order.getId(), manager.getEmail()))
+        assertThatThrownBy(() -> vendorService.confirmManualMomoPayment(vendor.getEmail(), order.getId()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("chưa báo đã chuyển tiền");
         assertThatThrownBy(() -> orderService.updateOrderStatus(order.getId(), OrderStatus.CONFIRMED))
@@ -208,10 +209,15 @@ class CustomerWorkflowIntegrationTest {
         assertThat(submitted.getPaymentStatus()).isEqualTo(PaymentStatus.AWAITING_CONFIRMATION);
         assertThat(submitted.getPaymentSubmittedAt()).isNotNull();
 
-        Order paid = orderService.confirmManualMomoPayment(order.getId(), manager.getEmail());
+        User otherVendor = userRepository.findByEmail("vendor.thuduc2@websachcu.vn").orElseThrow();
+        assertThatThrownBy(() -> vendorService.confirmManualMomoPayment(otherVendor.getEmail(), order.getId()))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("không có sản phẩm của mình");
+
+        Order paid = vendorService.confirmManualMomoPayment(vendor.getEmail(), order.getId());
         assertThat(paid.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
         assertThat(paid.getPaymentConfirmedAt()).isNotNull();
-        assertThat(paid.getPaymentConfirmedBy()).isEqualTo(manager.getEmail());
+        assertThat(paid.getPaymentConfirmedBy()).isEqualTo(vendor.getEmail());
     }
 
     @Test
@@ -518,6 +524,40 @@ class CustomerWorkflowIntegrationTest {
         assertThat(model.getAttribute("order")).isEqualTo(order);
         assertThat(model.getAttribute("success")).isEqualTo(true);
         assertThat(model.getAttribute("assignment")).isNotNull();
+    }
+
+    @Test
+    void outOfProvinceSpxShippingRemainsAvailableAtCheckout() {
+        ShippingProvider spxProvider = shippingProviderRepository.findByActiveTrue().stream()
+                .filter(provider -> "SPX_EXPRESS".equalsIgnoreCase(provider.getCode()))
+                .findFirst().orElseThrow();
+        User customer = getOrCreateCustomer("out-of-province-order@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        cartService.clearCart(customer);
+        cartService.addToCart(customer, copy.getId(), 1);
+
+        org.springframework.security.core.Authentication auth =
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        customer.getEmail(), null,
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+        org.springframework.ui.ConcurrentModel checkoutModel = new org.springframework.ui.ConcurrentModel();
+        assertThat(checkoutController.showCheckoutPage(auth, checkoutModel)).isEqualTo("customer/checkout");
+        @SuppressWarnings("unchecked")
+        List<ShippingProvider> visibleProviders =
+                (List<ShippingProvider>) checkoutModel.getAttribute("shippingProviders");
+        assertThat(visibleProviders)
+                .extracting(ShippingProvider::getCode)
+                .contains("SPX_EXPRESS");
+
+        Order order = checkoutService.processCheckout(customer, null, "Người nhận", "0912345678",
+                "12 Trần Phú, Đà Nẵng", spxProvider.getId(), null, "COD", null).getFirst();
+
+        assertThat(order.getShippingProvider()).isNotNull();
+        assertThat(order.getShippingProvider().getCode()).isEqualTo("SPX_EXPRESS");
+        assertThat(order.getShippingFee()).isEqualTo(spxProvider.getBaseFee());
     }
 
     private User getOrCreateCustomer(String email) {

@@ -112,7 +112,7 @@
                             </div>
                             <div class="col-md-7">
                                 <div class="alert alert-warning small">
-                                    Hãy kiểm tra đúng người nhận trên QR trước khi chuyển. Đây là thanh toán demo được Manager xác nhận thủ công.
+                                    Hãy kiểm tra đúng người nhận trên QR trước khi chuyển. Đây là thanh toán demo được Vendor xác nhận thủ công.
                                 </div>
                                 <p class="mb-2"><strong>Số tiền:</strong>
                                     <span class="text-danger fw-bold fs-5"><fmt:formatNumber value="${order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>

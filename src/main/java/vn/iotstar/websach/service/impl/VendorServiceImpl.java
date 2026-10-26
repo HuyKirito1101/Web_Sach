@@ -406,6 +406,43 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     @Transactional
+    public Order confirmManualMomoPayment(String vendorEmail, Long orderId) {
+        User vendor = userRepository.findByEmail(vendorEmail)
+                .orElseThrow(() -> new SecurityException("Không tìm thấy tài khoản Vendor."));
+        if (vendor.getRole() == null || vendor.getRole().getName() != RoleName.ROLE_VENDOR) {
+            throw new SecurityException("Chỉ Vendor bán sản phẩm trong đơn mới được xác nhận thanh toán MoMo.");
+        }
+
+        Order order = getOrder(vendorEmail, orderId);
+        boolean ownsOrderItem = orderItemRepository.findByOrderId(orderId).stream()
+                .anyMatch(item -> item.getBookCopy() != null
+                        && item.getBookCopy().getSeller() != null
+                        && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId()));
+        if (!ownsOrderItem) {
+            throw new SecurityException("Vendor không được xác nhận thanh toán cho đơn hàng không có sản phẩm của mình.");
+        }
+        if (order.getPaymentMethod() != PaymentMethod.MOMO) {
+            throw new IllegalStateException("Đơn hàng này không thanh toán bằng MoMo.");
+        }
+        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.REFUNDED) {
+            throw new IllegalStateException("Không thể xác nhận thanh toán cho đơn hàng đã hủy hoặc hoàn tiền.");
+        }
+        if (order.getPaymentStatus() != PaymentStatus.AWAITING_CONFIRMATION) {
+            throw new IllegalStateException(order.getPaymentStatus() == PaymentStatus.PAID
+                    ? "Đơn hàng đã được xác nhận thanh toán."
+                    : "Khách hàng chưa báo đã chuyển tiền.");
+        }
+
+        order.setPaymentStatus(PaymentStatus.PAID);
+        order.setPaymentConfirmedAt(LocalDateTime.now());
+        order.setPaymentConfirmedBy(vendorEmail);
+        Order saved = orderRepository.save(order);
+        send("Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
+        return saved;
+    }
+
+    @Override
+    @Transactional
     public Order updateOrderStatus(String vendorEmail, Long orderId, OrderStatus target) {
         User vendor = requireVendor(vendorEmail);
         Order order = getOrder(vendorEmail, orderId);
@@ -413,7 +450,7 @@ public class VendorServiceImpl implements VendorService {
         if (order.getPaymentMethod() == PaymentMethod.MOMO
                 && target != OrderStatus.CANCELLED
                 && order.getPaymentStatus() != PaymentStatus.PAID) {
-            throw new IllegalStateException("Đơn MoMo chưa được Manager xác nhận thanh toán.");
+            throw new IllegalStateException("Đơn MoMo chưa được Vendor xác nhận thanh toán.");
         }
         if (order.getPaymentMethod() == PaymentMethod.MOMO
                 && target == OrderStatus.CANCELLED

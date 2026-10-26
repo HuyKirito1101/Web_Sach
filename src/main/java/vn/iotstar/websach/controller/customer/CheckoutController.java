@@ -48,8 +48,6 @@ public class CheckoutController {
         model.addAttribute("addresses", addresses);
         model.addAttribute("shippingProviders", shippingProviderService.findAllProviders().stream()
                 .filter(provider -> Boolean.TRUE.equals(provider.getActive()))
-                .filter(provider -> provider.getCode() == null
-                        || !"SPX_EXPRESS".equalsIgnoreCase(provider.getCode()))
                 .toList());
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("user", user);

@@ -13,7 +13,7 @@
 
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i>Quản Lý Đơn Hàng Của Cửa Hàng</h3>
+                <h3 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i>Giám Sát Đơn Hàng Chi Nhánh</h3>
                 <form action="/manager/orders/clear-history" method="post"
                       onsubmit="return confirm('Dọn các đơn ĐÃ GIAO, ĐÃ HỦY và ĐÃ HOÀN TIỀN khỏi danh sách Manager? Dữ liệu vẫn được giữ để thống kê và khách hàng vẫn xem được lịch sử.');">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
@@ -38,7 +38,6 @@
                                     <th>Tổng Tiền</th>
                                     <th>Thanh Toán</th>
                                     <th>Trạng Thái Đơn</th>
-                                    <th class="text-end">Phân Shipper Chi Nhánh</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -58,14 +57,7 @@
                                                     <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán</span>
                                                 </c:when>
                                                 <c:when test="${o.paymentMethod == 'MOMO' && o.paymentStatus == 'AWAITING_CONFIRMATION'}">
-                                                    <span class="badge bg-warning text-dark mb-2">Khách báo đã chuyển</span>
-                                                    <form action="/manager/orders/${o.id}/confirm-momo-payment" method="post"
-                                                          onsubmit="return confirm('Bạn đã kiểm tra tài khoản MoMo và xác nhận nhận đúng số tiền của đơn ${o.orderCode}?');">
-                                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-                                                        <button type="submit" class="btn btn-sm btn-success text-nowrap">
-                                                            <i class="fa-solid fa-check-double me-1"></i>Xác nhận nhận tiền
-                                                        </button>
-                                                    </form>
+                                                    <span class="badge bg-warning text-dark">Chờ Vendor xác nhận</span>
                                                 </c:when>
                                                 <c:when test="${o.paymentMethod == 'MOMO' && o.paymentStatus == 'PENDING'}">
                                                     <span class="badge bg-secondary">Khách chưa báo chuyển</span>
@@ -79,71 +71,9 @@
                                             </c:choose>
                                         </td>
                                         <td>
-                                            <form action="/manager/orders/update-status" method="post" class="d-inline">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-                                                <input type="hidden" name="orderId" value="${o.id}" />
-                                                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                                    <option value="${o.orderStatus}" selected>${o.orderStatus}</option>
-                                                    <c:if test="${o.orderStatus == 'NEW'}">
-                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus == 'PAID'}"><option value="CONFIRMED">CONFIRMED</option></c:if>
-                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
-                                                    </c:if>
-                                                    <c:if test="${o.orderStatus == 'CONFIRMED'}">
-                                                        <option value="PACKING">PACKING</option><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option>
-                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
-                                                    </c:if>
-                                                    <c:if test="${o.orderStatus == 'PACKING'}">
-                                                        <option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option>
-                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
-                                                    </c:if>
-                                                    <c:if test="${o.orderStatus == 'RETURN_REQUESTED'}"><option value="RETURNED">RETURNED</option></c:if>
-                                                    <c:if test="${o.orderStatus == 'RETURNED'}"><option value="REFUNDED">REFUNDED</option></c:if>
-                                                </select>
-                                            </form>
-                                        </td>
-                                        <td class="text-end">
-                                            <c:choose>
-                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' && not empty shippers}"><button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}"><i class="fa-solid fa-truck-fast me-1"></i> Phân Shipper</button></c:when>
-                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP'}"><span class="text-danger small">Chưa có shipper</span></c:when>
-                                                <c:otherwise><span class="text-muted small">Chưa sẵn sàng giao</span></c:otherwise>
-                                            </c:choose>
+                                            <span class="badge bg-info text-dark"><c:out value="${o.orderStatus}"/></span>
                                         </td>
                                     </tr>
-
-                                    <!-- Modal Assign Shipper -->
-                                    <div class="modal fade" id="assignModal${o.id}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content text-start">
-                                                <form action="/manager/orders/assign-shipper" method="post">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-                                                    <input type="hidden" name="orderId" value="${o.id}" />
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Phân Shipper Cho Đơn Hàng: ${o.orderCode}</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Chọn Shipper Chi Nhánh</label>
-                                                            <select name="shipperId" class="form-select" required>
-                                                                <c:forEach var="s" items="${shippers}">
-                                                                    <option value="${s.id}"><c:out value="${s.fullName}"/> (<c:out value="${s.phone}"/>)</option>
-                                                                </c:forEach>
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Ghi Chú</label>
-                                                            <textarea name="note" class="form-control" rows="2"></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                        <button type="submit" class="btn btn-primary">Xác Nhận Phân Shipper</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </c:forEach>
                             </tbody>
                         </table>

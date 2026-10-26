@@ -403,6 +403,18 @@ public class VendorController {
         return "redirect:/vendor/orders";
     }
 
+    @PostMapping("/orders/{id}/confirm-momo-payment")
+    public String confirmMomoPayment(Authentication auth, @PathVariable Long id,
+                                     RedirectAttributes redirect) {
+        try {
+            vendorService.confirmManualMomoPayment(auth.getName(), id);
+            redirect.addFlashAttribute("successMessage", "Đã xác nhận cửa hàng nhận được tiền MoMo.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/vendor/orders";
+    }
+
     @GetMapping("/promotions")
     public String promotions(Authentication auth, Model model) {
         model.addAttribute("promotions", vendorService.getPromotions(auth.getName()));

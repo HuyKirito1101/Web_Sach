@@ -15,7 +15,6 @@ public interface OrderService {
     Optional<Order> findById(Long id);
     Optional<Order> findByOrderCode(String orderCode);
     Order updateOrderStatus(Long orderId, OrderStatus status);
-    Order confirmManualMomoPayment(Long orderId, String managerEmail);
     DeliveryAssignment assignShipper(AssignShipperRequest request, String assignedByEmail);
     int clearCompletedOrderHistory(String managerEmail);
     void deleteCancelledOrder(Long orderId);

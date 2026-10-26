@@ -51,4 +51,13 @@ class JspCsrfCoverageTest {
         assertTrue(missingTokens.isEmpty(),
                 "Các form POST sau chưa có CSRF token: " + String.join(", ", missingTokens));
     }
+
+    @Test
+    void managerOrderViewDoesNotDuplicateVendorOrderOperations() throws IOException {
+        String managerOrders = Files.readString(VIEW_ROOT.resolve("manager/orders/list.jsp"));
+
+        assertTrue(!managerOrders.contains("/manager/orders/update-status")
+                        && !managerOrders.contains("/manager/orders/assign-shipper"),
+                "Manager chỉ được giám sát, không được đổi trạng thái hoặc phân Shipper thay Vendor.");
+    }
 }

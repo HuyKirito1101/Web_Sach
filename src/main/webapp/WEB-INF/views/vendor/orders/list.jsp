@@ -155,7 +155,24 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-dark border">${o.paymentMethod}</span>
-                                        <div class="small text-muted mt-1">${o.paymentStatus}</div>
+                                        <c:choose>
+                                            <c:when test="${o.paymentMethod == 'MOMO' && o.paymentStatus == 'AWAITING_CONFIRMATION'}">
+                                                <div class="mt-1"><span class="badge bg-warning text-dark">Khách báo đã chuyển</span></div>
+                                                <form action="/vendor/orders/${o.id}/confirm-momo-payment" method="post" class="mt-1"
+                                                      onsubmit="return confirm('Chỉ xác nhận sau khi đã kiểm tra tài khoản MoMo và nhận đúng số tiền của đơn này. Tiếp tục?');">
+                                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                    <button type="submit" class="btn btn-sm btn-success fw-bold text-nowrap">
+                                                        <i class="fa-solid fa-circle-check me-1"></i>Xác nhận tiền
+                                                    </button>
+                                                </form>
+                                            </c:when>
+                                            <c:when test="${o.paymentStatus == 'PAID'}">
+                                                <div class="mt-1"><span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán</span></div>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <div class="small text-muted mt-1">${o.paymentStatus}</div>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </td>
                                     <td>
                                         <c:choose>
