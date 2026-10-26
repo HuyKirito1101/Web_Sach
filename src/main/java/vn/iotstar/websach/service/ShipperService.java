@@ -1,6 +1,7 @@
 package vn.iotstar.websach.service;
 
 import vn.iotstar.websach.dto.ShipperDashboardDTO;
+import vn.iotstar.websach.dto.ShipperIncomeAnalyticsDTO;
 import vn.iotstar.websach.entity.DeliveryAssignment;
 import vn.iotstar.websach.entity.enums.DeliveryStatus;
 
@@ -14,4 +15,5 @@ public interface ShipperService {
     DeliveryAssignment updateStatus(String shipperEmail, Long assignmentId,
                                     DeliveryStatus target, String failureReason);
     ShipperDashboardDTO getDashboard(String shipperEmail, LocalDate from, LocalDate to);
+    ShipperIncomeAnalyticsDTO getIncomeAnalytics(String shipperEmail, Integer year, Integer month);
 }

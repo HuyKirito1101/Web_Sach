@@ -58,7 +58,7 @@ public class BookCopy {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (status == null) status = BookCopyStatus.AVAILABLE;
+        if (status == null) status = BookCopyStatus.UNPUBLISHED;
         if (quantity == null) quantity = 1;
     }
 

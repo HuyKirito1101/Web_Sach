@@ -91,21 +91,54 @@
                         <hr>
                         <div class="alert alert-warning border-0 rounded-3 mb-4">
                             <i class="fa-solid fa-circle-exclamation me-2"></i>
-                            <strong>Thời gian yêu cầu đổi trả:</strong> Trong vòng <strong>48 giờ</strong> kể từ thời điểm đơn hàng được cập nhật trạng thái <strong>Đã giao (DELIVERED)</strong>.
+                            <strong>Thời gian yêu cầu đổi trả:</strong> Trong vòng <strong>48 giờ</strong> kể từ thời điểm đơn hàng được cập nhật trạng thái <strong>Đã giao (DELIVERED)</strong> nếu quý khách không ưng ý sách hoặc sách gặp sự cố.
                         </div>
 
                         <h5 class="fw-bold text-dark mt-3">1. Các trường hợp được chấp nhận trả hàng</h5>
                         <ul>
-                            <li>Sách bị giao sai đầu sách hoặc sai phiên bản so với đơn đặt hàng.</li>
-                            <li>Tình trạng sách cũ thực tế rách nát, mất trang nghiêm trọng không đúng với mô tả (Condition Rating).</li>
-                            <li>Sách bị ướt, hư hỏng trong quá trình vận chuyển.</li>
+                            <li>Khách hàng <strong>không ưng ý sách</strong> (đổi trả linh hoạt trong vòng 48h kể từ khi nhận hàng).</li>
+                            <li>Sách bị giao sai tựa đề hoặc sai phiên bản so với đơn đặt hàng.</li>
+                            <li>Tình trạng thực tế rách nát, mất trang nghiêm trọng không đúng với mô tả (Condition Rating).</li>
+                            <li>Sách bị ướt, móp méo, hư hỏng trong quá trình vận chuyển.</li>
                         </ul>
 
-                        <h5 class="fw-bold text-dark mt-3">2. Quy trình các bước trả hàng - hoàn tiền</h5>
-                        <ol>
-                            <li><strong>Khách hàng gửi yêu cầu:</strong> Vào mục <em>Chi tiết đơn hàng</em> đã nhận, bấm <strong>Yêu Cầu Trả Hàng / Hoàn Tiền</strong>, cung cấp lý do cụ thể. Đơn hàng chuyển sang trạng thái <code>RETURN_REQUESTED</code>.</li>
-                            <li><strong>Kiểm duyệt &amp; Thu hồi sách:</strong> Quản lý chi nhánh tiếp nhận và điều phối thu hồi hàng hoặc tiếp nhận bưu phẩm hoàn. Khi hàng về kho, trạng thái chuyển thành <code>RETURNED</code> và tồn kho sách được hoàn trả tự động.</li>
-                            <li><strong>Hoàn tiền:</strong> Quản trị viên / Quản lý duyệt hoàn tiền, đơn hàng hoàn tất chu trình ở trạng thái <code>REFUNDED</code>, tiền thanh toán được hoàn lại cho khách hàng.</li>
+                        <h5 class="fw-bold text-dark mt-4">2. Hai hình thức hoàn trả và quy định chi phí</h5>
+                        <div class="row g-3 my-2">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fa-solid fa-store fs-4 text-primary me-2"></i>
+                                        <h6 class="fw-bold mb-0 text-primary">Cách 1: Hoàn trả tại cơ sở chi nhánh</h6>
+                                    </div>
+                                    <ul class="small text-secondary ps-3 mb-2">
+                                        <li>Khách hàng tự mang sách đến chi nhánh đã đặt hàng.</li>
+                                        <li><strong>Khách hàng không mất phí ship (0đ)</strong>.</li>
+                                        <li>Được hoàn trả <strong>100% số tiền đơn hàng</strong>.</li>
+                                        <li><strong>Quy trình phía Vendor:</strong> Cửa hàng chỉ cần kiểm tra sách và trực tiếp bấm <strong>Xác nhận đã nhận hàng</strong> tại quầy mà không cần điều phối shipper.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light h-100">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fa-solid fa-truck fs-4 text-warning me-2"></i>
+                                        <h6 class="fw-bold mb-0 text-dark">Cách 2: Cửa hàng phân Shipper đến nhận</h6>
+                                    </div>
+                                    <ul class="small text-secondary ps-3 mb-2">
+                                        <li>Khách hàng ghi lại <strong>địa chỉ hoàn trả</strong> trong chi tiết đơn hàng để Shipper đến lấy sách.</li>
+                                        <li><strong>Khách hàng chịu 50% phí ship</strong> vận chuyển hoàn trả (được trừ trực tiếp vào số tiền hoàn lại).</li>
+                                        <li><strong>Quy trình phía Vendor:</strong> Cửa hàng <strong>bắt buộc phải phân công Shipper</strong> đến lấy sách. <strong>Chỉ khi Shipper đã nhận sách và giao trả về đến trụ sở chi nhánh</strong> thì Vendor mới được phép bấm xác nhận đã nhận hàng và duyệt hoàn tiền.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold text-dark mt-4">3. Quy trình các bước thực hiện</h5>
+                        <ol class="small text-secondary">
+                            <li class="mb-2"><strong>Gửi yêu cầu:</strong> Vào mục <em>Chi tiết đơn hàng</em> đã nhận, bấm <strong>Yêu Cầu Trả Hàng / Hoàn Tiền</strong>, chọn 1 trong 2 cách hoàn trả (tại cơ sở hoặc qua Shipper) và nhập lý do. Trạng thái chuyển sang <code>RETURN_REQUESTED</code>.</li>
+                            <li class="mb-2"><strong>Tiếp nhận &amp; Điều phối:</strong> Với đơn trả tại cơ sở, khách mang sách qua chi nhánh. Với đơn qua Shipper, Vendor phân công Shipper đến tận nơi lấy sách hoàn.</li>
+                            <li class="mb-2"><strong>Nhận hàng về trụ sở:</strong> Khi sách đã về tới chi nhánh (Shipper giao đến hoặc khách tự mang tới), Vendor kiểm tra và xác nhận chuyển sang <code>RETURNED</code>, số lượng sách được tự động hoàn lại vào kho.</li>
+                            <li class="mb-2"><strong>Hoàn tiền:</strong> Vendor duyệt hoàn tiền, trạng thái chuyển thành <code>REFUNDED</code>, khách hàng nhận lại tiền hoàn thỏa đáng.</li>
                         </ol>
                     </c:when>
 
@@ -204,6 +237,16 @@
                            - Sách chuyên ngành y dược, kiến trúc, mỹ thuật, kinh tế.<br>
                            - Sách xuất bản trước năm 1975, sách quý hiếm, sách có chữ ký tác giả.<br>
                            - Sách ngoại văn, truyện tranh nguyên bộ.</p>
+
+                        <div class="card bg-light border-warning mt-4 shadow-sm">
+                            <div class="card-body p-4 text-center">
+                                <h5 class="fw-bold text-dark mb-2"><i class="fa-solid fa-hand-holding-dollar text-warning me-2"></i>Bạn muốn bán lại sách cũ cho Sách Cũ Việt?</h5>
+                                <p class="text-secondary small mb-3">Tạo yêu cầu thu mua trực tuyến nhanh chóng, chúng tôi sẽ thẩm định và báo giá tốt nhất cho bạn trong 24 giờ!</p>
+                                <a href="/sell-books" class="btn btn-warning px-4 py-2 fw-bold text-dark rounded-pill shadow-sm">
+                                    <i class="fa-solid fa-paper-plane me-2"></i>Gửi Yêu Cầu Thu Mua Trực Tuyến Ngay
+                                </a>
+                            </div>
+                        </div>
                     </c:when>
 
                     <%-- 8. Chính sách khách sỉ --%>

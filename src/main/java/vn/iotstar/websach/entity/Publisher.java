@@ -21,4 +21,15 @@ public class Publisher {
 
     @Column(length = 255)
     private String address;
+
+    @Column(length = 20)
+    private String phone;
+
+    @Builder.Default
+    private Boolean active = true;
+
+    @PrePersist
+    protected void onCreate() {
+        if (active == null) active = true;
+    }
 }

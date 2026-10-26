@@ -7,7 +7,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import vn.iotstar.websach.entity.User;
+import vn.iotstar.websach.entity.enums.RoleName;
 import vn.iotstar.websach.entity.enums.UserStatus;
+import vn.iotstar.websach.repository.RoleRepository;
 import vn.iotstar.websach.repository.UserRepository;
 
 import java.util.Collections;
@@ -17,6 +19,7 @@ import java.util.Collections;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -25,6 +28,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new UsernameNotFoundException("Tài khoản chưa được kích hoạt hoặc đã bị khóa");
+        }
+
+        // Tự động gán quyền ADMIN cho tài khoản admin chính nếu chưa có
+        if (email.equalsIgnoreCase("minhkhuyen779@gmail.com")
+                && (user.getRole() == null || user.getRole().getName() != RoleName.ROLE_ADMIN)) {
+            roleRepository.findByName(RoleName.ROLE_ADMIN).ifPresent(r -> {
+                user.setRole(r);
+                userRepository.save(user);
+            });
         }
 
         return new org.springframework.security.core.userdetails.User(

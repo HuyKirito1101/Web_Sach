@@ -13,4 +13,6 @@ public interface CustomerOrderService {
     List<OrderItem> getOrderItems(Long orderId);
     boolean cancelOrder(User user, Long orderId, String reason);
     boolean requestReturnOrder(User user, Long orderId, String reason);
+    boolean requestReturnOrder(User user, Long orderId, String reason, String returnAddress);
+    boolean requestReturnOrder(User user, Long orderId, String reason, String returnMethod, String returnAddress);
 }

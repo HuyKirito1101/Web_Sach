@@ -3,6 +3,7 @@
 <c:set var="currentUri" value="${not empty requestScope['jakarta.servlet.forward.request_uri'] ? requestScope['jakarta.servlet.forward.request_uri'] : pageContext.request.requestURI}" />
 <c:set var="isHome" value="${currentUri == '/' || currentUri == '/home'}" />
 <c:set var="isBooks" value="${currentUri.startsWith('/books')}" />
+<c:set var="isSellBooks" value="${currentUri.startsWith('/sell-books')}" />
 <c:set var="isCart" value="${currentUri.startsWith('/cart')}" />
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom px-4 py-2 sticky-top shadow-sm">
@@ -34,6 +35,9 @@
                     <a class="nav-link nav-main-link ${isBooks ? 'text-warning' : 'text-white'} fw-medium" href="/books"><i class="fa-solid fa-book me-1"></i>Sách Cũ</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link nav-main-link ${isSellBooks ? 'text-warning' : 'text-white'} fw-medium" href="/sell-books"><i class="fa-solid fa-hand-holding-dollar me-1"></i>Thu Mua Sách</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link nav-main-link ${isCart ? 'text-warning' : 'text-white'} fw-medium position-relative" href="/cart">
                         <i class="fa-solid fa-cart-shopping me-1 fs-5"></i>Giỏ hàng
                     </a>
@@ -41,7 +45,85 @@
 
                 <c:choose>
                     <c:when test="${pageContext.request.userPrincipal != null}">
-                        <li class="nav-item dropdown ms-2">
+                        <%-- Chuông thông báo cho Vendor --%>
+                        <c:if test="${pageContext.request.isUserInRole('VENDOR') && vTotalNotif > 0}">
+                            <li class="nav-item dropdown me-1">
+                                <a class="nav-link position-relative text-white px-2" href="#" id="vendorNotifBell" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo công việc cần lưu ý">
+                                    <i class="fa-solid fa-bell fs-5 text-warning"></i>
+                                    <span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger border border-dark" style="font-size: 10px;">
+                                        ${vTotalNotif}
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="vendorNotifBell" style="min-width: 290px;">
+                                    <li class="dropdown-header fw-bold text-dark d-flex justify-content-between align-items-center py-1">
+                                        <span><i class="fa-solid fa-bell text-warning me-1"></i> Cần Lưu Ý Xử Lý</span>
+                                        <span class="badge bg-danger rounded-pill">${vTotalNotif}</span>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <c:if test="${vOrderBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/vendor/orders">
+                                                <div><i class="fa-solid fa-box text-primary me-2"></i>Đơn hàng cần xử lý</div>
+                                                <span class="badge bg-danger rounded-pill">${vOrderBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                    <c:if test="${vReturnBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/vendor/returns">
+                                                <div><i class="fa-solid fa-rotate-left text-warning me-2"></i>Đơn yêu cầu đổi trả</div>
+                                                <span class="badge bg-warning text-dark fw-bold rounded-pill">${vReturnBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                    <c:if test="${vSellBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/vendor/sell-requests">
+                                                <div><i class="fa-solid fa-hand-holding-dollar text-info me-2"></i>Yêu cầu thu mua mới</div>
+                                                <span class="badge bg-info text-dark fw-bold rounded-pill">${vSellBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                </ul>
+                            </li>
+                        </c:if>
+
+                        <%-- Chuông thông báo cho Shipper --%>
+                        <c:if test="${pageContext.request.isUserInRole('SHIPPER') && sTotalNotif > 0}">
+                            <li class="nav-item dropdown me-1">
+                                <a class="nav-link position-relative text-white px-2" href="#" id="shipperNotifBell" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo đơn hàng giao">
+                                    <i class="fa-solid fa-bell fs-5 text-warning"></i>
+                                    <span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger border border-dark" style="font-size: 10px;">
+                                        ${sTotalNotif}
+                                    </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" aria-labelledby="shipperNotifBell" style="min-width: 280px;">
+                                    <li class="dropdown-header fw-bold text-dark d-flex justify-content-between align-items-center py-1">
+                                        <span><i class="fa-solid fa-truck-fast text-warning me-1"></i> Đơn Giao Cần Xử Lý</span>
+                                        <span class="badge bg-danger rounded-pill">${sTotalNotif}</span>
+                                    </li>
+                                    <li><hr class="dropdown-divider my-1"></li>
+                                    <c:if test="${sAssignedBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/shipper/orders">
+                                                <div><i class="fa-solid fa-clipboard-check text-danger me-2"></i>Đơn mới chờ nhận</div>
+                                                <span class="badge bg-danger rounded-pill">${sAssignedBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                    <c:if test="${sInProgressBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/shipper/orders">
+                                                <div><i class="fa-solid fa-truck-arrow-right text-primary me-2"></i>Đơn đang lấy &amp; giao</div>
+                                                <span class="badge bg-primary rounded-pill">${sInProgressBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
+                                </ul>
+                            </li>
+                        </c:if>
+
+                        <li class="nav-item dropdown ms-1">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white fw-medium" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <c:set var="fallbackAvatar" value="https://ui-avatars.com/api/?name=${pageContext.request.userPrincipal.name}&background=FFC107&color=000" />
                                 <c:set var="navbarAvatar" value="${not empty currentUser.avatarUrl ? currentUser.avatarUrl : fallbackAvatar}" />
@@ -60,26 +142,36 @@
                                     <li><a class="dropdown-item" href="/manager/dashboard"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Quản lý chi nhánh</a></li>
                                 </c:if>
                                 <c:if test="${pageContext.request.isUserInRole('VENDOR')}">
-                                    <li><a class="dropdown-item" href="/vendor/dashboard"><i class="fa-solid fa-store me-2 text-success"></i>Quản lý cửa hàng</a></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="/vendor/dashboard">
+                                            <div><i class="fa-solid fa-store me-2 text-success"></i>Quản lý cửa hàng</div>
+                                            <c:if test="${vTotalNotif > 0}">
+                                                <span class="badge bg-danger rounded-pill" style="font-size: 11px;">${vTotalNotif}</span>
+                                            </c:if>
+                                        </a>
+                                    </li>
                                 </c:if>
                                 <c:if test="${pageContext.request.isUserInRole('SHIPPER')}">
-                                    <li><a class="dropdown-item" href="/shipper/dashboard"><i class="fa-solid fa-truck me-2 text-warning"></i>Trang giao hàng</a></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="/shipper/dashboard">
+                                            <div><i class="fa-solid fa-truck me-2 text-warning"></i>Trang giao hàng</div>
+                                            <c:if test="${sTotalNotif > 0}">
+                                                <span class="badge bg-danger rounded-pill" style="font-size: 11px;">${sTotalNotif}</span>
+                                            </c:if>
+                                        </a>
+                                    </li>
                                 </c:if>
                                 <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')}">
                                     <li><hr class="dropdown-divider"></li>
                                 </c:if>
                                 <li><a class="dropdown-item" href="/profile"><i class="fa-solid fa-user me-2 text-primary"></i>Hồ sơ cá nhân</a></li>
                                 <li><a class="dropdown-item" href="/orders"><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng của tôi</a></li>
+                                <li><a class="dropdown-item" href="/sell-books"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Yêu cầu thu mua sách</a></li>
                                 <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>
                                 <li><a class="dropdown-item" href="/viewed-products"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Sách đã xem</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <form action="/auth/logout" method="post" class="m-0">
-                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-                                        <button type="submit" class="dropdown-item text-danger fw-bold">
-                                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
-                                        </button>
-                                    </form>
+                                    <a class="dropdown-item text-danger fw-bold" href="/auth/logout"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a>
                                 </li>
                             </ul>
                         </li>

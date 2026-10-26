@@ -41,6 +41,11 @@ public class Review {
 
     private LocalDateTime createdAt;
 
+    public String getFormattedCreatedAt() {
+        if (createdAt == null) return "";
+        return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

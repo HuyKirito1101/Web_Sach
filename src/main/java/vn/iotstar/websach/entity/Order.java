@@ -32,7 +32,7 @@ public class Order {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "shipping_provider_id")
     private ShippingProvider shippingProvider;
 
@@ -63,11 +63,29 @@ public class Order {
     @Column(length = 30, nullable = false)
     private OrderStatus orderStatus;
 
+    @Column(length = 20)
+    private String returnMethod; // "STORE" hoặc "SHIPPER"
+
+    @Column(length = 255)
+    private String returnAddress;
+
+    @Column(length = 500)
+    private String returnReason;
+
+    private Double returnShippingFee; // Phí ship hoàn trả khách chịu (50% nếu SHIPPER, 0đ nếu STORE)
+
+    private Double refundAmount; // Số tiền hoàn trả cho khách sau khi trừ phí ship hoàn trả (nếu có)
+
     @Column(columnDefinition = "TEXT")
     private String note;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public String getFormattedCreatedAt() {
+        if (createdAt == null) return "";
+        return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
 
     @PrePersist
     protected void onCreate() {

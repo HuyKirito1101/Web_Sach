@@ -27,6 +27,10 @@ public class Promotion {
     @JoinColumn(name = "branch_id")
     private Branch branch; // Nếu null là áp dụng toàn hệ thống, ngược lại áp dụng cho chi nhánh
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendor_id")
+    private User vendor; // Nếu null là do Manager/Admin tạo (áp dụng chung cho toàn cơ sở), nếu có là của riêng Vendor
+
     private Double discountPercent;
 
     @Enumerated(EnumType.STRING)

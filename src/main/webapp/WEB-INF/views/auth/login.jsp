@@ -34,6 +34,13 @@
             <p class="text-muted small">Website Quản Lý Chuỗi Cửa Hàng Sách Cũ</p>
         </div>
 
+                <c:if test="${param.error == 'unauthorized'}">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>Vui lòng đăng nhập để thêm sách vào giỏ hàng và mua hàng!
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </c:if>
+
         <c:if test="${not empty errorMessage}">
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>

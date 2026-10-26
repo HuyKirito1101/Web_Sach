@@ -68,6 +68,7 @@
                                             </td>
                                             <td>
                                                 <form action="/cart/update" method="POST" class="d-flex align-items-center gap-1">
+                                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <input type="hidden" name="cartItemId" value="${item.id}"/>
                                                     <input type="number" name="quantity" value="${item.quantity}" min="1" max="${item.bookCopy.quantity}" class="form-control form-control-sm text-center" style="width: 60px;" onchange="this.form.submit()">
                                                 </form>
@@ -77,6 +78,7 @@
                                             </td>
                                             <td>
                                                 <form action="/cart/delete" method="POST">
+                                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <input type="hidden" name="cartItemId" value="${item.id}"/>
                                                     <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle" title="Xóa">
                                                         <i class="fa-solid fa-trash"></i>

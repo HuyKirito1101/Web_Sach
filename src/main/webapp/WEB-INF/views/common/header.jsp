@@ -23,18 +23,45 @@
             background-color: #f4f6f9;
         }
         .sidebar {
-            min-height: 100vh;
+            width: 275px;
+            min-width: 275px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1020;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
             background-color: #1e293b;
             color: #f8fafc;
         }
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #334155;
+            border-radius: 4px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+        .sidebar h5 {
+            white-space: nowrap !important;
+        }
         .sidebar .nav-link {
+            white-space: nowrap !important;
             color: #94a3b8;
-            padding: 12px 20px;
+            padding: 10px 14px;
             font-size: 15px;
             display: flex;
             align-items: center;
             border-radius: 6px;
-            margin: 4px 10px;
+            margin: 3px 6px;
+        }
+        .sidebar .nav-link div,
+        .sidebar .nav-link span {
+            white-space: nowrap !important;
         }
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
             color: #ffffff;

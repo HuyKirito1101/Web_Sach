@@ -28,6 +28,9 @@ public class CheckoutController {
 
     @GetMapping
     public String showCheckoutPage(Authentication authentication, Model model) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -62,6 +65,9 @@ public class CheckoutController {
                              @RequestParam(value = "note", required = false) String note,
                              Authentication authentication,
                              Model model) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -95,6 +101,9 @@ public class CheckoutController {
                                      String method,
                                      Authentication authentication,
                                      org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -151,9 +160,8 @@ public class CheckoutController {
     public String vnpayDemo(@RequestParam(value = "orderId", required = false) Long orderId,
                             @RequestParam(value = "orderIds", required = false) String orderIds,
                             Model model) {
-        String finalOrderIds = orderIds != null ? orderIds : (orderId != null ? orderId.toString() : "");
         model.addAttribute("orderId", orderId != null ? orderId : (orderIds != null ? orderIds.split(",")[0] : null));
-        model.addAttribute("orderIds", finalOrderIds);
+        model.addAttribute("orderIds", orderIds != null ? orderIds : (orderId != null ? orderId.toString() : ""));
         return "customer/vnpay-demo";
     }
 
@@ -161,9 +169,8 @@ public class CheckoutController {
     public String momoDemo(@RequestParam(value = "orderId", required = false) Long orderId,
                            @RequestParam(value = "orderIds", required = false) String orderIds,
                            Model model) {
-        String finalOrderIds = orderIds != null ? orderIds : (orderId != null ? orderId.toString() : "");
         model.addAttribute("orderId", orderId != null ? orderId : (orderIds != null ? orderIds.split(",")[0] : null));
-        model.addAttribute("orderIds", finalOrderIds);
+        model.addAttribute("orderIds", orderIds != null ? orderIds : (orderId != null ? orderId.toString() : ""));
         return "customer/momo-demo";
     }
 }

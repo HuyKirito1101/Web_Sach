@@ -105,16 +105,17 @@ public class OrderServiceImpl implements OrderService {
         User assignedBy = userRepository.findByEmail(assignedByEmail)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người phân công"));
         RoleName assignerRole = assignedBy.getRole().getName();
-        if (assignerRole != RoleName.ROLE_MANAGER && assignerRole != RoleName.ROLE_ADMIN) {
+        if (assignerRole != RoleName.ROLE_MANAGER && assignerRole != RoleName.ROLE_ADMIN && assignerRole != RoleName.ROLE_VENDOR) {
             throw new SecurityException("Chỉ Manager/Admin được phân công Shipper");
         }
         if (shipper.getRole() == null || shipper.getRole().getName() != RoleName.ROLE_SHIPPER) {
             throw new IllegalArgumentException("Tài khoản được chọn không phải Shipper");
         }
-        if (order.getOrderStatus() != OrderStatus.READY_FOR_PICKUP) {
+        boolean isReturn = (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED || order.getOrderStatus() == OrderStatus.RETURNED);
+        if (order.getOrderStatus() != OrderStatus.READY_FOR_PICKUP && !isReturn) {
             throw new IllegalStateException("Chỉ phân Shipper khi đơn READY_FOR_PICKUP");
         }
-        if (assignedBy.getBranch() != null && assignerRole == RoleName.ROLE_MANAGER
+        if (assignedBy.getBranch() != null && (assignerRole == RoleName.ROLE_MANAGER || assignerRole == RoleName.ROLE_VENDOR)
                 && !assignedBy.getBranch().getId().equals(order.getBranch().getId())) {
             throw new SecurityException("Manager không được phân công đơn ngoài chi nhánh");
         }
@@ -135,7 +136,9 @@ public class OrderServiceImpl implements OrderService {
         assignment.setCompletedAt(null);
         assignment.setFailureReason(null);
 
-        order.setOrderStatus(OrderStatus.READY_FOR_PICKUP);
+        if (!isReturn) {
+            order.setOrderStatus(OrderStatus.READY_FOR_PICKUP);
+        }
         orderRepository.save(order);
 
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);

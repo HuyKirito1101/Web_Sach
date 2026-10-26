@@ -22,9 +22,13 @@ public class ShipperController {
     public String dashboard(Authentication auth,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                            @RequestParam(required = false) Integer chartYear,
+                            @RequestParam(required = false) Integer chartMonth,
                             Model model) {
         model.addAttribute("stats", shipperService.getDashboard(auth.getName(), from, to));
-        model.addAttribute("recentAssignments", shipperService.getAssignments(auth.getName(), null, from, to).stream().limit(8).toList());
+        // Chỉ hiện 5 đơn đã hoàn thành gần đây nhất ở dashboard
+        model.addAttribute("recentCompletedAssignments", shipperService.getAssignments(auth.getName(), DeliveryStatus.DELIVERED, from, to).stream().limit(5).toList());
+        model.addAttribute("incomeAnalytics", shipperService.getIncomeAnalytics(auth.getName(), chartYear, chartMonth));
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         return "shipper/dashboard";
@@ -62,5 +66,18 @@ public class ShipperController {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/shipper/orders/" + id;
+    }
+
+    @PostMapping("/orders/{id}/reject")
+    public String reject(Authentication auth, @PathVariable Long id,
+                         @RequestParam String reason,
+                         RedirectAttributes redirect) {
+        try {
+            shipperService.updateStatus(auth.getName(), id, DeliveryStatus.CANCELLED, reason);
+            redirect.addFlashAttribute("successMessage", "Đã từ chối nhận đơn giao và gửi lý do về cho cửa hàng");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/shipper/orders";
     }
 }

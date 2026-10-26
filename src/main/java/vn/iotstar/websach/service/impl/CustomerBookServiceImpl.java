@@ -30,7 +30,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
     @Override
     public List<Book> getTop10BestSellers() {
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
         Map<Long, Long> soldMap = new HashMap<>();
         for (Book b : all) {
             Long soldOrders = orderItemRepository.getSoldQuantityByBookId(b.getId());
@@ -68,7 +68,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
      */
     @Override
     public List<Book> getTop10ByPriceDesc() {
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
         // Sắp xếp theo giá bán cao nhất trong các bản copy
         all.sort((b1, b2) -> {
             double p1 = getMaxPrice(b1.getId());
@@ -86,9 +86,32 @@ public class CustomerBookServiceImpl implements CustomerBookService {
                 .orElse(0.0);
     }
 
+    private boolean hasAvailableCopy(Long bookId) {
+        if (bookId == null) return false;
+        return bookCopyRepository.findByBookId(bookId).stream()
+                .anyMatch(c -> c.getStatus() == BookCopyStatus.AVAILABLE
+                        && c.getSeller() != null
+                        && c.getQuantity() != null
+                        && c.getQuantity() > 0);
+    }
+
+    private List<Book> findAvailableBooks() {
+        return bookRepository.findAll().stream()
+                .filter(b -> hasAvailableCopy(b.getId()))
+                .map(b -> {
+                    // Æ¯u tiÃªn hiá»ƒn thá»‹ áº£nh má»›i nháº¥t tá»« báº£n copy cá»§a vendor náº¿u cÃ³
+                    bookCopyRepository.findByBookId(b.getId()).stream()
+                            .filter(c -> c.getImageUrl() != null && !c.getImageUrl().isBlank())
+                            .findFirst()
+                            .ifPresent(c -> b.setCoverUrl(c.getImageUrl()));
+                    return b;
+                })
+                .collect(Collectors.toList());
+    }
+
     @Override
     public List<Book> getTop20NewBooks() {
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
         all.sort((b1, b2) -> {
             if (b2.getCreatedAt() == null && b1.getCreatedAt() == null) return 0;
             if (b2.getCreatedAt() == null) return -1;
@@ -101,7 +124,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     @Override
     public List<Book> getTop20BestSellers() {
         // Sắp xếp theo số lượng bản copy bán được (số copy với status SOLD)
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
         all.sort((b1, b2) -> {
             long sold1 = bookCopyRepository.findByBookId(b1.getId()).stream()
                     .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
@@ -114,7 +137,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
     @Override
     public List<Book> getTop20TopRated() {
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
         all.sort((b1, b2) -> {
             Double r1 = reviewRepository.getAverageRatingForBook(b1);
             Double r2 = reviewRepository.getAverageRatingForBook(b2);
@@ -131,12 +154,13 @@ public class CustomerBookServiceImpl implements CustomerBookService {
         List<Object[]> rows = favoriteRepository.findTopFavoriteBooks();
         List<Book> result = rows.stream()
                 .map(r -> (Book) r[0])
+                .filter(b -> hasAvailableCopy(b.getId()))
                 .limit(20)
                 .collect(Collectors.toList());
         // Nếu chưa đủ 20, bổ sung bằng sách mới nhất
         if (result.size() < 20) {
             Set<Long> existingIds = result.stream().map(Book::getId).collect(Collectors.toSet());
-            List<Book> all = bookRepository.findAll();
+            List<Book> all = findAvailableBooks();
             for (Book b : all) {
                 if (!existingIds.contains(b.getId())) {
                     result.add(b);
@@ -149,7 +173,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
     @Override
     public List<Book> searchAndFilterBooks(String keyword, Long categoryId, Long branchId, BookCondition condition, Double minPrice, Double maxPrice, String sortBy) {
-        List<Book> all = bookRepository.findAll();
+        List<Book> all = findAvailableBooks();
 
         List<Book> filtered = all.stream().filter(book -> {
             boolean matchesKeyword = true;

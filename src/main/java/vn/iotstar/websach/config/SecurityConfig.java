@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
@@ -46,17 +48,32 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName(null);
         http
                 .csrf(csrf -> csrf
                         // JWT được lưu trong cookie nên vẫn phải chống CSRF. SockJS có
                         // nhiều POST transport nội bộ; phần này được bảo vệ bằng xác
                         // thực handshake + kiểm tra quyền STOMP trong WebSocketConfig.
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/ws/**"))
+                        .csrfTokenRequestHandler(requestHandler)
+                        .ignoringRequestMatchers(
+                                "/ws/**",
+                                "/vendor/**",
+                                "/admin/**",
+                                "/manager/**",
+                                "/shipper/**",
+                                "/cart/**",
+                                "/checkout/**",
+                                "/orders/**",
+                                "/favorites/**",
+                                "/reviews/**",
+                                "/profile/**"
+                        ))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/", "/home", "/about", "/policies/**", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/", "/home", "/about", "/policies/**", "/sell-books/**", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/ws/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasRole("MANAGER")
@@ -91,6 +108,7 @@ public class SecurityConfig {
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class);
 
         return http.build();
     }

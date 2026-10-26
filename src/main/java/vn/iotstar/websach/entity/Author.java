@@ -21,4 +21,6 @@ public class Author {
 
     @Column(columnDefinition = "TEXT")
     private String bio;
+
+    private Integer birthYear;
 }

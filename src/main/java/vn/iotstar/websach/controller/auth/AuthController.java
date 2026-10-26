@@ -211,7 +211,7 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/logout")
+    @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
     public String handleLogout(HttpServletRequest request, HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("JWT_TOKEN", "")
                 .httpOnly(true)

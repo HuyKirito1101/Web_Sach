@@ -22,6 +22,9 @@ public class CartController {
 
     @GetMapping
     public String showCart(Authentication authentication, Model model) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -37,13 +40,20 @@ public class CartController {
     @PostMapping("/add")
     public String addToCart(@RequestParam("bookCopyId") Long bookCopyId,
                             @RequestParam(value = "quantity", defaultValue = "1") Integer quantity,
+                            @RequestParam(value = "buyNow", defaultValue = "false") Boolean buyNow,
                             org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
                             Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
         try {
             cartService.addToCart(user, bookCopyId, quantity);
+            if (Boolean.TRUE.equals(buyNow)) {
+                return "redirect:/checkout";
+            }
             redirectAttributes.addFlashAttribute("successMessage", "Đã thêm sản phẩm vào giỏ hàng thành công!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -56,6 +66,9 @@ public class CartController {
                                  @RequestParam("quantity") Integer quantity,
                                  org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes,
                                  Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
@@ -70,6 +83,9 @@ public class CartController {
     @PostMapping("/delete")
     public String deleteCartItem(@RequestParam("cartItemId") Long cartItemId,
                                  Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login?error=unauthorized";
+        }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 

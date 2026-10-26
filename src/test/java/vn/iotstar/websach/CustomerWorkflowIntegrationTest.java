@@ -39,6 +39,9 @@ class CustomerWorkflowIntegrationTest {
     @Autowired private AppDiscountRepository appDiscountRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private OrderItemRepository orderItemRepository;
+    @Autowired private ShippingProviderRepository shippingProviderRepository;
+    @Autowired private DeliveryAssignmentRepository deliveryAssignmentRepository;
+    @Autowired private vn.iotstar.websach.controller.customer.CustomerOrderController customerOrderController;
 
     @MockBean private EmailService emailService;
 
@@ -264,6 +267,56 @@ class CustomerWorkflowIntegrationTest {
         // OTP không thể dùng lại lần thứ hai
         assertThatThrownBy(() -> userService.resetPasswordWithOtp(email, otp, "anotherPassword"))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void customerOrderDetailWithStandardShippingLoadsSuccessfully() {
+        User customer = getOrCreateCustomer("std-order-customer@example.com");
+        ShippingProvider standardProvider = shippingProviderRepository.findAll().stream()
+                .filter(sp -> sp.getCode() != null && sp.getCode().contains("STANDARD"))
+                .findFirst().orElseGet(() -> shippingProviderRepository.save(ShippingProvider.builder()
+                        .name("Giao Hang Nhanh Standard")
+                        .code("GHN_STANDARD")
+                        .baseFee(20000.0)
+                        .estimatedDays("2-3 ngay")
+                        .build()));
+
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        cartService.clearCart(customer);
+        cartService.addToCart(customer, copy.getId(), 1);
+
+        List<Order> orders = checkoutService.processCheckout(customer, null, "Nguyen Van A", "0911222333",
+                "123 Nguyen Hue", standardProvider.getId(), null, "COD", "Giao gio hanh chinh");
+
+        assertThat(orders).isNotEmpty();
+        Order order = orders.get(0);
+        assertThat(order.getShippingProvider()).isNotNull();
+        assertThat(order.getShippingProvider().getId()).isEqualTo(standardProvider.getId());
+
+        // Táº¡o assignment kÃ¨m tracking code
+        DeliveryAssignment assignment = deliveryAssignmentRepository.save(DeliveryAssignment.builder()
+                .order(order)
+                .status(DeliveryStatus.ASSIGNED)
+                .trackingCode("GHN12345678VN")
+                .note("Van chuyen GHN Standard")
+                .build());
+
+        assertThat(assignment.getTrackingCode()).isEqualTo("GHN12345678VN");
+
+        // Gá»i controller orderDetail
+        org.springframework.security.core.Authentication auth =
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        customer.getEmail(), null, List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
+        org.springframework.ui.ConcurrentModel model = new org.springframework.ui.ConcurrentModel();
+
+        String view = customerOrderController.orderDetail(order.getId(), true, auth, model);
+        assertThat(view).isEqualTo("customer/order-detail");
+        assertThat(model.getAttribute("order")).isEqualTo(order);
+        assertThat(model.getAttribute("success")).isEqualTo(true);
+        assertThat(model.getAttribute("assignment")).isNotNull();
     }
 
     private User getOrCreateCustomer(String email) {

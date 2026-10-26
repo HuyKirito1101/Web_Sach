@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -27,6 +28,13 @@ class SecurityHardeningIntegrationTest {
     }
 
     @Test
+    void getLogoutRedirectsToLogin() throws Exception {
+        mockMvc.perform(get("/auth/logout"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?logout"));
+    }
+
+    @Test
     void publicPagesReturnBrowserSecurityHeaders() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
@@ -35,5 +43,21 @@ class SecurityHardeningIntegrationTest {
                 .andExpect(header().string("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()"))
                 .andExpect(header().string("Content-Security-Policy",
                         org.hamcrest.Matchers.containsString("object-src 'none'")));
+    }
+
+    @Test
+    void unauthenticatedAddToCartRedirectsToLogin() throws Exception {
+        mockMvc.perform(post("/cart/add")
+                        .param("bookCopyId", "1")
+                        .param("quantity", "1"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=unauthorized"));
+    }
+
+    @Test
+    void unauthenticatedCheckoutRedirectsToLogin() throws Exception {
+        mockMvc.perform(get("/checkout"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login?error=unauthorized"));
     }
 }

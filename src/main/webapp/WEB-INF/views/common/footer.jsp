@@ -106,6 +106,19 @@
                 }
                 input.name = parameter;
                 input.value = token;
+
+                if (form.enctype && form.enctype.toLowerCase().includes('multipart')) {
+                    try {
+                        let action = form.getAttribute('action') || window.location.href;
+                        let url = new URL(action, window.location.origin);
+                        if (!url.searchParams.has(parameter)) {
+                            url.searchParams.set(parameter, token);
+                            form.action = url.pathname + url.search;
+                        }
+                    } catch (e) {
+                        console.error('Không thể gắn CSRF vào action URL', e);
+                    }
+                }
             }
 
             document.querySelectorAll('form').forEach(ensureCsrf);

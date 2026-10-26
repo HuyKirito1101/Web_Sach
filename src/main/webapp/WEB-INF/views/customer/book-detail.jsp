@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <jsp:include page="../common/header.jsp">
@@ -43,6 +43,7 @@
 
             <!-- Nút yêu thích -->
             <form action="/favorites/toggle" method="POST" class="mt-3">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                 <input type="hidden" name="bookId" value="${book.id}"/>
                 <button type="submit" class="btn ${isFavorite ? 'btn-danger' : 'btn-outline-danger'} w-100 rounded-pill fw-bold">
                     <i class="fa-solid fa-heart me-1"></i>${isFavorite ? '❤️ Đã Yêu Thích' : '🤍 Thêm Vào Yêu Thích'}
@@ -151,10 +152,20 @@
                                     <td><span class="badge bg-success">${cp.quantity} cuốn</span></td>
                                     <td>
                                         <form action="/cart/add" method="POST" class="d-inline">
+                                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                             <input type="hidden" name="bookCopyId" value="${cp.id}"/>
                                             <input type="hidden" name="quantity" value="1"/>
-                                            <button type="submit" class="btn btn-warning btn-sm rounded-pill fw-bold px-3">
+                                            <button type="submit" class="btn btn-warning btn-sm rounded-pill fw-bold px-3 me-1">
                                                 <i class="fa-solid fa-cart-plus me-1"></i>Thêm Giỏ Hàng
+                                            </button>
+                                        </form>
+                                        <form action="/cart/add" method="POST" class="d-inline">
+                                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                            <input type="hidden" name="bookCopyId" value="${cp.id}"/>
+                                            <input type="hidden" name="quantity" value="1"/>
+                                            <input type="hidden" name="buyNow" value="true"/>
+                                            <button type="submit" class="btn btn-danger btn-sm rounded-pill fw-bold px-3">
+                                                <i class="fa-solid fa-bolt me-1"></i>Mua Ngay
                                             </button>
                                         </form>
                                     </td>
@@ -220,6 +231,7 @@
                 <div class="bg-light p-4 rounded-3 mb-4 border">
                     <h6 class="fw-bold mb-3"><i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Viết Đánh Giá &amp; Bình Luận (tối thiểu 50 ký tự)</h6>
                     <form action="/reviews/add" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                         <input type="hidden" name="bookId" value="${book.id}"/>
 
                         <!-- Star rating -->
@@ -322,8 +334,7 @@
                                 </c:if>
                                 <small class="text-muted">
                                     <i class="fa-regular fa-clock me-1"></i>
-                                    <fmt:parseDate value="${rev.createdAt}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both"/>
-                                    <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                    <c:out value="${rev.formattedCreatedAt}"/>
                                 </small>
                             </div>
                         </div>
