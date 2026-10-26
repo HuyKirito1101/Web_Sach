@@ -49,7 +49,8 @@
                                         <td class="text-end">
                                             <c:choose>
                                                 <c:when test="${s.role.name == 'ROLE_ADMIN' || s.role.name == 'ROLE_MANAGER'}"><span class="text-muted small">Được bảo vệ</span></c:when>
-                                                <c:otherwise><form action="/manager/staff/${s.id}/toggle-lock" method="post"><button class="btn btn-sm ${s.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'}"><i class="fa-solid ${s.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'} me-1"></i>${s.status == 'LOCKED' ? 'Mở khóa' : 'Khóa'}</button></form></c:otherwise>
+                                                <c:otherwise><form action="/manager/staff/${s.id}/toggle-lock" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm ${s.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'}"><i class="fa-solid ${s.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'} me-1"></i>${s.status == 'LOCKED' ? 'Mở khóa' : 'Khóa'}</button></form></c:otherwise>
                                             </c:choose>
                                         </td>
                                     </tr>

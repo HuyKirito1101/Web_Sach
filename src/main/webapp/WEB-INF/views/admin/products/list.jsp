@@ -57,6 +57,7 @@
                                     <td class="text-end text-nowrap">
                                         <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProduct${p.id}"><i class="fa-solid fa-pen"></i></button>
                                         <form action="/admin/products/${p.id}/toggle" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                             <button class="btn btn-sm btn-outline-warning" title="Đổi trạng thái"><i class="fa-solid fa-power-off"></i></button>
                                         </form>
                                     </td>
@@ -64,6 +65,7 @@
                                 <div class="modal fade" id="editProduct${p.id}" tabindex="-1">
                                     <div class="modal-dialog"><div class="modal-content">
                                         <form action="/admin/products/${p.id}/update" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                             <div class="modal-header"><h5 class="modal-title fw-bold">Cập nhật <c:out value="${p.book.title}"/></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                                             <div class="modal-body">
                                                 <div class="mb-3"><label class="form-label">Giá bán</label><input type="number" min="0" step="1000" name="sellingPrice" value="${p.sellingPrice}" class="form-control" required></div>

@@ -55,14 +55,17 @@
                                         <td class="text-end">
                                             <c:if test="${t.status == 'PENDING' && t.fromBranch.id == currentBranchId}">
                                                 <form action="/manager/transfers/approve/${t.id}" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <button type="submit" class="btn btn-sm btn-success me-1"><i class="fa-solid fa-check me-1"></i> Duyệt Chuyển</button>
                                                 </form>
                                                 <form action="/manager/transfers/reject/${t.id}" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-xmark"></i> Từ Chối</button>
                                                 </form>
                                             </c:if>
                                             <c:if test="${t.status == 'SHIPPING' && t.toBranch.id == currentBranchId}">
                                                 <form action="/manager/transfers/complete/${t.id}" method="post" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                     <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-box-open me-1"></i> Xác Nhận Nhận Sách</button>
                                                 </form>
                                             </c:if>
@@ -80,6 +83,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form action="/manager/transfers/create" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <input type="hidden" name="fromBranchId" value="${currentBranchId}" />
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold">Tạo Yêu Cầu Điều Chuyển Sách</h5>

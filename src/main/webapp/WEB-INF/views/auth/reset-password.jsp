@@ -60,7 +60,8 @@
 
             <div class="mb-3">
                 <label class="form-label font-weight-bold">Mật khẩu mới</label>
-                <form:input path="newPassword" type="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required="true" />
+                <form:input path="newPassword" type="password" class="form-control"
+                            placeholder="Từ 8 đến 72 ký tự" minlength="8" maxlength="72" required="true" />
                 <form:errors path="newPassword" cssClass="text-danger small mt-1" />
             </div>
 
@@ -81,6 +82,10 @@
             </a>
             <a href="/auth/login" class="text-decoration-none small fw-bold text-primary">
                 Đăng nhập
+            </a>
+            <span class="text-muted mx-1">|</span>
+            <a href="/auth/register" class="text-decoration-none small fw-bold text-primary">
+                Đăng ký tài khoản
             </a>
         </div>
     </div>

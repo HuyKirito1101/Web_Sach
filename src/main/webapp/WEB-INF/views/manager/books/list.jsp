@@ -85,7 +85,8 @@
                                         <td class="fw-bold fs-6">${c.quantity}</td>
                                         <td><span class="badge ${c.status == 'AVAILABLE' ? 'bg-success' : 'bg-secondary'}">${c.status}</span></td>
                                         <td class="text-end">
-                                            <form method="post" action="/manager/books/delete/${c.id}" class="d-inline"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fa-solid fa-trash"></i></button></form>
+                                            <form method="post" action="/manager/books/delete/${c.id}" class="d-inline">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc chắn muốn xóa?')"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -100,6 +101,7 @@
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <form action="/manager/books/create-master-book" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header bg-success text-white">
                                 <h5 class="modal-title fw-bold"><i class="fa-solid fa-book-medical me-2"></i>Thêm Đầu Sách Mới Vẫn Chưa Có Trực Tiếp Về Hệ Thống</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -158,6 +160,7 @@
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <form action="/manager/books/save" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold">Nhập Bản Sách Cũ Vào Kho Chi Nhánh</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

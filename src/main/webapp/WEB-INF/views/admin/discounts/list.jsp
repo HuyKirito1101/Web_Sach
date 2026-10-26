@@ -44,7 +44,8 @@
                                         <td><fmt:formatNumber value="${d.minOrderValue}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${d.active ? 'bg-success' : 'bg-secondary'}">${d.active ? 'ĐANG ÁP DỤNG' : 'HẾT HẠN'}</span></td>
                                         <td class="text-end">
-                                            <form action="/admin/discounts/delete/${d.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                            <form action="/admin/discounts/delete/${d.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã này?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -59,6 +60,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form action="/admin/discounts/save" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold">Tạo Mã Voucher / Chiết Khấu App</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

@@ -34,6 +34,7 @@
                                 <p class="text-muted small mb-3"><i class="fa-solid fa-envelope me-2 text-info"></i><c:out value="${b.email}"/></p>
                                 <div class="pt-2 border-top">
                                     <form action="/admin/branches/${b.id}/commission" method="post" class="input-group input-group-sm mb-2">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                         <span class="input-group-text">Chiết khấu App</span>
                                         <input type="number" min="0" max="100" step="0.1" name="appDiscountPercent" value="${b.appDiscountPercent}" class="form-control" required>
                                         <span class="input-group-text">%</span>
@@ -44,7 +45,8 @@
                                                 data-bs-toggle="modal" data-bs-target="#editBranchModal${b.id}">
                                             <i class="fa-solid fa-pen-to-square me-1"></i>Chỉnh sửa
                                         </button>
-                                        <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                        <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
                                     </div>
                                 </div>
                             </div>
@@ -56,6 +58,7 @@
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <form action="/admin/branches/save" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                     <input type="hidden" name="id" value="${b.id}" />
                                     <div class="modal-header">
                                         <h5 class="modal-title fw-bold">
@@ -130,6 +133,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form action="/admin/branches/save" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                             <div class="modal-header">
                                 <h5 class="modal-title fw-bold">Thêm Chi Nhánh Mới</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
