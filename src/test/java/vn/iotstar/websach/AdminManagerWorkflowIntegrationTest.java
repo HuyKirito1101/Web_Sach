@@ -8,13 +8,17 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.entity.BookCopy;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.Promotion;
+import vn.iotstar.websach.entity.SupportConversation;
 import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.entity.enums.PromotionType;
+import vn.iotstar.websach.dto.StockTransferRequest;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BranchRepository;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.PromotionService;
 import vn.iotstar.websach.service.BranchService;
+import vn.iotstar.websach.service.StockTransferService;
+import vn.iotstar.websach.service.SupportChatService;
 
 import java.time.LocalDate;
 
@@ -22,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 @Transactional
 class AdminManagerWorkflowIntegrationTest {
 
@@ -33,6 +37,8 @@ class AdminManagerWorkflowIntegrationTest {
     @Autowired private BookCopyRepository bookCopyRepository;
     @Autowired private BranchRepository branchRepository;
     @Autowired private BranchService branchService;
+    @Autowired private StockTransferService stockTransferService;
+    @Autowired private SupportChatService supportChatService;
 
     @Test
     void adminCanEditBranchInformationWithoutClearingCurrentImage() {
@@ -108,5 +114,66 @@ class AdminManagerWorkflowIntegrationTest {
                 otherBranchPromotion.getId(), managedBranch.getId()))
                 .isInstanceOf(SecurityException.class)
                 .hasMessageContaining("chi nhánh khác");
+    }
+
+    @Test
+    void managerCannotCreateTransferFromAnotherBranch() {
+        Branch managedBranch = managerAccessService.requireManagedBranch(MANAGER_EMAIL);
+        BookCopy otherCopy = bookCopyRepository.findAll().stream()
+                .filter(copy -> copy.getBranch() != null)
+                .filter(copy -> !copy.getBranch().getId().equals(managedBranch.getId()))
+                .filter(copy -> copy.getQuantity() != null && copy.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        StockTransferRequest request = new StockTransferRequest();
+        request.setFromBranchId(otherCopy.getBranch().getId());
+        request.setToBranchId(managedBranch.getId());
+        request.setBookCopyId(otherCopy.getId());
+        request.setQuantity(1);
+
+        assertThatThrownBy(() -> stockTransferService.createTransferRequest(request, MANAGER_EMAIL))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("chi nhánh mình quản lý");
+    }
+
+    @Test
+    void customerMessagesAreRoutedToTheCorrectBranchManager() {
+        Branch managedBranch = managerAccessService.requireManagedBranch(MANAGER_EMAIL);
+        Branch otherBranch = branchRepository.findAll().stream()
+                .filter(branch -> branch.getStatus() == BranchStatus.ACTIVE)
+                .filter(branch -> !branch.getId().equals(managedBranch.getId()))
+                .findFirst().orElseThrow();
+
+        SupportConversation conversation = supportChatService.startConversation(
+                "Khách cần hỗ trợ", "0901234567", managedBranch.getId(), "Chi nhánh còn sách này không?");
+
+        assertThat(supportChatService.getManagerConversations(MANAGER_EMAIL))
+                .extracting(SupportConversation::getId)
+                .contains(conversation.getId());
+        assertThat(supportChatService.countUnreadForManager(MANAGER_EMAIL)).isGreaterThanOrEqualTo(1);
+
+        supportChatService.openForManager(MANAGER_EMAIL, conversation.getId());
+        supportChatService.replyAsManager(MANAGER_EMAIL, conversation.getId(), "Chi nhánh vẫn còn sách, mời bạn ghé xem.");
+
+        assertThat(supportChatService.getCustomerMessages(conversation.getPublicToken()))
+                .extracting(message -> message.getSenderType().name())
+                .containsExactly("CUSTOMER", "MANAGER");
+
+        SupportConversation anotherBranchConversation = supportChatService.startConversation(
+                "Khách chi nhánh khác", "0912345678", otherBranch.getId(), "Tôi cần hỗ trợ.");
+        assertThatThrownBy(() -> supportChatService.openForManager(MANAGER_EMAIL, anotherBranchConversation.getId()))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("chi nhánh khác");
+        assertThatThrownBy(() -> supportChatService.deleteConversation(MANAGER_EMAIL, anotherBranchConversation.getId()))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("chi nhánh khác");
+
+        supportChatService.deleteConversation(MANAGER_EMAIL, conversation.getId());
+        assertThat(supportChatService.getManagerConversations(MANAGER_EMAIL))
+                .extracting(SupportConversation::getId)
+                .doesNotContain(conversation.getId());
+        assertThatThrownBy(() -> supportChatService.getCustomerConversation(conversation.getPublicToken()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Không tìm thấy hội thoại");
     }
 }

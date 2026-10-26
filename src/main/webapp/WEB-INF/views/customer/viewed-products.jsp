@@ -6,7 +6,31 @@
 <jsp:include page="../common/navbar.jsp"/>
 
 <div class="container py-4">
-    <h3 class="fw-bold mb-4"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Lịch Sử Sách Đã Xem</h3>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-clock-rotate-left text-info me-2"></i>Lịch Sử Sách Đã Xem</h3>
+        <c:if test="${not empty viewedProducts}">
+            <form action="/viewed-products/clear" method="post"
+                  onsubmit="return confirm('Bạn có chắc muốn xóa toàn bộ lịch sử xem sách?')">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                <button type="submit" class="btn btn-outline-danger rounded-pill px-3">
+                    <i class="fa-solid fa-trash-can me-1"></i>Xóa Lịch Sử
+                </button>
+            </form>
+        </c:if>
+    </div>
+
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty infoMessage}">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i><c:out value="${infoMessage}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
 
     <c:choose>
         <c:when test="${empty viewedProducts}">

@@ -41,7 +41,6 @@ public interface VendorService {
     DeliveryAssignment assignShipper(String vendorEmail, Long orderId, Long shipperId, String note);
     DeliveryAssignment revokeAssignment(String vendorEmail, Long orderId);
     DeliveryAssignment autoAssignBranchShipper(Order order, User assignedBy);
-    Order syncSpxDelivery(String vendorEmail, Long orderId);
     List<Order> getReturnOrders(String vendorEmail);
     Order confirmReturnReceived(String vendorEmail, Long orderId);
     Order approveRefund(String vendorEmail, Long orderId);

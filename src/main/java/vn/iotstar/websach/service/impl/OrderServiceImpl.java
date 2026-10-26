@@ -15,7 +15,9 @@ import vn.iotstar.websach.entity.enums.PaymentMethod;
 import vn.iotstar.websach.entity.enums.RoleName;
 import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.repository.OrderRepository;
+import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.repository.UserRepository;
+import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.OrderService;
 
 import java.time.LocalDateTime;
@@ -32,6 +34,8 @@ public class OrderServiceImpl implements OrderService {
     private final SimpMessagingTemplate messagingTemplate;
     private final vn.iotstar.websach.repository.OrderItemRepository orderItemRepository;
     private final vn.iotstar.websach.repository.BookCopyRepository bookCopyRepository;
+    private final ReviewRepository reviewRepository;
+    private final ManagerAccessService managerAccessService;
 
     @Override
     public List<Order> findAllOrders() {
@@ -40,7 +44,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Order> findOrdersByBranch(Long branchId) {
-        return orderRepository.findByBranchId(branchId);
+        return orderRepository.findByBranchId(branchId).stream()
+                .filter(order -> !Boolean.TRUE.equals(order.getManagerArchived()))
+                .toList();
     }
 
     @Override
@@ -64,12 +70,28 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng id: " + orderId));
 
+        OrderStatus current = order.getOrderStatus();
+        if (current == status) return order;
+        if (order.getPaymentMethod() == PaymentMethod.MOMO
+                && status != OrderStatus.CANCELLED
+                && order.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new IllegalStateException("Đơn MoMo chưa được xác nhận thanh toán.");
+        }
+        if (order.getPaymentMethod() == PaymentMethod.MOMO
+                && status == OrderStatus.CANCELLED
+                && order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalStateException("Đơn MoMo đã thanh toán phải thực hiện quy trình hoàn tiền.");
+        }
+        if (!isAllowedTransition(current, status)) {
+            throw new IllegalStateException("Không được chuyển trạng thái đơn từ " + current + " sang " + status + ".");
+        }
+
         order.setOrderStatus(status);
         if (status == OrderStatus.DELIVERED && order.getPaymentMethod() == PaymentMethod.COD) {
             order.setPaymentStatus(PaymentStatus.PAID);
         } else if (status == OrderStatus.REFUNDED) {
             order.setPaymentStatus(PaymentStatus.REFUNDED);
-        } else if (status == OrderStatus.RETURNED) {
+        } else if (status == OrderStatus.RETURNED || status == OrderStatus.CANCELLED) {
             List<vn.iotstar.websach.entity.OrderItem> items = orderItemRepository.findByOrderId(order.getId());
             for (vn.iotstar.websach.entity.OrderItem item : items) {
                 vn.iotstar.websach.entity.BookCopy copy = item.getBookCopy();
@@ -81,6 +103,9 @@ public class OrderServiceImpl implements OrderService {
                     bookCopyRepository.save(copy);
                 }
             }
+            if (status == OrderStatus.CANCELLED && order.getPaymentMethod() == PaymentMethod.MOMO) {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+            }
         }
 
         Order saved = orderRepository.save(order);
@@ -91,6 +116,48 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception ignored) {}
 
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public Order confirmManualMomoPayment(Long orderId, String managerEmail) {
+        Order order = managerAccessService.requireOrderInBranch(managerEmail, orderId);
+        if (order.getPaymentMethod() != PaymentMethod.MOMO) {
+            throw new IllegalStateException("Đơn hàng này không thanh toán bằng MoMo.");
+        }
+        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.REFUNDED) {
+            throw new IllegalStateException("Không thể xác nhận thanh toán cho đơn hàng đã hủy hoặc hoàn tiền.");
+        }
+        if (order.getPaymentStatus() != PaymentStatus.AWAITING_CONFIRMATION) {
+            throw new IllegalStateException(order.getPaymentStatus() == PaymentStatus.PAID
+                    ? "Đơn hàng đã được xác nhận thanh toán."
+                    : "Khách hàng chưa báo đã chuyển tiền.");
+        }
+        order.setPaymentStatus(PaymentStatus.PAID);
+        order.setPaymentConfirmedAt(LocalDateTime.now());
+        order.setPaymentConfirmedBy(managerEmail);
+        Order saved = orderRepository.save(order);
+        try {
+            messagingTemplate.convertAndSend("/topic/orders",
+                    "Đơn hàng " + order.getOrderCode() + " đã được xác nhận thanh toán MoMo.");
+        } catch (Exception ignored) {}
+        return saved;
+    }
+
+    private boolean isAllowedTransition(OrderStatus current, OrderStatus target) {
+        return switch (current) {
+            case NEW -> target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED;
+            case CONFIRMED -> target == OrderStatus.PACKING || target == OrderStatus.CANCELLED;
+            case PACKING -> target == OrderStatus.READY_FOR_PICKUP || target == OrderStatus.CANCELLED;
+            case READY_FOR_PICKUP -> target == OrderStatus.PICKED_UP || target == OrderStatus.SHIPPING
+                    || target == OrderStatus.CANCELLED;
+            case PICKED_UP -> target == OrderStatus.SHIPPING;
+            case SHIPPING -> target == OrderStatus.DELIVERED;
+            case DELIVERED -> target == OrderStatus.RETURN_REQUESTED;
+            case RETURN_REQUESTED -> target == OrderStatus.RETURNED;
+            case RETURNED -> target == OrderStatus.REFUNDED;
+            case CANCELLED, REFUNDED -> false;
+        };
     }
 
     @Override
@@ -149,6 +216,43 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception ignored) {}
 
         return saved;
+    }
+
+    @Override
+    @Transactional
+    public int clearCompletedOrderHistory(String managerEmail) {
+        Long branchId = managerAccessService.requireManagedBranch(managerEmail).getId();
+        List<Order> completedOrders = orderRepository.findByBranchId(branchId).stream()
+                .filter(order -> !Boolean.TRUE.equals(order.getManagerArchived()))
+                .filter(order -> order.getOrderStatus() == OrderStatus.DELIVERED
+                        || order.getOrderStatus() == OrderStatus.CANCELLED
+                        || order.getOrderStatus() == OrderStatus.REFUNDED)
+                .toList();
+        completedOrders.forEach(order -> order.setManagerArchived(true));
+        orderRepository.saveAll(completedOrders);
+        return completedOrders.size();
+    }
+
+    @Override
+    @Transactional
+    public void deleteCancelledOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng id: " + orderId));
+        if (order.getOrderStatus() != OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Chỉ được xóa đơn hàng đã hủy.");
+        }
+
+        // Xóa theo thứ tự bảng con -> bảng cha để không vi phạm khóa ngoại MySQL.
+        deliveryAssignmentRepository.findByOrderId(orderId)
+                .ifPresent(deliveryAssignmentRepository::delete);
+        reviewRepository.deleteAll(reviewRepository.findByOrderItemOrderId(orderId));
+        orderItemRepository.deleteAll(orderItemRepository.findByOrderId(orderId));
+        orderRepository.delete(order);
+        orderRepository.flush();
+
+        try {
+            messagingTemplate.convertAndSend("/topic/orders", "Đơn hàng " + order.getOrderCode() + " đã được xóa.");
+        } catch (Exception ignored) {}
     }
 
 }

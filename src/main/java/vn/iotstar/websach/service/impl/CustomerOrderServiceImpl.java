@@ -7,11 +7,15 @@ import vn.iotstar.websach.entity.Order;
 import vn.iotstar.websach.entity.OrderItem;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.enums.OrderStatus;
+import vn.iotstar.websach.entity.enums.PaymentMethod;
+import vn.iotstar.websach.entity.enums.PaymentStatus;
 import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.repository.OrderItemRepository;
 import vn.iotstar.websach.repository.OrderRepository;
+import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.service.CustomerOrderService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +27,7 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
+    private final BookCopyRepository bookCopyRepository;
 
     @Override
     public List<Order> getCustomerOrders(User user, OrderStatus status) {
@@ -47,10 +52,41 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
 
     @Override
     @Transactional
+    public Order markMomoTransferred(User user, Long orderId) {
+        Order order = getOrderById(user, orderId);
+        if (order == null) {
+            throw new SecurityException("Đơn hàng không tồn tại hoặc không thuộc tài khoản của bạn.");
+        }
+        if (order.getPaymentMethod() != PaymentMethod.MOMO) {
+            throw new IllegalStateException("Đơn hàng này không sử dụng thanh toán MoMo.");
+        }
+        if (order.getOrderStatus() == OrderStatus.CANCELLED || order.getOrderStatus() == OrderStatus.REFUNDED) {
+            throw new IllegalStateException("Không thể báo chuyển tiền cho đơn hàng đã hủy hoặc hoàn tiền.");
+        }
+        if (order.getPaymentStatus() != PaymentStatus.PENDING) {
+            throw new IllegalStateException(order.getPaymentStatus() == PaymentStatus.PAID
+                    ? "Đơn hàng đã được xác nhận thanh toán."
+                    : "Yêu cầu xác nhận thanh toán đã được gửi trước đó.");
+        }
+        order.setPaymentStatus(PaymentStatus.AWAITING_CONFIRMATION);
+        order.setPaymentSubmittedAt(LocalDateTime.now());
+        return orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
     public boolean cancelOrder(User user, Long orderId, String reason) {
         Order order = getOrderById(user, orderId);
         if (order != null && (order.getOrderStatus() == OrderStatus.NEW || order.getOrderStatus() == OrderStatus.CONFIRMED)) {
+            if (order.getPaymentMethod() == PaymentMethod.MOMO
+                    && order.getPaymentStatus() == PaymentStatus.PAID) {
+                throw new IllegalStateException("Đơn MoMo đã thanh toán không thể hủy trực tiếp. Vui lòng liên hệ cửa hàng để hoàn tiền.");
+            }
             order.setOrderStatus(OrderStatus.CANCELLED);
+            if (order.getPaymentMethod() == PaymentMethod.MOMO) {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+            }
+            restoreInventory(order);
             if (reason != null && !reason.trim().isEmpty()) {
                 order.setNote((order.getNote() != null ? order.getNote() + " | " : "") + "Khách hủy: " + reason);
             }
@@ -58,6 +94,19 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
             return true;
         }
         return false;
+    }
+
+    private void restoreInventory(Order order) {
+        for (OrderItem item : orderItemRepository.findByOrderId(order.getId())) {
+            if (item.getBookCopy() == null || item.getQuantity() == null) continue;
+            var copy = item.getBookCopy();
+            copy.setQuantity((copy.getQuantity() == null ? 0 : copy.getQuantity()) + item.getQuantity());
+            if (copy.getQuantity() > 0
+                    && copy.getStatus() == vn.iotstar.websach.entity.enums.BookCopyStatus.SOLD) {
+                copy.setStatus(vn.iotstar.websach.entity.enums.BookCopyStatus.AVAILABLE);
+            }
+            bookCopyRepository.save(copy);
+        }
     }
 
     @Override
@@ -79,6 +128,9 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         Order order = getOrderById(user, orderId);
         if (order != null && order.getOrderStatus() == OrderStatus.DELIVERED) {
             order.setOrderStatus(OrderStatus.RETURN_REQUESTED);
+            // Đơn đã được Manager dọn khỏi lịch sử phải xuất hiện lại khi khách
+            // phát sinh yêu cầu hoàn trả cần xử lý.
+            order.setManagerArchived(false);
             order.setReturnReason(reason);
 
             // Xóa phân công vận chuyển chiều giao trước đó (nếu có) để chuẩn bị cho quy trình hoàn trả

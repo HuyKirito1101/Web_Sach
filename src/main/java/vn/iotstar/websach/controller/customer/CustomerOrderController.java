@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Order;
 import vn.iotstar.websach.entity.OrderItem;
 import vn.iotstar.websach.entity.User;
@@ -69,14 +70,43 @@ public class CustomerOrderController {
     @PostMapping("/{id}/cancel")
     public String cancelOrder(@PathVariable("id") Long id,
                               @RequestParam(value = "reason", required = false) String reason,
-                              Authentication authentication) {
+                              Authentication authentication,
+                              RedirectAttributes redirectAttributes) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "redirect:/auth/login";
         }
         User user = userService.findByEmail(authentication.getName()).orElse(null);
         if (user == null) return "redirect:/auth/login";
 
-        customerOrderService.cancelOrder(user, id, reason);
+        try {
+            boolean cancelled = customerOrderService.cancelOrder(user, id, reason);
+            if (cancelled) {
+                redirectAttributes.addFlashAttribute("successMessage", "Đã hủy đơn hàng.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Đơn hàng không còn ở trạng thái có thể hủy.");
+            }
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/orders/" + id;
+    }
+
+    @PostMapping("/{id}/momo-transferred")
+    public String markMomoTransferred(@PathVariable("id") Long id,
+                                      Authentication authentication,
+                                      RedirectAttributes redirectAttributes) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "redirect:/auth/login";
+        }
+        User user = userService.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/auth/login";
+        try {
+            customerOrderService.markMomoTransferred(user, id);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã gửi yêu cầu xác nhận. Cửa hàng sẽ kiểm tra giao dịch MoMo của bạn.");
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
         return "redirect:/orders/" + id;
     }
 

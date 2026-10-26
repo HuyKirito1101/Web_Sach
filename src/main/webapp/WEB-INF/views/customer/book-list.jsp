@@ -105,10 +105,14 @@
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Sách Cũ
-                    <span class="badge bg-warning text-dark ms-2">${books.size()} kết quả</span>
+                    <span class="badge bg-warning text-dark ms-2">${bookPage.totalElements} kết quả</span>
                 </h5>
-                <!-- Page info -->
-                <small class="text-muted" id="pageInfo"></small>
+                <c:if test="${bookPage.totalElements > 0}">
+                    <small class="text-muted">
+                        Hiển thị ${bookPage.number * bookPage.size + 1}-${bookPage.number * bookPage.size + bookPage.numberOfElements}
+                        trong ${bookPage.totalElements} sản phẩm
+                    </small>
+                </c:if>
             </div>
 
             <c:if test="${empty books}">
@@ -119,10 +123,10 @@
                 </div>
             </c:if>
 
-            <!-- All books in a grid, paginated via JS -->
-            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4" id="bookGrid">
-                <c:forEach var="b" items="${books}" varStatus="status">
-                    <div class="col book-item" data-index="${status.index}">
+            <!-- Chỉ 20 sản phẩm của trang hiện tại được trả về từ server. -->
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+                <c:forEach var="b" items="${books}">
+                    <div class="col">
                         <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
                             <img src="<c:out value='${b.coverUrl != null ? b.coverUrl : "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400"}'/>"
                                  class="card-img-top" alt="<c:out value='${b.title}'/>" style="height: 220px; object-fit: cover;"
@@ -143,55 +147,41 @@
             </div>
 
             <!-- Pagination -->
-            <c:if test="${!empty books}">
-                <div class="d-flex justify-content-center align-items-center mt-4 gap-2" id="paginationContainer">
-                    <button class="btn btn-outline-warning text-dark rounded-pill px-3" id="prevBtn" onclick="changePage(-1)" disabled>
-                        <i class="fa-solid fa-chevron-left"></i> Trước
-                    </button>
-                    <span class="fw-bold text-dark" id="pageLabel">Trang 1</span>
-                    <button class="btn btn-outline-warning text-dark rounded-pill px-3" id="nextBtn" onclick="changePage(1)">
-                        Sau <i class="fa-solid fa-chevron-right"></i>
-                    </button>
+            <c:if test="${bookPage.totalPages > 1}">
+                <c:url var="previousPageUrl" value="/books">
+                    <c:param name="keyword" value="${keyword}"/><c:param name="categoryId" value="${selectedCategory}"/>
+                    <c:param name="branchId" value="${selectedBranch}"/><c:param name="condition" value="${selectedCondition}"/>
+                    <c:param name="minPrice" value="${minPrice}"/><c:param name="maxPrice" value="${maxPrice}"/>
+                    <c:param name="sortBy" value="${sortBy}"/><c:param name="page" value="${bookPage.number - 1}"/>
+                </c:url>
+                <c:url var="nextPageUrl" value="/books">
+                    <c:param name="keyword" value="${keyword}"/><c:param name="categoryId" value="${selectedCategory}"/>
+                    <c:param name="branchId" value="${selectedBranch}"/><c:param name="condition" value="${selectedCondition}"/>
+                    <c:param name="minPrice" value="${minPrice}"/><c:param name="maxPrice" value="${maxPrice}"/>
+                    <c:param name="sortBy" value="${sortBy}"/><c:param name="page" value="${bookPage.number + 1}"/>
+                </c:url>
+                <div class="d-flex justify-content-center align-items-center mt-4 gap-2">
+                    <c:choose>
+                        <c:when test="${bookPage.hasPrevious}">
+                            <a class="btn btn-outline-warning text-dark rounded-pill px-3" href="${previousPageUrl}">
+                                <i class="fa-solid fa-chevron-left"></i> Trước
+                            </a>
+                        </c:when>
+                        <c:otherwise><span class="btn btn-outline-secondary rounded-pill px-3 disabled">Trước</span></c:otherwise>
+                    </c:choose>
+                    <span class="fw-bold text-dark">Trang ${bookPage.number + 1} / ${bookPage.totalPages}</span>
+                    <c:choose>
+                        <c:when test="${bookPage.hasNext}">
+                            <a class="btn btn-outline-warning text-dark rounded-pill px-3" href="${nextPageUrl}">
+                                Sau <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </c:when>
+                        <c:otherwise><span class="btn btn-outline-secondary rounded-pill px-3 disabled">Sau</span></c:otherwise>
+                    </c:choose>
                 </div>
             </c:if>
         </div>
     </div>
 </div>
-
-<script>
-    const PAGE_SIZE = 20;
-    let currentPage = 0;
-    const allItems = document.querySelectorAll('.book-item');
-    const totalPages = Math.ceil(allItems.length / PAGE_SIZE);
-
-    function renderPage(page) {
-        allItems.forEach((item, idx) => {
-            const start = page * PAGE_SIZE;
-            const end = start + PAGE_SIZE;
-            item.style.display = (idx >= start && idx < end) ? '' : 'none';
-        });
-        document.getElementById('pageLabel').textContent = 'Trang ' + (page + 1) + ' / ' + totalPages;
-        document.getElementById('pageInfo').textContent = 'Hiển thị ' + Math.min(page * PAGE_SIZE + 1, allItems.length) + '-' + Math.min((page+1)*PAGE_SIZE, allItems.length) + ' trong ' + allItems.length + ' sản phẩm';
-        document.getElementById('prevBtn').disabled = (page === 0);
-        document.getElementById('nextBtn').disabled = (page >= totalPages - 1);
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function changePage(delta) {
-        currentPage = Math.max(0, Math.min(totalPages - 1, currentPage + delta));
-        renderPage(currentPage);
-    }
-
-    // Khởi tạo
-    document.addEventListener('DOMContentLoaded', function() {
-        if (allItems.length > 0) {
-            renderPage(0);
-            if (totalPages <= 1) {
-                const pc = document.getElementById('paginationContainer');
-                if (pc) pc.style.display = 'none';
-            }
-        }
-    });
-</script>
 
 <jsp:include page="../common/footer.jsp"/>

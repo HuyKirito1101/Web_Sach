@@ -16,6 +16,9 @@ import vn.iotstar.websach.service.CustomerBookService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -42,24 +45,11 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
         // Lọc các sách bán trên 10 cuốn, xếp theo số lượng bán giảm dần
         List<Book> over10Sold = all.stream()
-                .filter(b -> soldMap.getOrDefault(b.getId(), 0L) >= 10)
+                .filter(b -> soldMap.getOrDefault(b.getId(), 0L) > 10)
                 .sorted((b1, b2) -> Long.compare(soldMap.getOrDefault(b2.getId(), 0L), soldMap.getOrDefault(b1.getId(), 0L)))
                 .limit(10)
                 .collect(Collectors.toList());
 
-        if (over10Sold.size() >= 10) {
-            return over10Sold;
-        }
-
-        // Bổ sung các cuốn bán chạy theo số lượng giảm dần để đủ top 10
-        Set<Long> pickedIds = over10Sold.stream().map(Book::getId).collect(Collectors.toSet());
-        List<Book> remainingBestSellers = all.stream()
-                .filter(b -> !pickedIds.contains(b.getId()))
-                .sorted((b1, b2) -> Long.compare(soldMap.getOrDefault(b2.getId(), 0L), soldMap.getOrDefault(b1.getId(), 0L)))
-                .limit(10 - over10Sold.size())
-                .collect(Collectors.toList());
-
-        over10Sold.addAll(remainingBestSellers);
         return over10Sold;
     }
 
@@ -99,7 +89,7 @@ public class CustomerBookServiceImpl implements CustomerBookService {
         return bookRepository.findAll().stream()
                 .filter(b -> hasAvailableCopy(b.getId()))
                 .map(b -> {
-                    // Æ¯u tiÃªn hiá»ƒn thá»‹ áº£nh má»›i nháº¥t tá»« báº£n copy cá»§a vendor náº¿u cÃ³
+                    // Ưu tiên hiển thị ảnh từ bản sách của vendor nếu có.
                     bookCopyRepository.findByBookId(b.getId()).stream()
                             .filter(c -> c.getImageUrl() != null && !c.getImageUrl().isBlank())
                             .findFirst()
@@ -123,13 +113,11 @@ public class CustomerBookServiceImpl implements CustomerBookService {
 
     @Override
     public List<Book> getTop20BestSellers() {
-        // Sắp xếp theo số lượng bản copy bán được (số copy với status SOLD)
+        // Sắp xếp theo tổng số lượng thực tế trong các dòng đơn hàng không bị hủy.
         List<Book> all = findAvailableBooks();
         all.sort((b1, b2) -> {
-            long sold1 = bookCopyRepository.findByBookId(b1.getId()).stream()
-                    .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
-            long sold2 = bookCopyRepository.findByBookId(b2.getId()).stream()
-                    .filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+            long sold1 = Optional.ofNullable(orderItemRepository.getSoldQuantityByBookId(b1.getId())).orElse(0L);
+            long sold2 = Optional.ofNullable(orderItemRepository.getSoldQuantityByBookId(b2.getId())).orElse(0L);
             return Long.compare(sold2, sold1);
         });
         return all.stream().limit(20).collect(Collectors.toList());
@@ -172,7 +160,16 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     }
 
     @Override
-    public List<Book> searchAndFilterBooks(String keyword, Long categoryId, Long branchId, BookCondition condition, Double minPrice, Double maxPrice, String sortBy) {
+    public Page<Book> searchAndFilterBooks(String keyword, Long categoryId, Long branchId, BookCondition condition,
+                                           Double minPrice, Double maxPrice, String sortBy, int page, int size) {
+        if ((minPrice != null && minPrice < 0) || (maxPrice != null && maxPrice < 0)) {
+            throw new IllegalArgumentException("Khoảng giá không được âm.");
+        }
+        if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+            throw new IllegalArgumentException("Giá tối thiểu không được lớn hơn giá tối đa.");
+        }
+        int safePage = Math.max(0, page);
+        int safeSize = Math.max(1, Math.min(size, 50));
         List<Book> all = findAvailableBooks();
 
         List<Book> filtered = all.stream().filter(book -> {
@@ -191,7 +188,8 @@ public class CustomerBookServiceImpl implements CustomerBookService {
                     .filter(c -> c.getStatus() == BookCopyStatus.AVAILABLE && c.getSeller() != null)
                     .collect(Collectors.toList());
 
-            boolean matchesBranch = (branchId == null || copies.stream().anyMatch(c -> c.getBranch().getId().equals(branchId)));
+            boolean matchesBranch = (branchId == null || copies.stream()
+                    .anyMatch(c -> c.getBranch() != null && c.getBranch().getId().equals(branchId)));
             boolean matchesCondition = (condition == null || copies.stream().anyMatch(c -> c.getConditionRating() == condition));
 
             boolean matchesPrice = true;
@@ -226,8 +224,8 @@ public class CustomerBookServiceImpl implements CustomerBookService {
                     break;
                 case "best_seller":
                     filtered.sort((b1, b2) -> {
-                        long s1 = bookCopyRepository.findByBookId(b1.getId()).stream().filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
-                        long s2 = bookCopyRepository.findByBookId(b2.getId()).stream().filter(c -> c.getStatus() == BookCopyStatus.SOLD).count();
+                        long s1 = Optional.ofNullable(orderItemRepository.getSoldQuantityByBookId(b1.getId())).orElse(0L);
+                        long s2 = Optional.ofNullable(orderItemRepository.getSoldQuantityByBookId(b2.getId())).orElse(0L);
                         return Long.compare(s2, s1);
                     });
                     break;
@@ -250,7 +248,9 @@ public class CustomerBookServiceImpl implements CustomerBookService {
             }
         }
 
-        return filtered;
+        int fromIndex = Math.min(safePage * safeSize, filtered.size());
+        int toIndex = Math.min(fromIndex + safeSize, filtered.size());
+        return new PageImpl<>(filtered.subList(fromIndex, toIndex), PageRequest.of(safePage, safeSize), filtered.size());
     }
 
     @Override
@@ -270,9 +270,9 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     @Override
     public Double getAverageRating(Long bookId) {
         Book book = bookRepository.findById(bookId).orElse(null);
-        if (book == null) return 5.0;
+        if (book == null) return 0.0;
         Double avg = reviewRepository.getAverageRatingForBook(book);
-        return avg != null ? Math.round(avg * 10.0) / 10.0 : 5.0;
+        return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
 
     @Override

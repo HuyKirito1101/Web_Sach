@@ -171,7 +171,12 @@
                                 <li><a class="dropdown-item" href="/viewed-products"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Sách đã xem</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item text-danger fw-bold" href="/auth/logout"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a>
+                                    <form action="/auth/logout" method="post" class="m-0">
+                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                        <button type="submit" class="dropdown-item text-danger fw-bold">
+                                            <i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất
+                                        </button>
+                                    </form>
                                 </li>
                             </ul>
                         </li>

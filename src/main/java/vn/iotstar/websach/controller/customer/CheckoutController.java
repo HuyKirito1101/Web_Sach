@@ -12,6 +12,9 @@ import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.*;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/checkout")
@@ -24,7 +27,6 @@ public class CheckoutController {
     private final ShippingProviderService shippingProviderService;
     private final UserService userService;
     private final AppDiscountService appDiscountService;
-    private final vn.iotstar.websach.repository.OrderRepository orderRepository;
 
     @GetMapping
     public String showCheckoutPage(Authentication authentication, Model model) {
@@ -44,14 +46,59 @@ public class CheckoutController {
 
         model.addAttribute("cartItems", cartItems);
         model.addAttribute("addresses", addresses);
-        model.addAttribute("shippingProviders", shippingProviderService.findAllProviders());
+        model.addAttribute("shippingProviders", shippingProviderService.findAllProviders().stream()
+                .filter(provider -> Boolean.TRUE.equals(provider.getActive()))
+                .filter(provider -> provider.getCode() == null
+                        || !"SPX_EXPRESS".equalsIgnoreCase(provider.getCode()))
+                .toList());
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("user", user);
         // Danh sách mã giảm giá có thể dùng
         model.addAttribute("availableDiscounts", appDiscountService.findAllDiscounts()
-                .stream().filter(d -> Boolean.TRUE.equals(d.getActive())).toList());
+                .stream().filter(d -> Boolean.TRUE.equals(d.getActive()))
+                .filter(d -> d.getStartDate() == null || !LocalDate.now().isBefore(d.getStartDate()))
+                .filter(d -> d.getEndDate() == null || !LocalDate.now().isAfter(d.getEndDate()))
+                .filter(d -> d.getMinOrderValue() == null || subtotal >= d.getMinOrderValue())
+                .toList());
 
         return "customer/checkout";
+    }
+
+    @GetMapping("/voucher-preview")
+    @ResponseBody
+    public Map<String, Object> previewVoucher(@RequestParam String code, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new SecurityException("Vui lòng đăng nhập.");
+        }
+        User user = userService.findByEmail(authentication.getName())
+                .orElseThrow(() -> new SecurityException("Tài khoản không tồn tại."));
+        double subtotal = cartService.getCartTotal(user);
+        var discount = appDiscountService.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT))
+                .orElseThrow(() -> new IllegalArgumentException("Mã voucher không tồn tại hoặc đã bị khóa."));
+        LocalDate today = LocalDate.now();
+        if (discount.getStartDate() != null && today.isBefore(discount.getStartDate())) {
+            throw new IllegalArgumentException("Mã voucher chưa có hiệu lực.");
+        }
+        if (discount.getEndDate() != null && today.isAfter(discount.getEndDate())) {
+            throw new IllegalArgumentException("Mã voucher đã hết hạn.");
+        }
+        if (discount.getMinOrderValue() != null && subtotal < discount.getMinOrderValue()) {
+            throw new IllegalArgumentException("Giỏ hàng chưa đạt giá trị tối thiểu của voucher.");
+        }
+        if (discount.getDiscountPercent() == null || discount.getDiscountPercent() <= 0
+                || discount.getDiscountPercent() > 100) {
+            throw new IllegalArgumentException("Cấu hình voucher không hợp lệ.");
+        }
+        double amount = subtotal * discount.getDiscountPercent() / 100.0;
+        if (discount.getMaxDiscountAmount() != null) amount = Math.min(amount, discount.getMaxDiscountAmount());
+        return Map.of("valid", true, "discountAmount", Math.max(0.0, amount), "code", discount.getCode());
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, SecurityException.class})
+    @ResponseBody
+    @ResponseStatus(org.springframework.http.HttpStatus.BAD_REQUEST)
+    public Map<String, Object> checkoutRequestError(RuntimeException ex) {
+        return Map.of("valid", false, "message", ex.getMessage());
     }
 
     @PostMapping("/place-order")
@@ -75,16 +122,6 @@ public class CheckoutController {
             List<Order> orders = checkoutService.processCheckout(user, addressId, recipientName, phone, shippingAddress,
                     shippingProviderId, voucherCode, paymentMethod, note);
 
-            String orderIdsStr = orders.stream().map(o -> o.getId().toString()).collect(java.util.stream.Collectors.joining(","));
-
-            if ("VNPAY".equalsIgnoreCase(paymentMethod)) {
-                return "redirect:/checkout/vnpay-demo?orderIds=" + orderIdsStr;
-            }
-
-            if ("MOMO".equalsIgnoreCase(paymentMethod)) {
-                return "redirect:/checkout/momo-demo?orderIds=" + orderIdsStr;
-            }
-
             if (orders.size() == 1) {
                 return "redirect:/orders/" + orders.get(0).getId() + "?success=true";
             }
@@ -95,82 +132,4 @@ public class CheckoutController {
         }
     }
 
-    private String handleDemoPayment(@RequestParam(value = "orderId", required = false) Long orderId,
-                                     @RequestParam(value = "orderIds", required = false) String orderIds,
-                                     @RequestParam("status") String status,
-                                     String method,
-                                     Authentication authentication,
-                                     org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/auth/login?error=unauthorized";
-        }
-        User user = userService.findByEmail(authentication.getName()).orElse(null);
-        if (user == null) return "redirect:/auth/login";
-
-        List<Long> ids = new java.util.ArrayList<>();
-        if (orderId != null) ids.add(orderId);
-        if (orderIds != null && !orderIds.trim().isEmpty()) {
-            for (String s : orderIds.split(",")) {
-                try { ids.add(Long.parseLong(s.trim())); } catch (Exception ignored) {}
-            }
-        }
-
-        // Trang này chỉ mô phỏng giao diện ví điện tử. Tuyệt đối không tin tham
-        // số status từ trình duyệt để đánh dấu PAID. Tích hợp thật phải xác minh
-        // chữ ký/IPN do VNPAY hoặc MoMo gửi từ máy chủ của nhà cung cấp.
-        List<Long> ownedIds = ids.stream()
-                .distinct()
-                .filter(id -> orderRepository.findById(id)
-                        .map(order -> order.getCustomer().getId().equals(user.getId()))
-                        .orElse(false))
-                .toList();
-
-        if ("SUCCESS".equalsIgnoreCase(status)) {
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Đã mô phỏng thanh toán " + method
-                            + ". Đơn vẫn CHỜ THANH TOÁN vì chưa có chữ ký xác thực từ cổng thanh toán thật.");
-        } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Bạn đã hủy mô phỏng thanh toán " + method + ".");
-        }
-        if (ownedIds.size() == 1) {
-            return "redirect:/orders/" + ownedIds.getFirst();
-        }
-        return "redirect:/orders";
-    }
-
-    @PostMapping("/vnpay-demo-result")
-    public String vnpayCallback(@RequestParam(value = "orderId", required = false) Long orderId,
-                                @RequestParam(value = "orderIds", required = false) String orderIds,
-                                @RequestParam(value = "status", defaultValue = "SUCCESS") String status,
-                                Authentication authentication,
-                                org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        return handleDemoPayment(orderId, orderIds, status, "VNPAY", authentication, redirectAttributes);
-    }
-
-    @PostMapping("/momo-demo-result")
-    public String momoCallback(@RequestParam(value = "orderId", required = false) Long orderId,
-                               @RequestParam(value = "orderIds", required = false) String orderIds,
-                               @RequestParam(value = "status", defaultValue = "SUCCESS") String status,
-                               Authentication authentication,
-                               org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        return handleDemoPayment(orderId, orderIds, status, "MoMo", authentication, redirectAttributes);
-    }
-
-    @GetMapping("/vnpay-demo")
-    public String vnpayDemo(@RequestParam(value = "orderId", required = false) Long orderId,
-                            @RequestParam(value = "orderIds", required = false) String orderIds,
-                            Model model) {
-        model.addAttribute("orderId", orderId != null ? orderId : (orderIds != null ? orderIds.split(",")[0] : null));
-        model.addAttribute("orderIds", orderIds != null ? orderIds : (orderId != null ? orderId.toString() : ""));
-        return "customer/vnpay-demo";
-    }
-
-    @GetMapping("/momo-demo")
-    public String momoDemo(@RequestParam(value = "orderId", required = false) Long orderId,
-                           @RequestParam(value = "orderIds", required = false) String orderIds,
-                           Model model) {
-        model.addAttribute("orderId", orderId != null ? orderId : (orderIds != null ? orderIds.split(",")[0] : null));
-        model.addAttribute("orderIds", orderIds != null ? orderIds : (orderId != null ? orderId.toString() : ""));
-        return "customer/momo-demo";
-    }
 }

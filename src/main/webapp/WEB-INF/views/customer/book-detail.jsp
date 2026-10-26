@@ -1,6 +1,7 @@
 ﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <jsp:include page="../common/header.jsp">
     <jsp:param name="title" value="${book.title} - Chi Tiết Sách Cũ"/>
 </jsp:include>
@@ -264,10 +265,10 @@
                         <!-- Upload ảnh / video Cloudinary -->
                         <div class="mb-3">
                             <label class="form-label fw-medium small">
-                                <i class="fa-solid fa-cloud-arrow-up me-1 text-primary"></i>Tải ảnh đánh giá (Upload Cloudinary):
+                                <i class="fa-solid fa-cloud-arrow-up me-1 text-primary"></i>Tải ảnh hoặc video đánh giá lên Cloudinary:
                             </label>
-                            <input type="file" name="imageFile" accept="image/*" class="form-control mb-1">
-                            <div class="form-text">Chọn ảnh thực tế của sách để tải trực tiếp lên Cloudinary</div>
+                            <input type="file" name="imageFile" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm" class="form-control mb-1">
+                            <div class="form-text">Tối đa 10 MB; hỗ trợ JPG, PNG, GIF, WEBP, MP4 và WEBM.</div>
                         </div>
 
                         <!-- Image URL fallback -->
@@ -324,12 +325,29 @@
                                     </span>
                                 </div>
                                 <p class="mb-2 text-secondary"><c:out value="${rev.comment}"/></p>
-                                <!-- Hình ảnh đính kèm -->
+                                <!-- Ảnh/video đính kèm -->
                                 <c:if test="${rev.imageUrl != null && !rev.imageUrl.isEmpty()}">
                                     <div class="mb-2">
-                                        <img src="<c:out value='${rev.imageUrl}'/>" alt="Ảnh đánh giá"
-                                             class="rounded-3 border" style="max-height:200px; max-width:300px; object-fit:cover;"
-                                             onerror="this.style.display='none'">
+                                        <c:set var="mediaUrlLower" value="${fn:toLowerCase(rev.imageUrl)}"/>
+                                        <c:choose>
+                                            <c:when test="${fn:contains(mediaUrlLower, '/video/upload/') || fn:endsWith(mediaUrlLower, '.mp4') || fn:endsWith(mediaUrlLower, '.webm')}">
+                                                <video controls preload="metadata" class="rounded-3 border" style="max-height:300px; max-width:100%;">
+                                                    <source src="<c:out value='${rev.imageUrl}'/>" />
+                                                    Trình duyệt không hỗ trợ phát video.
+                                                </video>
+                                            </c:when>
+                                            <c:when test="${fn:contains(mediaUrlLower, 'youtube.com') || fn:contains(mediaUrlLower, 'youtu.be') || fn:contains(mediaUrlLower, 'tiktok.com')}">
+                                                <a href="<c:out value='${rev.imageUrl}'/>" target="_blank" rel="noopener noreferrer"
+                                                   class="btn btn-outline-danger btn-sm rounded-pill">
+                                                    <i class="fa-solid fa-play me-1"></i>Xem video đánh giá
+                                                </a>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <img src="<c:out value='${rev.imageUrl}'/>" alt="Ảnh đánh giá"
+                                                     class="rounded-3 border" style="max-height:200px; max-width:300px; object-fit:cover;"
+                                                     onerror="this.style.display='none'">
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
                                 </c:if>
                                 <small class="text-muted">

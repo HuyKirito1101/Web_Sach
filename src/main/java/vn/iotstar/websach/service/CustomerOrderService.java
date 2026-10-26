@@ -11,6 +11,7 @@ public interface CustomerOrderService {
     List<Order> getCustomerOrders(User user, OrderStatus status);
     Order getOrderById(User user, Long orderId);
     List<OrderItem> getOrderItems(Long orderId);
+    Order markMomoTransferred(User user, Long orderId);
     boolean cancelOrder(User user, Long orderId, String reason);
     boolean requestReturnOrder(User user, Long orderId, String reason);
     boolean requestReturnOrder(User user, Long orderId, String reason, String returnAddress);

@@ -1,11 +1,15 @@
 package vn.iotstar.websach;
 
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import vn.iotstar.websach.config.JwtUtils;
+import vn.iotstar.websach.entity.User;
+import vn.iotstar.websach.repository.UserRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -15,11 +19,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 class SecurityHardeningIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     void stateChangingRequestWithoutCsrfTokenIsRejected() throws Exception {
@@ -28,10 +38,9 @@ class SecurityHardeningIntegrationTest {
     }
 
     @Test
-    void getLogoutRedirectsToLogin() throws Exception {
+    void getLogoutIsNotAllowed() throws Exception {
         mockMvc.perform(get("/auth/logout"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/auth/login?logout"));
+                .andExpect(status().isMethodNotAllowed());
     }
 
     @Test
@@ -50,8 +59,7 @@ class SecurityHardeningIntegrationTest {
         mockMvc.perform(post("/cart/add")
                         .param("bookCopyId", "1")
                         .param("quantity", "1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/auth/login?error=unauthorized"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -59,5 +67,27 @@ class SecurityHardeningIntegrationTest {
         mockMvc.perform(get("/checkout"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/auth/login?error=unauthorized"));
+    }
+
+    @Test
+    void authenticatedAdminPostWithoutCsrfTokenIsRejected() throws Exception {
+        User admin = userRepository.findByEmail("admin@websachcu.vn").orElseThrow();
+        String token = jwtUtils.generateJwtToken(admin.getEmail(), admin.getRole().getName().name());
+
+        mockMvc.perform(post("/admin/users/toggle-lock/999999")
+                        .cookie(new Cookie("JWT_TOKEN", token)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void guestCanOpenSupportChatButCannotPostWithoutCsrfToken() throws Exception {
+        mockMvc.perform(get("/support-chat"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/support-chat/start")
+                        .param("phone", "0901234567")
+                        .param("branchId", "1")
+                        .param("content", "Tôi cần hỗ trợ"))
+                .andExpect(status().isForbidden());
     }
 }

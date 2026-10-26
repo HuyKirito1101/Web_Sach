@@ -63,10 +63,10 @@
 
                     <h6 class="fw-bold text-uppercase mb-2 text-dark">Theo Dõi Sách Cũ Việt</h6>
                     <div class="d-flex gap-2">
-                        <a href="#" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Youtube"><i class="fa-brands fa-youtube"></i></a>
-                        <a href="#" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Zalo"><i class="fa-solid fa-comment-dots"></i></a>
-                        <a href="#" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+                        <a href="https://www.facebook.com/sachthumuasachcu" target="_blank" rel="noopener noreferrer" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="https://www.youtube.com/watch?v=Va3n0iHu1hA" target="_blank" rel="noopener noreferrer" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="/support-chat" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Nhắn tin với chi nhánh"><i class="fa-solid fa-comment-dots"></i></a>
+                        <a href="https://www.tiktok.com/@khuyenminh779" target="_blank" rel="noopener noreferrer" class="btn btn-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
                     </div>
                 </div>
             </div>
@@ -133,14 +133,30 @@
             stompClient.debug = null; // Tắt log rác
             stompClient.connect({}, function (frame) {
                 console.log('WebSocket Connected!');
-                
+
+                <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')}">
                 stompClient.subscribe('/topic/orders', function (msg) {
                     showToastNotification(msg.body);
                 });
-                
+                </c:if>
+
+                <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER')}">
                 stompClient.subscribe('/topic/transfers', function (msg) {
                     showToastNotification(msg.body);
                 });
+                </c:if>
+
+                <c:if test="${pageContext.request.isUserInRole('MANAGER') && currentUser != null && currentUser.branch != null}">
+                stompClient.subscribe('/topic/support/branch/${currentUser.branch.id}', function (msg) {
+                    showToastNotification(msg.body);
+                });
+                </c:if>
+
+                <c:if test="${pageContext.request.isUserInRole('SHIPPER') && currentUser != null}">
+                stompClient.subscribe('/topic/shipper/${currentUser.id}', function (msg) {
+                    showToastNotification(msg.body);
+                });
+                </c:if>
             });
         } catch (e) {
             console.log('WebSocket connect error:', e);

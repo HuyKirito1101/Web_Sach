@@ -127,9 +127,14 @@ public class AuthController {
     }
 
     @PostMapping("/verify-otp")
-    public String handleVerifyOtp(@ModelAttribute("otpRequest") OtpVerificationRequest request,
+    public String handleVerifyOtp(@Valid @ModelAttribute("otpRequest") OtpVerificationRequest request,
+                                  BindingResult bindingResult,
                                   HttpServletRequest servletRequest,
                                   Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("email", request.getEmail());
+            return "auth/verify-otp";
+        }
         String limitKey = request.getEmail() + '|' + servletRequest.getRemoteAddr();
         try {
             authRateLimiter.checkAndRecord("verify-register-otp", limitKey, 5, Duration.ofMinutes(10));
@@ -217,7 +222,7 @@ public class AuthController {
         }
     }
 
-    @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
+    @PostMapping("/logout")
     public String handleLogout(HttpServletRequest request, HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("JWT_TOKEN", "")
                 .httpOnly(true)

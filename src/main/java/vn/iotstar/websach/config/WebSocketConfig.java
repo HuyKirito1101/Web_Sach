@@ -89,6 +89,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             }
             return;
         }
+        if (destination.startsWith("/topic/support/branch/")) {
+            requireAnyRole(authentication, "ROLE_MANAGER");
+            Long requestedBranchId;
+            try {
+                requestedBranchId = Long.valueOf(destination.substring("/topic/support/branch/".length()));
+            } catch (NumberFormatException ex) {
+                throw new AccessDeniedException("Kênh hỗ trợ chi nhánh không hợp lệ.");
+            }
+            boolean managesBranch = userRepository.findByEmail(authentication.getName())
+                    .filter(user -> user.getBranch() != null)
+                    .map(user -> requestedBranchId.equals(user.getBranch().getId()))
+                    .orElse(false);
+            if (!managesBranch) {
+                throw new AccessDeniedException("Không được theo dõi tin nhắn của chi nhánh khác.");
+            }
+            return;
+        }
         throw new AccessDeniedException("Không được phép đăng ký kênh WebSocket này.");
     }
 

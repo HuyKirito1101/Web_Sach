@@ -45,8 +45,8 @@
                                                 data-bs-toggle="modal" data-bs-target="#editBranchModal${b.id}">
                                             <i class="fa-solid fa-pen-to-square me-1"></i>Chỉnh sửa
                                         </button>
-                                        <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chi nhánh này?')">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                        <form action="/admin/branches/delete/${b.id}" method="post" class="d-inline" onsubmit="return confirm('Tạm dừng chi nhánh này? Lịch sử và dữ liệu sẽ vẫn được giữ lại.')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger" title="Tạm dừng chi nhánh"><i class="fa-solid fa-ban"></i></button></form>
                                     </div>
                                 </div>
                             </div>

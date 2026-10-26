@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 import vn.iotstar.websach.entity.Book;
 import vn.iotstar.websach.entity.BookCopy;
 import vn.iotstar.websach.entity.User;
@@ -33,11 +34,25 @@ public class CustomerBookController {
                             @RequestParam(value = "minPrice", required = false) Double minPrice,
                             @RequestParam(value = "maxPrice", required = false) Double maxPrice,
                             @RequestParam(value = "sortBy", required = false) String sortBy,
+                            @RequestParam(value = "page", defaultValue = "0") int page,
                             Model model) {
 
-        List<Book> books = customerBookService.searchAndFilterBooks(keyword, categoryId, branchId, condition, minPrice, maxPrice, sortBy);
+        Page<Book> bookPage;
+        try {
+            bookPage = customerBookService.searchAndFilterBooks(
+                    keyword, categoryId, branchId, condition, minPrice, maxPrice, sortBy,
+                    Math.max(0, page), 20);
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+            minPrice = null;
+            maxPrice = null;
+            bookPage = customerBookService.searchAndFilterBooks(
+                    keyword, categoryId, branchId, condition, null, null, sortBy,
+                    Math.max(0, page), 20);
+        }
 
-        model.addAttribute("books", books);
+        model.addAttribute("books", bookPage.getContent());
+        model.addAttribute("bookPage", bookPage);
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("branches", branchService.findAllBranches());
         model.addAttribute("conditions", BookCondition.values());

@@ -380,33 +380,11 @@ public class VendorServiceImpl implements VendorService {
                 ? orderRepository.findByBranchIdAndOrderStatus(shop.getId(), status)
                 : orderRepository.findByBranchIdOrderByCreatedAtDesc(shop.getId());
 
-        List<Order> list = branchOrders.stream()
+        return branchOrders.stream()
                 .filter(o -> orderItemRepository.findByOrderId(o.getId()).stream()
                         .anyMatch(item -> item.getBookCopy() != null && item.getBookCopy().getSeller() != null
                                 && Objects.equals(item.getBookCopy().getSeller().getId(), vendor.getId())))
                 .toList();
-
-        // Kiểm tra cập nhật tự động mô phỏng giao hàng cho SPX Express (nếu đã quá thời gian dự kiến)
-        LocalDateTime now = LocalDateTime.now();
-        for (Order o : list) {
-            if (o.getOrderStatus() == OrderStatus.SHIPPING && o.getShippingProvider() != null
-                    && "SPX_EXPRESS".equalsIgnoreCase(o.getShippingProvider().getCode())) {
-                Optional<DeliveryAssignment> daOpt = deliveryAssignmentRepository.findByOrderId(o.getId());
-                if (daOpt.isPresent()) {
-                    DeliveryAssignment da = daOpt.get();
-                    if (da.getDeliveredAt() != null && now.isAfter(da.getDeliveredAt())) {
-                        da.setStatus(DeliveryStatus.DELIVERED);
-                        da.setCompletedAt(now);
-                        deliveryAssignmentRepository.save(da);
-                        o.setOrderStatus(OrderStatus.DELIVERED);
-                        if (o.getPaymentMethod() == PaymentMethod.COD) o.setPaymentStatus(PaymentStatus.PAID);
-                        orderRepository.save(o);
-                    }
-                }
-            }
-        }
-
-        return list;
     }
 
     @Override
@@ -432,6 +410,16 @@ public class VendorServiceImpl implements VendorService {
         User vendor = requireVendor(vendorEmail);
         Order order = getOrder(vendorEmail, orderId);
         OrderStatus current = order.getOrderStatus();
+        if (order.getPaymentMethod() == PaymentMethod.MOMO
+                && target != OrderStatus.CANCELLED
+                && order.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new IllegalStateException("Đơn MoMo chưa được Manager xác nhận thanh toán.");
+        }
+        if (order.getPaymentMethod() == PaymentMethod.MOMO
+                && target == OrderStatus.CANCELLED
+                && order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalStateException("Đơn MoMo đã thanh toán phải thực hiện quy trình hoàn tiền.");
+        }
         boolean allowed = (current == OrderStatus.NEW && (target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED))
                 || (current == OrderStatus.CONFIRMED && (target == OrderStatus.PACKING || target == OrderStatus.READY_FOR_PICKUP || target == OrderStatus.CANCELLED))
                 || (current == OrderStatus.PACKING && target == OrderStatus.READY_FOR_PICKUP)
@@ -446,6 +434,20 @@ public class VendorServiceImpl implements VendorService {
             return approveRefund(vendorEmail, orderId);
         }
 
+        if (target == OrderStatus.CANCELLED) {
+            for (OrderItem item : orderItemRepository.findByOrderId(order.getId())) {
+                BookCopy copy = item.getBookCopy();
+                if (copy == null || item.getQuantity() == null) continue;
+                copy.setQuantity((copy.getQuantity() == null ? 0 : copy.getQuantity()) + item.getQuantity());
+                if (copy.getQuantity() > 0 && copy.getStatus() == BookCopyStatus.SOLD) {
+                    copy.setStatus(BookCopyStatus.AVAILABLE);
+                }
+                bookCopyRepository.save(copy);
+            }
+            if (order.getPaymentMethod() == PaymentMethod.MOMO) {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+            }
+        }
         order.setOrderStatus(target);
         Order saved = orderRepository.save(order);
         send("Đơn hàng #" + order.getOrderCode() + " đã chuyển sang " + target);
@@ -487,61 +489,10 @@ public class VendorServiceImpl implements VendorService {
         DeliveryAssignment assignment = deliveryAssignmentRepository.findByOrderId(order.getId())
                 .orElse(DeliveryAssignment.builder().order(order).build());
 
-        // Kiểm tra ràng buộc đơn vị vận chuyển đặt hàng của khách
-        if (order.getShippingProvider() != null) {
-            String orderProviderCode = order.getShippingProvider().getCode();
-            boolean isSpxOrder = "SPX_EXPRESS".equalsIgnoreCase(orderProviderCode);
-
-            if (shipperId == null || shipperId == -1L) {
-                if (!isSpxOrder) {
-                    throw new IllegalArgumentException("Khách hàng đã chọn đơn vị '" + order.getShippingProvider().getName() + "', không thể bàn giao cho SPX Express!");
-                }
-            } else {
-                if (isSpxOrder) {
-                    throw new IllegalArgumentException("Đơn hàng này do đối tác SPX Express (Shopee Xpress) phụ trách toàn quốc, không thể phân cho Shipper nội bộ!");
-                }
-            }
+        if (shipperId == null || shipperId <= 0) {
+            throw new IllegalArgumentException("Vui lòng chọn một Shipper nội bộ hợp lệ.");
         }
 
-        // Case 1: SPX Express (Dịch vụ vận chuyển đối tác toàn quốc, chạy ảo không có người cụ thể)
-        if (shipperId == null || shipperId == -1L) {
-            ShippingProvider spxProvider = shippingProviderRepository.findByCode("SPX_EXPRESS")
-                    .orElseGet(() -> shippingProviderRepository.findAll().stream()
-                            .filter(p -> p.getCode() != null && p.getCode().contains("SPX"))
-                            .findFirst()
-                            .orElse(null));
-            if (spxProvider != null) {
-                order.setShippingProvider(spxProvider);
-            }
-
-            int randomDays = 2 + new Random().nextInt(3); // 2, 3, hoặc 4 ngày
-            LocalDateTime estimatedDelivery = LocalDateTime.now().plusDays(randomDays);
-            String trackingCode = "SPX" + (100000000L + (long)(Math.random() * 900000000L)) + "VN";
-
-            assignment.setShipper(null); // Không gán cho cá nhân cụ thể
-            assignment.setAssignedBy(vendor);
-            assignment.setStatus(DeliveryStatus.SHIPPING);
-            assignment.setAssignedAt(LocalDateTime.now());
-            assignment.setPickedUpAt(LocalDateTime.now());
-            assignment.setDeliveredAt(estimatedDelivery);
-            assignment.setFailureReason(null);
-            String spxNote = "Đơn vị vận chuyển: SPX Express (Shopee Xpress) | Mã vận đơn: " + trackingCode + " | Dự kiến giao: " + randomDays + " ngày (" + estimatedDelivery.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ")";
-            if (note != null && !note.isBlank()) {
-                spxNote += " | Ghi chú: " + note.trim();
-            }
-            assignment.setNote(spxNote);
-
-            order.setOrderStatus(OrderStatus.SHIPPING);
-            order.setNote((order.getNote() != null ? order.getNote() + " | " : "") +
-                    "Bàn giao đơn vị vận chuyển SPX Express (Mã VĐ: " + trackingCode + ", dự kiến " + randomDays + " ngày)");
-
-            orderRepository.save(order);
-            DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
-            send("Đơn hàng #" + order.getOrderCode() + " đã bàn giao đối tác SPX Express (Shopee Xpress)");
-            return saved;
-        }
-
-        // Case 2: Shipper chi nhánh
         User shipper = userRepository.findById(shipperId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy Shipper id: " + shipperId));
         if (shipper.getRole() == null || shipper.getRole().getName() != RoleName.ROLE_SHIPPER) {
@@ -563,7 +514,8 @@ public class VendorServiceImpl implements VendorService {
             }
         } else {
             // Đơn giao thông thường: Ràng buộc khớp đơn vị vận chuyển giữa shipper và đơn hàng của khách
-            if (order.getShippingProvider() != null && shipper.getShippingProvider() != null) {
+            if (order.getShippingProvider() != null && shipper.getShippingProvider() != null
+                    && !"SPX_EXPRESS".equalsIgnoreCase(order.getShippingProvider().getCode())) {
                 String orderCode = order.getShippingProvider().getCode();
                 String shipperCode = shipper.getShippingProvider().getCode();
                 if (!Objects.equals(orderCode, shipperCode)) {
@@ -634,30 +586,6 @@ public class VendorServiceImpl implements VendorService {
         orderRepository.save(order);
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
         send("Đơn hàng #" + order.getOrderCode() + ": Đã thu hồi phân công giao hàng");
-        return saved;
-    }
-
-    @Override
-    @Transactional
-    public Order syncSpxDelivery(String vendorEmail, Long orderId) {
-        Order order = getOrder(vendorEmail, orderId);
-        DeliveryAssignment da = deliveryAssignmentRepository.findByOrderId(order.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Đơn hàng chưa có thông tin phân công vận chuyển"));
-        if (da.getShipper() != null) {
-            throw new IllegalStateException("Đơn hàng này do Shipper chi nhánh giao, không phải SPX Express");
-        }
-        da.setStatus(DeliveryStatus.DELIVERED);
-        da.setDeliveredAt(LocalDateTime.now());
-        da.setCompletedAt(LocalDateTime.now());
-        deliveryAssignmentRepository.save(da);
-
-        order.setOrderStatus(OrderStatus.DELIVERED);
-        if (order.getPaymentMethod() == PaymentMethod.COD) {
-            order.setPaymentStatus(PaymentStatus.PAID);
-        }
-        order.setNote((order.getNote() != null ? order.getNote() + " | " : "") + "SPX Express đã giao thành công lúc " + LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM")));
-        Order saved = orderRepository.save(order);
-        send("Đơn hàng #" + order.getOrderCode() + " đã được SPX Express giao thành công");
         return saved;
     }
 

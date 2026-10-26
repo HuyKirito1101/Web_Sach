@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.ShippingProvider;
 import vn.iotstar.websach.service.ShippingProviderService;
 
@@ -22,18 +23,26 @@ public class AdminShippingController {
     }
 
     @PostMapping("/save")
-    public String saveShippingProvider(@ModelAttribute("providerForm") ShippingProvider provider) {
-        if (provider.getId() == null) {
-            shippingProviderService.saveProvider(provider);
-        } else {
-            shippingProviderService.updateProvider(provider.getId(), provider);
+    public String saveShippingProvider(@ModelAttribute("providerForm") ShippingProvider provider,
+                                       RedirectAttributes redirect) {
+        try {
+            if (provider.getId() == null) shippingProviderService.saveProvider(provider);
+            else shippingProviderService.updateProvider(provider.getId(), provider);
+            redirect.addFlashAttribute("successMessage", "Đã lưu nhà vận chuyển.");
+        } catch (RuntimeException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/admin/shipping?success";
+        return "redirect:/admin/shipping";
     }
 
     @PostMapping("/delete/{id}")
-    public String deleteShippingProvider(@PathVariable("id") Long id) {
-        shippingProviderService.deleteProvider(id);
-        return "redirect:/admin/shipping?deleted";
+    public String deleteShippingProvider(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        try {
+            shippingProviderService.deleteProvider(id);
+            redirect.addFlashAttribute("successMessage", "Đã chuyển nhà vận chuyển sang trạng thái tạm dừng.");
+        } catch (RuntimeException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/shipping";
     }
 }

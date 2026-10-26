@@ -309,11 +309,7 @@ public class VendorController {
                                 RedirectAttributes redirect) {
         try {
             vendorService.assignShipper(auth.getName(), id, shipperId, note);
-            if (shipperId == null || shipperId == -1L) {
-                redirect.addFlashAttribute("successMessage", "Đã bàn giao đơn hàng thành công cho đối tác SPX Express (Shopee Xpress)!");
-            } else {
-                redirect.addFlashAttribute("successMessage", "Đã phân công Shipper lấy đơn thành công! (Chờ Shipper xác nhận)");
-            }
+            redirect.addFlashAttribute("successMessage", "Đã phân công Shipper lấy đơn thành công! (Chờ Shipper xác nhận)");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -327,19 +323,6 @@ public class VendorController {
         try {
             vendorService.revokeAssignment(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã thu hồi phân công Shipper thành công!");
-        } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        return (redirectUrl != null && !redirectUrl.isBlank()) ? "redirect:" + redirectUrl : "redirect:/vendor/orders";
-    }
-
-    @PostMapping("/orders/{id}/sync-spx")
-    public String syncSpx(Authentication auth, @PathVariable Long id,
-                          @RequestParam(required = false) String redirectUrl,
-                          RedirectAttributes redirect) {
-        try {
-            vendorService.syncSpxDelivery(auth.getName(), id);
-            redirect.addFlashAttribute("successMessage", "Đã đồng bộ trạng thái: Đơn vị vận chuyển SPX Express đã giao hàng thành công!");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
         }

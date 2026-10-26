@@ -83,9 +83,9 @@
                                                     </button>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa người dùng này khỏi hệ thống?')">
+                                                    <form action="/admin/users/delete/${u.id}" method="post" class="d-inline" onsubmit="return confirm('Chỉ tài khoản không còn dữ liệu liên quan mới được xóa. Nếu còn đơn hàng hoặc dữ liệu khác, hệ thống sẽ thông báo và giữ nguyên tài khoản. Tiếp tục kiểm tra?')">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa người dùng">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa tài khoản nếu không còn dữ liệu liên quan">
                                                             <i class="fa-solid fa-trash me-1"></i>Xóa
                                                         </button>
                                                     </form>

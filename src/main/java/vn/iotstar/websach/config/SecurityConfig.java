@@ -57,23 +57,11 @@ public class SecurityConfig {
                         // thực handshake + kiểm tra quyền STOMP trong WebSocketConfig.
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                         .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers(
-                                "/ws/**",
-                                "/vendor/**",
-                                "/admin/**",
-                                "/manager/**",
-                                "/shipper/**",
-                                "/cart/**",
-                                "/checkout/**",
-                                "/orders/**",
-                                "/favorites/**",
-                                "/reviews/**",
-                                "/profile/**"
-                        ))
+                        .ignoringRequestMatchers("/ws/**"))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/", "/home", "/about", "/policies/**", "/sell-books/**", "/books/**", "/search/**", "/category/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/", "/home", "/about", "/policies/**", "/sell-books/**", "/books/**", "/search/**", "/category/**", "/support-chat/**", "/public/**", "/auth/**", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
                         .requestMatchers("/ws/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasRole("MANAGER")

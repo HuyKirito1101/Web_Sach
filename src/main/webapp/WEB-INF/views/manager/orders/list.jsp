@@ -14,6 +14,13 @@
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i>Quản Lý Đơn Hàng Của Cửa Hàng</h3>
+                <form action="/manager/orders/clear-history" method="post"
+                      onsubmit="return confirm('Dọn các đơn ĐÃ GIAO, ĐÃ HỦY và ĐÃ HOÀN TIỀN khỏi danh sách Manager? Dữ liệu vẫn được giữ để thống kê và khách hàng vẫn xem được lịch sử.');">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                    <button type="submit" class="btn btn-outline-danger fw-bold">
+                        <i class="fa-solid fa-broom me-1"></i>Clear Lịch Sử Đơn
+                    </button>
+                </form>
             </div>
 
             <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
@@ -29,6 +36,7 @@
                                     <th>Người Nhận</th>
                                     <th>Địa Chỉ Giao</th>
                                     <th>Tổng Tiền</th>
+                                    <th>Thanh Toán</th>
                                     <th>Trạng Thái Đơn</th>
                                     <th class="text-end">Phân Shipper Chi Nhánh</th>
                                 </tr>
@@ -44,14 +52,50 @@
                                         <td class="small"><c:out value="${o.shippingAddress}"/></td>
                                         <td class="fw-bold text-dark"><fmt:formatNumber value="${o.finalAmount}" pattern="#,##0 ₫" /></td>
                                         <td>
+                                            <div class="small fw-bold mb-1">${o.paymentMethod}</div>
+                                            <c:choose>
+                                                <c:when test="${o.paymentStatus == 'PAID'}">
+                                                    <span class="badge bg-success"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán</span>
+                                                </c:when>
+                                                <c:when test="${o.paymentMethod == 'MOMO' && o.paymentStatus == 'AWAITING_CONFIRMATION'}">
+                                                    <span class="badge bg-warning text-dark mb-2">Khách báo đã chuyển</span>
+                                                    <form action="/manager/orders/${o.id}/confirm-momo-payment" method="post"
+                                                          onsubmit="return confirm('Bạn đã kiểm tra tài khoản MoMo và xác nhận nhận đúng số tiền của đơn ${o.orderCode}?');">
+                                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                        <button type="submit" class="btn btn-sm btn-success text-nowrap">
+                                                            <i class="fa-solid fa-check-double me-1"></i>Xác nhận nhận tiền
+                                                        </button>
+                                                    </form>
+                                                </c:when>
+                                                <c:when test="${o.paymentMethod == 'MOMO' && o.paymentStatus == 'PENDING'}">
+                                                    <span class="badge bg-secondary">Khách chưa báo chuyển</span>
+                                                </c:when>
+                                                <c:when test="${o.paymentStatus == 'FAILED'}">
+                                                    <span class="badge bg-danger">Đã hủy / thất bại</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-secondary">Chờ thu COD</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td>
                                             <form action="/manager/orders/update-status" method="post" class="d-inline">
                     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                                                 <input type="hidden" name="orderId" value="${o.id}" />
                                                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                                                     <option value="${o.orderStatus}" selected>${o.orderStatus}</option>
-                                                    <c:if test="${o.orderStatus == 'NEW'}"><option value="CONFIRMED">CONFIRMED</option><option value="CANCELLED">CANCELLED</option></c:if>
-                                                    <c:if test="${o.orderStatus == 'CONFIRMED'}"><option value="PACKING">PACKING</option><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option><option value="CANCELLED">CANCELLED</option></c:if>
-                                                    <c:if test="${o.orderStatus == 'PACKING'}"><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    <c:if test="${o.orderStatus == 'NEW'}">
+                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus == 'PAID'}"><option value="CONFIRMED">CONFIRMED</option></c:if>
+                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    </c:if>
+                                                    <c:if test="${o.orderStatus == 'CONFIRMED'}">
+                                                        <option value="PACKING">PACKING</option><option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option>
+                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    </c:if>
+                                                    <c:if test="${o.orderStatus == 'PACKING'}">
+                                                        <option value="READY_FOR_PICKUP">READY_FOR_PICKUP</option>
+                                                        <c:if test="${o.paymentMethod != 'MOMO' || o.paymentStatus != 'PAID'}"><option value="CANCELLED">CANCELLED</option></c:if>
+                                                    </c:if>
                                                     <c:if test="${o.orderStatus == 'RETURN_REQUESTED'}"><option value="RETURNED">RETURNED</option></c:if>
                                                     <c:if test="${o.orderStatus == 'RETURNED'}"><option value="REFUNDED">REFUNDED</option></c:if>
                                                 </select>

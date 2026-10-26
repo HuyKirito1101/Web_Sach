@@ -19,6 +19,9 @@
                 </button>
             </div>
 
+            <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
+            <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
+
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -44,10 +47,29 @@
                                         <td><fmt:formatNumber value="${d.minOrderValue}" pattern="#,##0 ₫" /></td>
                                         <td><span class="badge ${d.active ? 'bg-success' : 'bg-secondary'}">${d.active ? 'ĐANG ÁP DỤNG' : 'HẾT HẠN'}</span></td>
                                         <td class="text-end">
-                                            <form action="/admin/discounts/delete/${d.id}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã này?')">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editDiscount${d.id}"><i class="fa-solid fa-pen"></i></button>
+                                            <form action="/admin/discounts/delete/${d.id}" method="post" class="d-inline" onsubmit="return confirm('Ngừng áp dụng voucher này?')">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm btn-outline-danger" title="Ngừng áp dụng"><i class="fa-solid fa-ban"></i></button></form>
                                         </td>
                                     </tr>
+
+                                    <div class="modal fade" id="editDiscount${d.id}" tabindex="-1">
+                                        <div class="modal-dialog"><div class="modal-content">
+                                            <form action="/admin/discounts/save" method="post">
+                                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                <input type="hidden" name="id" value="${d.id}">
+                                                <div class="modal-header"><h5 class="modal-title fw-bold">Sửa Voucher</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3"><label class="form-label">Mã code</label><input type="text" name="code" maxlength="50" class="form-control text-uppercase fw-bold" value="<c:out value='${d.code}'/>" required></div>
+                                                    <div class="mb-3"><label class="form-label">% giảm</label><input type="number" min="0.1" max="100" step="0.1" name="discountPercent" class="form-control" value="${d.discountPercent}" required></div>
+                                                    <div class="row"><div class="col-6 mb-3"><label class="form-label">Giảm tối đa</label><input type="number" min="0" name="maxDiscountAmount" class="form-control" value="${d.maxDiscountAmount}"></div><div class="col-6 mb-3"><label class="form-label">Đơn tối thiểu</label><input type="number" min="0" name="minOrderValue" class="form-control" value="${d.minOrderValue}"></div></div>
+                                                    <div class="row"><div class="col-6 mb-3"><label class="form-label">Bắt đầu</label><input type="date" name="startDate" class="form-control" value="${d.startDate}" required></div><div class="col-6 mb-3"><label class="form-label">Kết thúc</label><input type="date" name="endDate" class="form-control" value="${d.endDate}" required></div></div>
+                                                    <div class="mb-3"><label class="form-label">Trạng thái</label><select name="active" class="form-select"><option value="true" ${d.active ? 'selected' : ''}>Đang áp dụng</option><option value="false" ${!d.active ? 'selected' : ''}>Tạm dừng</option></select></div>
+                                                </div>
+                                                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button><button class="btn btn-primary">Lưu thay đổi</button></div>
+                                            </form>
+                                        </div></div>
+                                    </div>
                                 </c:forEach>
                             </tbody>
                         </table>
@@ -68,20 +90,22 @@
                             <div class="modal-body">
                                 <div class="mb-3">
                                     <label class="form-label">Mã Code (Voucher)</label>
-                                    <input type="text" name="code" class="form-control text-uppercase fw-bold" placeholder="SACHCU10" required />
+                                    <input type="text" name="code" maxlength="50" class="form-control text-uppercase fw-bold" placeholder="SACHCU10" required />
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">% Giảm Giá</label>
-                                    <input type="number" step="0.1" name="discountPercent" class="form-control" value="10" required />
+                                    <input type="number" min="0.1" max="100" step="0.1" name="discountPercent" class="form-control" value="10" required />
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Số Tiền Giảm Tối Đa (VNĐ)</label>
-                                    <input type="number" name="maxDiscountAmount" class="form-control" value="30000" />
+                                    <input type="number" min="0" name="maxDiscountAmount" class="form-control" value="30000" />
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Giá Trị Đơn Hàng Tối Thiểu (VNĐ)</label>
-                                    <input type="number" name="minOrderValue" class="form-control" value="100000" />
+                                    <input type="number" min="0" name="minOrderValue" class="form-control" value="100000" />
                                 </div>
+                                <div class="row"><div class="col-6 mb-3"><label class="form-label">Ngày bắt đầu</label><input type="date" name="startDate" class="form-control" required /></div><div class="col-6 mb-3"><label class="form-label">Ngày kết thúc</label><input type="date" name="endDate" class="form-control" required /></div></div>
+                                <input type="hidden" name="active" value="true">
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>

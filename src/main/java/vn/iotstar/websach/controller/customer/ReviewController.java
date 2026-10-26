@@ -34,6 +34,9 @@ public class ReviewController {
         if (user == null) return "redirect:/auth/login";
 
         try {
+            if (!reviewService.canUserReviewBook(user, bookId)) {
+                throw new IllegalStateException("Bạn chỉ có thể tải nội dung đánh giá cho sách đã mua và nhận thành công.");
+            }
             String mediaUrl = null;
             // 1. Ưu tiên upload file lên Cloudinary
             if (imageFile != null && !imageFile.isEmpty()) {

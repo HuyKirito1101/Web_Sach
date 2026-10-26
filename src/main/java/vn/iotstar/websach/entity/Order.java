@@ -79,6 +79,15 @@ public class Order {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    private LocalDateTime paymentSubmittedAt;
+    private LocalDateTime paymentConfirmedAt;
+
+    @Column(length = 255)
+    private String paymentConfirmedBy;
+
+    @Column(nullable = false)
+    private Boolean managerArchived;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -93,6 +102,7 @@ public class Order {
         updatedAt = LocalDateTime.now();
         if (orderStatus == null) orderStatus = OrderStatus.NEW;
         if (paymentStatus == null) paymentStatus = PaymentStatus.PENDING;
+        if (managerArchived == null) managerArchived = false;
     }
 
     @PreUpdate

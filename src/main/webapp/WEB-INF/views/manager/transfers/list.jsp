@@ -16,10 +16,23 @@
                     <h3 class="fw-bold mb-1"><i class="fa-solid fa-right-left text-primary me-2"></i>Quản Lý Điều Chuyển Sách Giữa Các Chi Nhánh</h3>
                     <p class="text-muted small">Tạo và nhận yêu cầu điều chuyển các bản sách cũ trong hệ thống chuỗi cửa hàng</p>
                 </div>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTransferModal">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTransferModal" ${empty currentBranchId ? 'disabled' : ''}>
                     <i class="fa-solid fa-plus me-1"></i> Tạo Yêu Cầu Điều Chuyển
                 </button>
             </div>
+
+            <c:if test="${not empty successMessage}">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <c:out value="${successMessage}"/>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+            <c:if test="${not empty errorMessage}">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <c:out value="${errorMessage}"/>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
 
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">

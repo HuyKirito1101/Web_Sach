@@ -28,7 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 @Transactional
 class VendorShipperWorkflowIntegrationTest {
 

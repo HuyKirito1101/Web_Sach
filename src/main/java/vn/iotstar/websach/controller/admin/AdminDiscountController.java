@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.AppDiscount;
 import vn.iotstar.websach.service.AppDiscountService;
 
@@ -22,18 +23,26 @@ public class AdminDiscountController {
     }
 
     @PostMapping("/save")
-    public String saveDiscount(@ModelAttribute("discountForm") AppDiscount discount) {
-        if (discount.getId() == null) {
-            appDiscountService.saveDiscount(discount);
-        } else {
-            appDiscountService.updateDiscount(discount.getId(), discount);
+    public String saveDiscount(@ModelAttribute("discountForm") AppDiscount discount,
+                               RedirectAttributes redirect) {
+        try {
+            if (discount.getId() == null) appDiscountService.saveDiscount(discount);
+            else appDiscountService.updateDiscount(discount.getId(), discount);
+            redirect.addFlashAttribute("successMessage", "Đã lưu voucher.");
+        } catch (RuntimeException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/admin/discounts?success";
+        return "redirect:/admin/discounts";
     }
 
     @PostMapping("/delete/{id}")
-    public String deleteDiscount(@PathVariable("id") Long id) {
-        appDiscountService.deleteDiscount(id);
-        return "redirect:/admin/discounts?deleted";
+    public String deleteDiscount(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        try {
+            appDiscountService.deleteDiscount(id);
+            redirect.addFlashAttribute("successMessage", "Đã ngừng áp dụng voucher.");
+        } catch (RuntimeException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/discounts";
     }
 }

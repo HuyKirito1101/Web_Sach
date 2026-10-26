@@ -15,6 +15,7 @@ import vn.iotstar.websach.service.PromotionService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -29,7 +30,6 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final BookCopyRepository bookCopyRepository;
-    private final BranchRepository branchRepository;
     private final PromotionService promotionService;
 
     @Override
@@ -41,7 +41,12 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         // 1. Chặn mua vượt số lượng tồn kho
         for (CartItem item : cartItems) {
-            BookCopy copy = item.getBookCopy();
+            if (item.getBookCopy() == null || item.getBookCopy().getId() == null) {
+                throw new IllegalStateException("Giỏ hàng chứa sản phẩm không hợp lệ.");
+            }
+            BookCopy copy = bookCopyRepository.findByIdForUpdate(item.getBookCopy().getId())
+                    .orElseThrow(() -> new IllegalStateException("Sản phẩm trong giỏ không còn tồn tại."));
+            item.setBookCopy(copy);
             Integer available = copy != null ? copy.getQuantity() : 0;
             String bookTitle = (copy != null && copy.getBook() != null) ? copy.getBook().getTitle() : "Sách";
             if (available == null || available <= 0) {
@@ -54,6 +59,12 @@ public class CheckoutServiceImpl implements CheckoutService {
                 throw new IllegalStateException("Sản phẩm '" + bookTitle + "' chỉ còn " + available
                         + " cuốn trong kho, không đủ số lượng bạn đặt (" + item.getQuantity() + " cuốn)!");
             }
+            if (copy.getStatus() != vn.iotstar.websach.entity.enums.BookCopyStatus.AVAILABLE) {
+                throw new IllegalStateException("Sản phẩm '" + bookTitle + "' hiện không được mở bán.");
+            }
+            if (copy.getSellingPrice() == null || copy.getSellingPrice() < 0) {
+                throw new IllegalStateException("Giá bán của sản phẩm '" + bookTitle + "' không hợp lệ.");
+            }
         }
 
         // 2. Xác định thông tin địa chỉ giao hàng
@@ -62,26 +73,43 @@ public class CheckoutServiceImpl implements CheckoutService {
         String finalAddressStr = shippingAddress;
 
         if (addressId != null) {
-            Address addr = addressRepository.findByIdAndUser(addressId, user).orElse(null);
-            if (addr != null) {
-                finalName = addr.getRecipientName();
-                finalPhone = addr.getPhone();
-                finalAddressStr = addr.getStreet() + ", " + (addr.getWard() != null ? addr.getWard() + ", " : "") + (addr.getDistrict() != null ? addr.getDistrict() + ", " : "") + addr.getCity();
-            }
+            Address addr = addressRepository.findByIdAndUser(addressId, user)
+                    .orElseThrow(() -> new SecurityException("Địa chỉ nhận hàng không thuộc tài khoản của bạn."));
+            finalName = addr.getRecipientName();
+            finalPhone = addr.getPhone();
+            finalAddressStr = addr.getStreet() + ", " + (addr.getWard() != null ? addr.getWard() + ", " : "") + (addr.getDistrict() != null ? addr.getDistrict() + ", " : "") + addr.getCity();
         }
 
         if (finalName == null || finalName.trim().isEmpty()) finalName = user.getFullName();
-        if (finalPhone == null || finalPhone.trim().isEmpty()) finalPhone = user.getPhone() != null ? user.getPhone() : "0900000000";
-        if (finalAddressStr == null || finalAddressStr.trim().isEmpty()) finalAddressStr = "Địa chỉ nhận hàng mặc định";
-
-        ShippingProvider provider = null;
-        double baseShipFee = 20000.0;
-        if (shippingProviderId != null) {
-            provider = shippingProviderRepository.findById(shippingProviderId).orElse(null);
-            if (provider != null && provider.getBaseFee() != null) {
-                baseShipFee = provider.getBaseFee();
-            }
+        if (finalPhone == null || finalPhone.trim().isEmpty()) finalPhone = user.getPhone();
+        if (finalName == null || finalName.isBlank() || finalName.trim().length() > 100) {
+            throw new IllegalArgumentException("Tên người nhận không hợp lệ.");
         }
+        if (finalPhone == null || !finalPhone.trim().matches("^(?:0\\d{9}|\\+84\\d{9})$")) {
+            throw new IllegalArgumentException("Số điện thoại nhận hàng phải là số Việt Nam hợp lệ.");
+        }
+        if (finalAddressStr == null || finalAddressStr.isBlank() || finalAddressStr.trim().length() > 255) {
+            throw new IllegalArgumentException("Vui lòng chọn hoặc nhập đầy đủ địa chỉ nhận hàng.");
+        }
+        finalName = finalName.trim();
+        finalPhone = finalPhone.trim();
+        finalAddressStr = finalAddressStr.trim();
+        if (note != null && note.length() > 1000) {
+            throw new IllegalArgumentException("Ghi chú đơn hàng không được vượt quá 1000 ký tự.");
+        }
+
+        if (shippingProviderId == null) {
+            throw new IllegalArgumentException("Vui lòng chọn nhà vận chuyển.");
+        }
+        ShippingProvider provider = shippingProviderRepository.findById(shippingProviderId)
+                .orElseThrow(() -> new IllegalArgumentException("Nhà vận chuyển không tồn tại."));
+        if (!Boolean.TRUE.equals(provider.getActive())) {
+            throw new IllegalArgumentException("Nhà vận chuyển đã ngừng hoạt động.");
+        }
+        if (provider.getBaseFee() == null || provider.getBaseFee() < 0) {
+            throw new IllegalStateException("Phí vận chuyển chưa được cấu hình hợp lệ.");
+        }
+        double baseShipFee = provider.getBaseFee();
 
         double totalCartSubtotal = cartItems.stream()
                 .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
@@ -90,7 +118,8 @@ public class CheckoutServiceImpl implements CheckoutService {
         // 3. Kiểm tra Voucher (ngày bắt đầu, hết hạn, min order value)
         AppDiscount promo = null;
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            promo = appDiscountRepository.findByCodeAndActiveTrue(voucherCode.trim()).orElse(null);
+            String normalizedVoucherCode = voucherCode.trim().toUpperCase(Locale.ROOT);
+            promo = appDiscountRepository.findByCodeAndActiveTrue(normalizedVoucherCode).orElse(null);
             if (promo == null) {
                 throw new IllegalArgumentException("Mã voucher '" + voucherCode.trim() + "' không tồn tại hoặc đã bị khóa!");
             }
@@ -108,21 +137,32 @@ public class CheckoutServiceImpl implements CheckoutService {
                         + String.format("%,.0f đ", totalCartSubtotal) + ")!");
             }
         }
+        double totalVoucherDiscount = 0.0;
+        if (promo != null && promo.getDiscountPercent() != null && promo.getDiscountPercent() > 0) {
+            totalVoucherDiscount = totalCartSubtotal * promo.getDiscountPercent() / 100.0;
+            if (promo.getMaxDiscountAmount() != null) {
+                totalVoucherDiscount = Math.min(totalVoucherDiscount, promo.getMaxDiscountAmount());
+            }
+        }
 
         // 4. Nhóm sản phẩm theo từng chi nhánh / Shop (Tách đơn theo shop)
-        Branch defaultBranch = branchRepository.findAll().stream().findFirst().orElse(null);
         java.util.Map<Branch, List<CartItem>> itemsByBranch = new java.util.LinkedHashMap<>();
         for (CartItem ci : cartItems) {
-            Branch b = ci.getBookCopy().getBranch() != null ? ci.getBookCopy().getBranch() : defaultBranch;
+            Branch b = ci.getBookCopy().getBranch();
+            if (b == null) {
+                throw new IllegalStateException("Sản phẩm chưa được gán cho cửa hàng.");
+            }
             itemsByBranch.computeIfAbsent(b, k -> new java.util.ArrayList<>()).add(ci);
         }
 
-        PaymentMethod pm = PaymentMethod.COD;
-        try {
-            if (paymentMethodStr != null) {
-                pm = PaymentMethod.valueOf(paymentMethodStr.toUpperCase());
-            }
-        } catch (Exception ignored) {}
+        PaymentMethod pm;
+        if ("COD".equalsIgnoreCase(paymentMethodStr == null ? "" : paymentMethodStr.trim())) {
+            pm = PaymentMethod.COD;
+        } else if ("MOMO".equalsIgnoreCase(paymentMethodStr == null ? "" : paymentMethodStr.trim())) {
+            pm = PaymentMethod.MOMO;
+        } else {
+            throw new IllegalArgumentException("Hệ thống chỉ hỗ trợ COD hoặc MoMo demo xác nhận thủ công.");
+        }
 
         List<Order> createdOrders = new java.util.ArrayList<>();
 
@@ -137,13 +177,10 @@ public class CheckoutServiceImpl implements CheckoutService {
             double branchShipFee = baseShipFee;
             double branchDiscount = 0.0;
 
-            // Áp dụng voucher chia theo tỷ lệ hoặc trực tiếp nếu chỉ có 1 shop
-            if (promo != null && promo.getDiscountPercent() != null) {
-                double voucherDiscount = branchSubtotal * (promo.getDiscountPercent() / 100.0);
-                if (promo.getMaxDiscountAmount() != null && voucherDiscount > promo.getMaxDiscountAmount()) {
-                    voucherDiscount = promo.getMaxDiscountAmount();
-                }
-                branchDiscount += voucherDiscount;
+            // Chia tổng mức giảm voucher theo tỷ lệ giá trị từng shop. Giới hạn
+            // giảm tối đa chỉ được áp dụng một lần cho toàn giỏ hàng.
+            if (totalVoucherDiscount > 0 && totalCartSubtotal > 0) {
+                branchDiscount += totalVoucherDiscount * branchSubtotal / totalCartSubtotal;
             }
 
             // Áp dụng khuyến mãi theo chi nhánh nếu có
@@ -169,7 +206,8 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             String orderCode = "WS-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
 
-            // Lưu ý: PaymentStatus khởi tạo LUÔN LÀ PENDING (kể cả VNPAY / MOMO)
+            // COD chỉ PAID sau khi giao thành công; MoMo demo chỉ PAID sau khi
+            // khách báo đã chuyển và Manager chi nhánh kiểm tra thủ công.
             Order order = Order.builder()
                     .orderCode(orderCode)
                     .customer(user)

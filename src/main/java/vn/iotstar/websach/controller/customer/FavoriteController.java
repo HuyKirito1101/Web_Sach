@@ -5,6 +5,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.FavoriteService;
 import vn.iotstar.websach.service.UserService;
@@ -43,5 +44,20 @@ public class FavoriteController {
 
         model.addAttribute("viewedProducts", viewedProductService.getUserViewedProducts(user));
         return "customer/viewed-products";
+    }
+
+    @PostMapping("/viewed-products/clear")
+    public String clearViewedProducts(Authentication authentication, RedirectAttributes redirectAttributes) {
+        User user = userService.findByEmail(authentication.getName()).orElse(null);
+        if (user == null) return "redirect:/auth/login";
+
+        long deletedCount = viewedProductService.clearUserViewedProducts(user);
+        if (deletedCount > 0) {
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã xóa " + deletedCount + " mục khỏi lịch sử xem sách.");
+        } else {
+            redirectAttributes.addFlashAttribute("infoMessage", "Lịch sử xem sách đang trống.");
+        }
+        return "redirect:/viewed-products";
     }
 }

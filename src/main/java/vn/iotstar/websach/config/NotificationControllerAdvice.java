@@ -17,6 +17,7 @@ import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.repository.OrderItemRepository;
 import vn.iotstar.websach.repository.OrderRepository;
 import vn.iotstar.websach.repository.SellRequestRepository;
+import vn.iotstar.websach.repository.SupportConversationRepository;
 import vn.iotstar.websach.repository.UserRepository;
 
 import java.util.List;
@@ -32,6 +33,7 @@ public class NotificationControllerAdvice {
     private final OrderItemRepository orderItemRepository;
     private final SellRequestRepository sellRequestRepository;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
+    private final SupportConversationRepository supportConversationRepository;
 
     @ModelAttribute
     public void addNotificationAttributes(Model model) {
@@ -44,7 +46,11 @@ public class NotificationControllerAdvice {
         if (user == null || user.getRole() == null) return;
 
         RoleName role = user.getRole().getName();
-        if (role == RoleName.ROLE_VENDOR && user.getBranch() != null) {
+        if (role == RoleName.ROLE_MANAGER && user.getBranch() != null) {
+            long managerMessageBadge = supportConversationRepository
+                    .countByBranchIdAndManagerUnreadTrue(user.getBranch().getId());
+            model.addAttribute("managerMessageBadge", managerMessageBadge);
+        } else if (role == RoleName.ROLE_VENDOR && user.getBranch() != null) {
             Long branchId = user.getBranch().getId();
             Long vendorId = user.getId();
 

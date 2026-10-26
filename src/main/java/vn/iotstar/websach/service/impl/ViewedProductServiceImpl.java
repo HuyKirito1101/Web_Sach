@@ -43,4 +43,10 @@ public class ViewedProductServiceImpl implements ViewedProductService {
         if (user == null) return List.of();
         return viewedProductRepository.findByUserOrderByViewedAtDesc(user);
     }
+
+    @Override
+    public long clearUserViewedProducts(User user) {
+        if (user == null) return 0;
+        return viewedProductRepository.deleteByUser(user);
+    }
 }

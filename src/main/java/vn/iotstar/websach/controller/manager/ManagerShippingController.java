@@ -39,9 +39,9 @@ public class ManagerShippingController {
     public String delete(@PathVariable Long id, RedirectAttributes redirect) {
         try {
             shippingProviderService.deleteProvider(id);
-            redirect.addFlashAttribute("successMessage", "Đã xóa nhà vận chuyển.");
+            redirect.addFlashAttribute("successMessage", "Đã chuyển nhà vận chuyển sang trạng thái tạm dừng.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", "Nhà vận chuyển đang được sử dụng, hãy tạm dừng thay vì xóa.");
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/manager/shipping";
     }

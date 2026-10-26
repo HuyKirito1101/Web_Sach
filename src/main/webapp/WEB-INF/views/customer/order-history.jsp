@@ -160,7 +160,16 @@
                             <div class="col-md-8">
                                 <p class="mb-1 text-secondary small"><strong>Người nhận:</strong> <c:out value="${o.receiverName}"/> - <c:out value="${o.receiverPhone}"/></p>
                                 <p class="mb-1 text-secondary small"><strong>Địa chỉ:</strong> <c:out value="${o.shippingAddress}"/></p>
-                                <p class="mb-0 text-muted small"><strong>Thanh toán:</strong> ${o.paymentMethod} (<span class="${o.paymentStatus == 'PAID' ? 'text-success' : 'text-warning'}">${o.paymentStatus}</span>)</p>
+                                <p class="mb-0 text-muted small"><strong>Thanh toán:</strong> ${o.paymentMethod}
+                                    (<span class="${o.paymentStatus == 'PAID' ? 'text-success' : (o.paymentStatus == 'FAILED' ? 'text-danger' : 'text-warning')}">
+                                        <c:choose>
+                                            <c:when test="${o.paymentStatus == 'PAID'}">Đã thanh toán</c:when>
+                                            <c:when test="${o.paymentStatus == 'AWAITING_CONFIRMATION'}">Chờ cửa hàng xác nhận</c:when>
+                                            <c:when test="${o.paymentStatus == 'FAILED'}">Đã hủy / thất bại</c:when>
+                                            <c:otherwise>Chưa thanh toán</c:otherwise>
+                                        </c:choose>
+                                    </span>)
+                                </p>
                             </div>
                             <div class="col-md-4 text-md-end mt-2 mt-md-0">
                                 <div class="mb-2">
@@ -173,7 +182,7 @@
                                     Chi Tiết <i class="fa-solid fa-chevron-right ms-1"></i>
                                 </a>
                                 <!-- Nút hủy nếu đơn mới -->
-                                <c:if test="${o.orderStatus == 'NEW'}">
+                                <c:if test="${o.orderStatus == 'NEW' && !(o.paymentMethod == 'MOMO' && o.paymentStatus == 'PAID')}">
                                     <form action="/orders/${o.id}/cancel" method="POST" class="d-inline ms-1"
                                           onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?')">
                                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">

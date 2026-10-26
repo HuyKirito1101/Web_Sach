@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 @Transactional
 class CustomerWorkflowIntegrationTest {
 
@@ -31,6 +31,8 @@ class CustomerWorkflowIntegrationTest {
     @Autowired private OrderService orderService;
     @Autowired private ReviewService reviewService;
     @Autowired private UserService userService;
+    @Autowired private CustomerBookService customerBookService;
+    @Autowired private ViewedProductService viewedProductService;
 
     @Autowired private UserRepository userRepository;
     @Autowired private BookRepository bookRepository;
@@ -40,6 +42,7 @@ class CustomerWorkflowIntegrationTest {
     @Autowired private OrderRepository orderRepository;
     @Autowired private OrderItemRepository orderItemRepository;
     @Autowired private ShippingProviderRepository shippingProviderRepository;
+    @Autowired private PromotionRepository promotionRepository;
     @Autowired private DeliveryAssignmentRepository deliveryAssignmentRepository;
     @Autowired private vn.iotstar.websach.controller.customer.CustomerOrderController customerOrderController;
 
@@ -89,7 +92,7 @@ class CustomerWorkflowIntegrationTest {
                 .build());
 
         assertThatThrownBy(() -> checkoutService.processCheckout(user, null, "Test", "0900000000",
-                "Address", null, futureVoucher.getCode(), "COD", null))
+                "Address", activeProviderId(), futureVoucher.getCode(), "COD", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("chưa có hiệu lực");
 
@@ -103,7 +106,7 @@ class CustomerWorkflowIntegrationTest {
                 .build());
 
         assertThatThrownBy(() -> checkoutService.processCheckout(user, null, "Test", "0900000000",
-                "Address", null, expiredVoucher.getCode(), "COD", null))
+                "Address", activeProviderId(), expiredVoucher.getCode(), "COD", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("hết hạn");
 
@@ -118,7 +121,7 @@ class CustomerWorkflowIntegrationTest {
                 .build());
 
         assertThatThrownBy(() -> checkoutService.processCheckout(user, null, "Test", "0900000000",
-                "Address", null, highMinOrderVoucher.getCode(), "COD", null))
+                "Address", activeProviderId(), highMinOrderVoucher.getCode(), "COD", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("chưa đạt giá trị tối thiểu");
     }
@@ -145,14 +148,14 @@ class CustomerWorkflowIntegrationTest {
         cartService.addToCart(user, copy2.getId(), 1);
 
         List<Order> orders = checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
-                "123 Võ Văn Ngân", null, null, "VNPAY", "Ghi chú đơn");
+                "123 Võ Văn Ngân", activeProviderId(), null, "COD", "Ghi chú đơn");
 
         // Phải tách thành 2 đơn riêng biệt
         assertThat(orders).hasSize(2);
         assertThat(orders.stream().map(o -> o.getBranch().getId()).toList())
                 .containsExactlyInAnyOrder(b1.getId(), b2.getId());
 
-        // Đơn hàng khởi tạo phải có trạng thái thanh toán PENDING (kể cả VNPAY)
+        // Đơn COD khởi tạo phải chờ thanh toán khi giao thành công.
         for (Order o : orders) {
             assertThat(o.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
             assertThat(o.getOrderStatus()).isEqualTo(OrderStatus.NEW);
@@ -160,6 +163,198 @@ class CustomerWorkflowIntegrationTest {
 
         // Giỏ hàng phải được làm trống sau khi checkout
         assertThat(cartService.getCartItems(user)).isEmpty();
+    }
+
+    @Test
+    void checkoutRejectsUnsupportedOnlinePaymentMethod() {
+        User user = getOrCreateCustomer("unsupported-payment@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy.getId(), 1);
+
+        assertThatThrownBy(() -> checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "VNPAY", null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("chỉ hỗ trợ COD hoặc MoMo demo");
+    }
+
+    @Test
+    void momoDemoRequiresCustomerClaimThenBranchManagerConfirmation() {
+        User manager = userRepository.findByEmail("manager@websachcu.vn").orElseThrow();
+        User user = getOrCreateCustomer("momo-demo-user@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getBranch() != null && manager.getBranch() != null
+                        && c.getBranch().getId().equals(manager.getBranch().getId()))
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy.getId(), 1);
+        Order order = checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "MOMO", null).getFirst();
+
+        assertThat(order.getPaymentMethod()).isEqualTo(PaymentMethod.MOMO);
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThatThrownBy(() -> orderService.confirmManualMomoPayment(order.getId(), manager.getEmail()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("chưa báo đã chuyển tiền");
+        assertThatThrownBy(() -> orderService.updateOrderStatus(order.getId(), OrderStatus.CONFIRMED))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("chưa được xác nhận thanh toán");
+
+        Order submitted = customerOrderService.markMomoTransferred(user, order.getId());
+        assertThat(submitted.getPaymentStatus()).isEqualTo(PaymentStatus.AWAITING_CONFIRMATION);
+        assertThat(submitted.getPaymentSubmittedAt()).isNotNull();
+
+        Order paid = orderService.confirmManualMomoPayment(order.getId(), manager.getEmail());
+        assertThat(paid.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(paid.getPaymentConfirmedAt()).isNotNull();
+        assertThat(paid.getPaymentConfirmedBy()).isEqualTo(manager.getEmail());
+    }
+
+    @Test
+    void managerCanClearOnlyCompletedOrdersWithoutDeletingCustomerHistory() {
+        User manager = userRepository.findByEmail("manager@websachcu.vn").orElseThrow();
+        User customer = getOrCreateCustomer("manager-order-history@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getBranch() != null && manager.getBranch() != null
+                        && c.getBranch().getId().equals(manager.getBranch().getId()))
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        cartService.clearCart(customer);
+        cartService.addToCart(customer, copy.getId(), 1);
+        Order order = checkoutService.processCheckout(customer, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "COD", null).getFirst();
+        orderService.updateOrderStatus(order.getId(), OrderStatus.CONFIRMED);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.PACKING);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.READY_FOR_PICKUP);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.SHIPPING);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.DELIVERED);
+
+        int cleared = orderService.clearCompletedOrderHistory(manager.getEmail());
+        assertThat(cleared).isGreaterThanOrEqualTo(1);
+        assertThat(orderService.findOrdersByBranch(manager.getBranch().getId()))
+                .extracting(Order::getId)
+                .doesNotContain(order.getId());
+        assertThat(orderRepository.findById(order.getId())).isPresent();
+        assertThat(customerOrderService.getCustomerOrders(customer, null))
+                .extracting(Order::getId)
+                .contains(order.getId());
+
+        assertThat(customerOrderService.requestReturnOrder(customer, order.getId(), "Cần hoàn trả")).isTrue();
+        assertThat(orderService.findOrdersByBranch(manager.getBranch().getId()))
+                .extracting(Order::getId)
+                .contains(order.getId());
+    }
+
+    @Test
+    void adminCannotDeleteAUserWhoStillHasOrders() {
+        User user = getOrCreateCustomer("delete-blocked-by-order@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy.getId(), 1);
+        checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "COD", null);
+
+        assertThatThrownBy(() -> userService.deleteUser(user.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("đơn hàng mua (1)");
+        assertThat(userRepository.findById(user.getId())).isPresent();
+    }
+
+    @Test
+    void adminCanOnlyDeleteCancelledOrdersAndTheyDisappearFromCustomerHistory() {
+        User user = getOrCreateCustomer("delete-cancelled-order@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy.getId(), 1);
+        Order order = checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "COD", null).get(0);
+
+        assertThatThrownBy(() -> orderService.deleteCancelledOrder(order.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Chỉ được xóa đơn hàng đã hủy");
+        assertThat(customerOrderService.cancelOrder(user, order.getId(), "Không còn nhu cầu")).isTrue();
+
+        orderService.deleteCancelledOrder(order.getId());
+
+        assertThat(orderRepository.findById(order.getId())).isEmpty();
+        assertThat(orderItemRepository.findByOrderId(order.getId())).isEmpty();
+        assertThat(customerOrderService.getCustomerOrders(user, null)).isEmpty();
+
+        // Khi không còn dữ liệu liên quan, Admin có thể xóa luôn tài khoản.
+        userService.deleteUser(user.getId());
+        assertThat(userRepository.findById(user.getId())).isEmpty();
+    }
+
+    @Test
+    void clearingViewedHistoryOnlyDeletesTheCurrentUsersHistory() {
+        User firstUser = getOrCreateCustomer("clear-history-first@example.com");
+        User secondUser = getOrCreateCustomer("clear-history-second@example.com");
+        Long bookId = bookRepository.findAll().stream().findFirst().orElseThrow().getId();
+        viewedProductService.recordView(firstUser, bookId);
+        viewedProductService.recordView(secondUser, bookId);
+
+        long deletedCount = viewedProductService.clearUserViewedProducts(firstUser);
+
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(viewedProductService.getUserViewedProducts(firstUser)).isEmpty();
+        assertThat(viewedProductService.getUserViewedProducts(secondUser)).hasSize(1);
+    }
+
+    @Test
+    void lowercaseVoucherCodeIsAcceptedAndMaxDiscountIsAppliedOnceForTheWholeCart() {
+        User user = getOrCreateCustomer("case-voucher@example.com");
+        List<Branch> branches = branchRepository.findAll();
+        BookCopy copy1 = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getBranch() != null && c.getBranch().getId().equals(branches.get(0).getId()))
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0 && c.getSellingPrice() != null)
+                .findFirst().orElseThrow();
+        BookCopy copy2 = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getBranch() != null && !c.getBranch().getId().equals(copy1.getBranch().getId()))
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0 && c.getSellingPrice() != null)
+                .findFirst().orElseThrow();
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy1.getId(), 1);
+        cartService.addToCart(user, copy2.getId(), 1);
+
+        List<Promotion> promotions = promotionRepository.findAll();
+        promotions.forEach(promotion -> promotion.setActive(false));
+        promotionRepository.saveAll(promotions);
+
+        AppDiscount voucher = appDiscountRepository.save(AppDiscount.builder()
+                .code("CASEVOUCHER")
+                .discountPercent(100.0)
+                .maxDiscountAmount(5000.0)
+                .minOrderValue(0.0)
+                .startDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(1))
+                .active(true)
+                .build());
+
+        List<Order> orders = checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), voucher.getCode().toLowerCase(), "COD", null);
+
+        double totalDiscount = orders.stream()
+                .mapToDouble(order -> order.getDiscountAmount() == null ? 0.0 : order.getDiscountAmount())
+                .sum();
+        assertThat(orders).hasSize(2);
+        assertThat(totalDiscount).isCloseTo(5000.0, org.assertj.core.data.Offset.offset(0.01));
+    }
+
+    @Test
+    void bookSearchReturnsAtMostTwentyItemsPerServerPage() {
+        var firstPage = customerBookService.searchAndFilterBooks(
+                null, null, null, null, null, null, "newest", 0, 20);
+        assertThat(firstPage.getSize()).isEqualTo(20);
+        assertThat(firstPage.getContent()).hasSizeLessThanOrEqualTo(20);
     }
 
     @Test
@@ -172,7 +367,7 @@ class CustomerWorkflowIntegrationTest {
         cartService.clearCart(user);
         cartService.addToCart(user, copy.getId(), 1);
         List<Order> orders = checkoutService.processCheckout(user, null, "Test", "0900000000",
-                "Address", null, null, "COD", null);
+                "Address", activeProviderId(), null, "COD", null);
         Order order = orders.get(0);
 
         // 1. Không thể trả hàng khi đơn chưa DELIVERED
@@ -180,6 +375,8 @@ class CustomerWorkflowIntegrationTest {
 
         // 2. Chuyển đơn sang DELIVERED
         orderService.updateOrderStatus(order.getId(), OrderStatus.CONFIRMED);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.PACKING);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.READY_FOR_PICKUP);
         orderService.updateOrderStatus(order.getId(), OrderStatus.SHIPPING);
         order = orderService.updateOrderStatus(order.getId(), OrderStatus.DELIVERED);
         assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.DELIVERED);
@@ -221,8 +418,12 @@ class CustomerWorkflowIntegrationTest {
         cartService.clearCart(customer);
         cartService.addToCart(customer, copy.getId(), 1);
         List<Order> orders = checkoutService.processCheckout(customer, null, "Buyer", "0900000000",
-                "Address", null, null, "COD", null);
+                "Address", activeProviderId(), null, "COD", null);
         Order order = orders.get(0);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.CONFIRMED);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.PACKING);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.READY_FOR_PICKUP);
+        orderService.updateOrderStatus(order.getId(), OrderStatus.SHIPPING);
         orderService.updateOrderStatus(order.getId(), OrderStatus.DELIVERED);
 
         // Giờ đã đủ điều kiện mua hàng
@@ -253,7 +454,7 @@ class CustomerWorkflowIntegrationTest {
         userService.sendForgotPasswordOtp(email);
 
         ArgumentCaptor<String> otpCaptor = ArgumentCaptor.forClass(String.class);
-        verify(emailService).sendOtpEmail(eq(email), otpCaptor.capture());
+        verify(emailService).sendPasswordResetOtpEmail(eq(email), otpCaptor.capture());
         String otp = otpCaptor.getValue();
         assertThat(otp).hasSize(6);
 
@@ -333,5 +534,13 @@ class CustomerWorkflowIntegrationTest {
                     .status(UserStatus.ACTIVE)
                     .build());
         });
+    }
+
+    private Long activeProviderId() {
+        return shippingProviderRepository.findByActiveTrue().stream()
+                .filter(provider -> !"SPX_EXPRESS".equalsIgnoreCase(provider.getCode()))
+                .findFirst()
+                .orElseThrow()
+                .getId();
     }
 }

@@ -20,7 +20,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@ActiveProfiles("h2")
+@ActiveProfiles("test")
 class RegistrationFlowIntegrationTest {
 
     @Autowired private UserService userService;
@@ -68,6 +68,7 @@ class RegistrationFlowIntegrationTest {
 
         userService.deleteUser(retriedRegistration.getId());
         assertThat(userRepository.findByEmail(email)).isEmpty();
+        assertThat(userRepository.findById(retriedRegistration.getId())).isEmpty();
     }
 
     private RegisterRequest registerRequest(String email, String fullName, String password) {

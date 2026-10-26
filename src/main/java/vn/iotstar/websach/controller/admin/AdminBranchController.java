@@ -62,9 +62,14 @@ public class AdminBranchController {
     }
 
     @PostMapping("/delete/{id}")
-    public String deleteBranch(@PathVariable("id") Long id) {
-        branchService.deleteBranch(id);
-        return "redirect:/admin/branches?deleted";
+    public String deleteBranch(@PathVariable("id") Long id, RedirectAttributes redirect) {
+        try {
+            branchService.deleteBranch(id);
+            redirect.addFlashAttribute("successMessage", "Đã chuyển chi nhánh sang trạng thái ngừng hoạt động.");
+        } catch (RuntimeException ex) {
+            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/branches";
     }
 
     @PostMapping("/{id}/commission")

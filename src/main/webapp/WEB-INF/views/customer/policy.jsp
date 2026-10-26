@@ -81,7 +81,7 @@
                            - Hỗ trợ giải quyết khiếu nại, đổi trả và hoàn tiền nhanh chóng.</p>
 
                         <h5 class="fw-bold text-dark mt-3">3. Bảo mật giao dịch &amp; Thanh toán</h5>
-                        <p>Mọi giao dịch thanh toán qua thẻ, quét mã QR (VNPAY, MoMo) đều được xử lý qua cổng bảo mật của nhà cung cấp dịch vụ thanh toán. Chúng tôi tuyệt đối không lưu giữ thông tin thẻ ngân hàng của người dùng.</p>
+                        <p>Hệ thống hiện sử dụng thanh toán khi nhận hàng (COD) và không thu thập hoặc lưu giữ thông tin thẻ ngân hàng.</p>
                     </c:when>
 
                     <%-- 3. Chính sách đổi trả / hoàn tiền --%>
@@ -166,7 +166,7 @@
                                 <div class="p-3 border rounded-3 text-center h-100">
                                     <i class="fa-solid fa-credit-card fs-2 text-warning mb-2"></i>
                                     <h6 class="fw-bold">3. Thanh Toán &amp; Nhận Hàng</h6>
-                                    <p class="small text-muted mb-0">Áp mã giảm giá voucher, chọn thanh toán COD, VNPAY hoặc MoMo.</p>
+                                    <p class="small text-muted mb-0">Áp mã giảm giá voucher và thanh toán khi nhận hàng (COD).</p>
                                 </div>
                             </div>
                         </div>
@@ -178,10 +178,10 @@
                     <%-- 5. Chính sách giao hàng & phí ship --%>
                     <c:when test="${activePolicy == 'shipping'}">
                         <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Chính Sách Giao Hàng &amp; Phí Ship</h3>
-                        <p class="text-muted small">Dịch vụ vận chuyển chuyên nghiệp qua các đơn vị hàng đầu (GHN, SPX Express...)</p>
+                        <p class="text-muted small">Dịch vụ giao hàng do quản trị viên cấu hình và được shipper thật tiếp nhận</p>
                         <hr>
                         <h5 class="fw-bold text-dark mt-3">1. Phạm vi và Đối tác vận chuyển</h5>
-                        <p>Sách Cũ Việt phục vụ giao hàng trên toàn quốc (63 tỉnh/thành phố) thông qua các đối tác vận chuyển liên kết tin cậy như <strong>Giao Hàng Nhanh (GHN Express)</strong>, <strong>Shopee Xpress (SPX Express)</strong> hoặc đội ngũ shipper nội bộ tại các chi nhánh.</p>
+                        <p>Danh sách dịch vụ, phạm vi giao hàng và mức phí đang hoạt động được hiển thị trực tiếp tại bước thanh toán. Mỗi đơn phải được phân công cho một tài khoản shipper thật để cập nhật trạng thái giao nhận.</p>
 
                         <h5 class="fw-bold text-dark mt-3">2. Thời gian giao hàng dự kiến</h5>
                         <ul>
@@ -200,20 +200,14 @@
 
                     <%-- 6. Hướng dẫn thanh toán online --%>
                     <c:when test="${activePolicy == 'payment'}">
-                        <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Hướng Dẫn Thanh Toán Online</h3>
-                        <p class="text-muted small">Đa dạng hình thức thanh toán an toàn, bảo mật và tiện lợi</p>
+                        <h3 class="fw-bold mb-3 text-dark border-start border-4 border-warning ps-3">Hướng Dẫn Thanh Toán</h3>
+                        <p class="text-muted small">Thông tin phương thức thanh toán đang được hỗ trợ</p>
                         <hr>
                         <h5 class="fw-bold text-dark mt-3">1. Thanh toán khi nhận hàng (COD)</h5>
                         <p>Khách hàng kiểm tra thông tin đơn hàng và thanh toán tiền mặt trực tiếp cho nhân viên giao hàng khi nhận sách.</p>
 
-                        <h5 class="fw-bold text-dark mt-3">2. Thanh toán trực tuyến qua cổng VNPAY</h5>
-                        <p>Hỗ trợ quét mã VNPAY-QR qua hơn 30 ứng dụng Mobile Banking của các ngân hàng lớn tại Việt Nam, thanh toán bằng thẻ ATM nội địa hoặc thẻ quốc tế Visa/Mastercard/JCB một cách nhanh chóng.</p>
-
-                        <h5 class="fw-bold text-dark mt-3">3. Thanh toán qua Ví điện tử MoMo</h5>
-                        <p>Quét mã QR MoMo để xác nhận giao dịch tức thời trong vòng vài giây, thuận tiện và hoàn toàn miễn phí giao dịch.</p>
-
-                        <h5 class="fw-bold text-dark mt-3">4. Cam kết bảo mật thanh toán</h5>
-                        <p>Tất cả các giao dịch thanh toán trực tuyến đều được mã hóa bằng giao thức SSL/TLS an toàn. Hệ thống không lưu trữ thông tin số thẻ hay mã bảo mật của quý khách.</p>
+                        <h5 class="fw-bold text-dark mt-3">2. Phạm vi phương thức thanh toán</h5>
+                        <p>Phiên bản hiện tại chỉ hỗ trợ COD và không thu thập thông tin thẻ hoặc ví điện tử. Thanh toán trực tuyến chỉ được mở khi đã tích hợp merchant và xác minh chữ ký callback từ nhà cung cấp.</p>
                     </c:when>
 
                     <%-- 7. Dịch vụ thu mua sách cũ tận nhà --%>

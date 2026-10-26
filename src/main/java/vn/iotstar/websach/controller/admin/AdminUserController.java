@@ -44,8 +44,13 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("errorMessage", "Không thể tự đổi quyền hoặc trạng thái của tài khoản đang đăng nhập.");
             return "redirect:/admin/users";
         }
-        userService.updateUserRoleAndStatus(userId, roleId, branchId, status);
-        return "redirect:/admin/users?success";
+        try {
+            userService.updateUserRoleAndStatus(userId, roleId, branchId, status);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật quyền và trạng thái tài khoản.");
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/toggle-lock/{id}")
@@ -57,8 +62,13 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("errorMessage", "Bạn không thể tự khóa tài khoản đang đăng nhập.");
             return "redirect:/admin/users";
         }
-        userService.toggleUserLock(userId);
-        return "redirect:/admin/users?locked";
+        try {
+            userService.toggleUserLock(userId);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật trạng thái khóa tài khoản.");
+        } catch (RuntimeException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/delete/{id}")
@@ -72,10 +82,10 @@ public class AdminUserController {
                 return "redirect:/admin/users";
             }
             userService.deleteUser(userId);
-            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa thành công người dùng id: " + userId);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã xóa hoàn toàn người dùng id: " + userId + ".");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Không thể xóa người dùng vì tài khoản đang liên kết với dữ liệu nghiệp vụ. Hãy khóa tài khoản nếu cần giữ lịch sử.");
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/admin/users";
     }

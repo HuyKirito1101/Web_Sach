@@ -74,6 +74,36 @@ public class ManagerOrderController {
         return "redirect:/manager/orders";
     }
 
+    @PostMapping("/{id}/confirm-momo-payment")
+    public String confirmMomoPayment(@PathVariable("id") Long orderId,
+                                     Authentication authentication,
+                                     RedirectAttributes redirect) {
+        try {
+            orderService.confirmManualMomoPayment(orderId, authentication.getName());
+            redirect.addFlashAttribute("successMessage", "Đã xác nhận cửa hàng nhận được tiền MoMo.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/manager/orders";
+    }
+
+    @PostMapping("/clear-history")
+    public String clearCompletedHistory(Authentication authentication,
+                                        RedirectAttributes redirect) {
+        try {
+            int cleared = orderService.clearCompletedOrderHistory(authentication.getName());
+            if (cleared == 0) {
+                redirect.addFlashAttribute("errorMessage", "Không có đơn hàng đã kết thúc để dọn khỏi lịch sử.");
+            } else {
+                redirect.addFlashAttribute("successMessage",
+                        "Đã dọn " + cleared + " đơn hàng đã kết thúc khỏi danh sách quản lý.");
+            }
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/manager/orders";
+    }
+
     private boolean isAllowedTransition(OrderStatus current, OrderStatus target) {
         return (current == OrderStatus.NEW
                     && (target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED))

@@ -102,32 +102,6 @@
                                                     </span>
                                                 </c:when>
 
-                                                <%-- Đơn vị vận chuyển thứ 3: SPX Express (Shopee Xpress) --%>
-                                                <c:when test="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS' && not empty da && da.status != 'CANCELLED'}">
-                                                    <span class="badge bg-danger text-white p-1" style="font-size: 11px;">
-                                                        <i class="fa-solid fa-truck-fast me-1"></i>SPX Express (Shopee Xpress)
-                                                    </span>
-                                                    <div class="small text-muted mt-1" style="font-size: 11px;">
-                                                        <c:choose>
-                                                            <c:when test="${da.status == 'DELIVERED'}">
-                                                                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>Đã giao thành công</span>
-                                                            </c:when>
-                                                            <c:otherwise>
-                                                                <span class="text-primary"><i class="fa-solid fa-arrows-spin me-1 fa-spin"></i>Đang luân chuyển liên tỉnh</span>
-                                                            </c:otherwise>
-                                                        </c:choose>
-                                                    </div>
-                                                    <c:if test="${o.orderStatus == 'SHIPPING'}">
-                                                        <div class="mt-1">
-                                                            <form method="post" action="/vendor/orders/${o.id}/sync-spx" class="d-inline">
-                                                                <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" /></c:if>
-                                                                <button type="submit" class="btn btn-xs btn-outline-danger rounded-pill px-2 py-0 fw-bold" style="font-size: 10px;" title="Mô phỏng SPX hoàn tất giao hàng">
-                                                                    <i class="fa-solid fa-arrows-rotate me-1"></i>Đồng bộ SPX giao xong
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </c:if>
-                                                </c:when>
                                                 <%-- Shipper người cụ thể của chi nhánh --%>
                                                 <c:when test="${not empty da && not empty da.shipper}">
                                                     <c:choose>
@@ -348,17 +322,10 @@
                                                                 <label class="form-label small fw-bold">Chọn Shipper nhận đơn: <span class="text-danger">*</span></label>
                                                                 <select name="shipperId" class="form-select" required>
                                                                     <option value="">-- Chọn đơn vị hoặc shipper --</option>
-                                                                    <%-- Lựa chọn dịch vụ vận chuyển đối tác SPX Express --%>
                                                                     <c:set var="isSpxOrder" value="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS'}"/>
-                                                                    <c:if test="${isSpxOrder || o.shippingProvider == null}">
-                                                                        <option value="-1" class="text-danger fw-bold" ${isSpxOrder ? 'selected' : ''}>
-                                                                            📦 SPX Express (Shopee Xpress) - Dịch vụ vận chuyển đối tác toàn quốc
-                                                                        </option>
-                                                                    </c:if>
-
-                                                                    <%-- Danh sách Shipper nội bộ chi nhánh (Chỉ hiển thị shipper phụ trách gói vận chuyển khách đã chọn) --%>
+                                                                    <%-- Danh sách shipper nội bộ; đơn SPX cũ phải được xử lý bởi người thật thay vì mô phỏng. --%>
                                                                     <c:forEach var="shp" items="${shippers}">
-                                                                        <c:set var="isMismatch" value="${isSpxOrder || (o.shippingProvider != null && shp.shippingProvider != null && o.shippingProvider.code != shp.shippingProvider.code)}"/>
+                                                                        <c:set var="isMismatch" value="${!isSpxOrder && o.shippingProvider != null && shp.shippingProvider != null && o.shippingProvider.code != shp.shippingProvider.code}"/>
                                                                         <c:if test="${!isMismatch}">
                                                                             <c:set var="isRejected" value="${not empty da && da.hasShipperRejected(shp.id)}"/>
                                                                             <c:set var="isDisabled" value="${shp.busy || isRejected}"/>

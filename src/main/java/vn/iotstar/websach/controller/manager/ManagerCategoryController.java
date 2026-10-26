@@ -41,9 +41,9 @@ public class ManagerCategoryController {
     public String delete(@PathVariable Long id, RedirectAttributes redirect) {
         try {
             categoryService.deleteCategory(id);
-            redirect.addFlashAttribute("successMessage", "Đã xóa danh mục.");
+            redirect.addFlashAttribute("successMessage", "Đã ẩn danh mục.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", "Danh mục đang được sử dụng, hãy khóa thay vì xóa.");
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/manager/categories";
     }

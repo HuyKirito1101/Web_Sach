@@ -253,6 +253,10 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `final_amount` DOUBLE NOT NULL,
   `payment_method` VARCHAR(30) NOT NULL DEFAULT 'COD',
   `payment_status` VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+  `payment_submitted_at` DATETIME DEFAULT NULL,
+  `payment_confirmed_at` DATETIME DEFAULT NULL,
+  `payment_confirmed_by` VARCHAR(255) DEFAULT NULL,
+  `manager_archived` TINYINT(1) NOT NULL DEFAULT 0,
   `order_status` VARCHAR(30) NOT NULL DEFAULT 'NEW',
   `return_method` VARCHAR(20) DEFAULT NULL,
   `return_shipping_fee` DOUBLE DEFAULT NULL,
@@ -351,6 +355,34 @@ CREATE TABLE IF NOT EXISTS `sell_request_quotes` (
   CONSTRAINT `fk_quote_sell_request` FOREIGN KEY (`sell_request_id`) REFERENCES `sell_requests` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_quote_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_quote_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 17. HỘI THOẠI HỖ TRỢ KHÁCH HÀNG THEO CHI NHÁNH
+CREATE TABLE IF NOT EXISTS `support_conversations` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `public_token` VARCHAR(36) NOT NULL UNIQUE,
+  `customer_name` VARCHAR(100) NOT NULL,
+  `phone` VARCHAR(20) NOT NULL,
+  `branch_id` BIGINT NOT NULL,
+  `manager_unread` BIT(1) NOT NULL DEFAULT b'1',
+  `last_message_at` DATETIME(6) DEFAULT NULL,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  `updated_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_support_conversation_branch` FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 18. NỘI DUNG TIN NHẮN HỖ TRỢ
+CREATE TABLE IF NOT EXISTS `support_messages` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `conversation_id` BIGINT NOT NULL,
+  `sender_type` VARCHAR(20) NOT NULL,
+  `sender_name` VARCHAR(100) NOT NULL,
+  `content` TEXT NOT NULL,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_support_message_conversation` FOREIGN KEY (`conversation_id`)
+    REFERENCES `support_conversations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

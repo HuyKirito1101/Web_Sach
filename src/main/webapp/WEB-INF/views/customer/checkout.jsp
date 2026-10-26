@@ -69,9 +69,7 @@
                     <h5 class="fw-bold mb-3"><i class="fa-solid fa-truck text-primary me-2"></i>2. Phương Thức Vận Chuyển</h5>
                     <div class="alert alert-light border small text-dark mb-3">
                         <i class="fa-solid fa-circle-info text-info me-1"></i>
-                        <strong>Vận chuyển Trong Tỉnh:</strong> Giao Hàng Nhanh - GHN (Tiêu chuẩn 20k / Hỏa tốc 40k).<br>
-                        <i class="fa-solid fa-circle-info text-warning me-1"></i>
-                        <strong>Vận chuyển Ngoại Tỉnh:</strong> SPX Express (Shopee Xpress 32k).
+                        Chỉ các dịch vụ có shipper thật đang hoạt động mới được hiển thị. Phí giao hàng lấy trực tiếp từ cấu hình nhà vận chuyển.
                     </div>
                     <c:forEach var="sp" items="${shippingProviders}" varStatus="loop">
                         <div class="form-check border rounded-3 p-3 mb-2 shipping-provider-card">
@@ -124,41 +122,30 @@
                         </label>
                     </div>
 
-                    <!-- VNPAY -->
-                    <div class="form-check border rounded-3 p-3 mb-2">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_vnpay" value="VNPAY">
-                        <label class="form-check-label ms-2 w-100" for="pm_vnpay">
+                    <!-- MoMo demo: cửa hàng kiểm tra giao dịch và xác nhận thủ công -->
+                    <div class="form-check border border-danger-subtle rounded-3 p-3 mb-2 bg-danger bg-opacity-10">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_momo" value="MOMO">
+                        <label class="form-check-label ms-2 w-100" for="pm_momo">
                             <div class="d-flex align-items-center gap-2">
-                                <i class="fa-solid fa-qrcode text-primary fs-5"></i>
+                                <i class="fa-solid fa-qrcode text-danger fs-5"></i>
                                 <div>
-                                    <strong>Thanh toán qua VNPAY</strong>
-                                    <br><small class="text-muted">QR Code, ATM, Thẻ Visa/Master, Internet Banking</small>
+                                    <strong>Chuyển khoản MoMo (Demo)</strong>
+                                    <br><small class="text-muted">Quét QR sau khi đặt hàng và chờ Manager chi nhánh xác nhận</small>
                                 </div>
-                                <span class="badge bg-primary ms-auto">QR</span>
                             </div>
                         </label>
                     </div>
 
-                    <!-- MOMO -->
-                    <div class="form-check border rounded-3 p-3">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_momo" value="MOMO">
-                        <label class="form-check-label ms-2 w-100" for="pm_momo">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="fw-bold text-white rounded-circle d-flex align-items-center justify-content-center" style="width:30px;height:30px;background-color:#ae2070;font-size:12px;">M</span>
-                                <div>
-                                    <strong>Thanh toán qua MOMO</strong>
-                                    <br><small class="text-muted">Ví điện tử MOMO - Quét QR hoặc chuyển khoản</small>
-                                </div>
-                                <span class="badge ms-auto" style="background-color:#ae2070;">MoMo</span>
-                            </div>
-                        </label>
+                    <div class="alert alert-warning small mb-0">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        Đây là quy trình xác nhận thủ công, không phải cổng thanh toán MoMo API tự động.
                     </div>
                 </div>
 
                 <!-- Note -->
                 <div class="card border-0 shadow-sm rounded-3 p-4">
                     <h5 class="fw-bold mb-2">Ghi chú cho đơn hàng</h5>
-                    <textarea name="note" class="form-control" rows="2" placeholder="Ghi chú thêm về thời gian giao hàng, chỉ dẫn tìm nhà..."></textarea>
+                    <textarea name="note" class="form-control" rows="2" maxlength="1000" placeholder="Ghi chú thêm về thời gian giao hàng, chỉ dẫn tìm nhà..."></textarea>
                 </div>
             </div>
 
@@ -268,22 +255,30 @@
         applyVoucher();
     }
 
-    function applyVoucher() {
+    async function applyVoucher() {
         const code = document.getElementById('voucherCode').value.trim();
         const msgEl = document.getElementById('voucherMsg');
         if (!code) {
+            discountAmount = 0;
             msgEl.innerHTML = '';
+            document.getElementById('discountRow').style.display = 'none';
+            updateShippingFeeInfo();
             return;
         }
-        // Demo: giảm 10% nếu nhập "SACH10"
-        if (code.toUpperCase() === 'SACH10') {
-            discountAmount = subtotal * 0.10;
-            msgEl.innerHTML = '<span class="text-success"><i class="fa-solid fa-check me-1"></i>Đã áp dụng mã giảm 10%!</span>';
+        try {
+            const response = await fetch('/checkout/voucher-preview?code=' + encodeURIComponent(code), {
+                headers: {'Accept': 'application/json'}
+            });
+            const result = await response.json();
+            if (!response.ok || !result.valid) throw new Error(result.message || 'Mã voucher không hợp lệ');
+            discountAmount = Number(result.discountAmount) || 0;
+            msgEl.innerHTML = '<span class="text-success"><i class="fa-solid fa-check me-1"></i>Voucher hợp lệ.</span>';
             document.getElementById('discountRow').style.display = 'flex';
             document.getElementById('displayDiscount').textContent = '-' + formatVND(discountAmount);
-        } else {
+        } catch (error) {
             discountAmount = 0;
-            msgEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-x me-1"></i>Mã không hợp lệ hoặc đã hết hạn</span>';
+            msgEl.textContent = error.message || 'Không thể kiểm tra voucher.';
+            msgEl.className = 'small mt-1 text-danger';
             document.getElementById('discountRow').style.display = 'none';
         }
         updateShippingFeeInfo();

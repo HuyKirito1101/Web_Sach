@@ -13,4 +13,5 @@ import java.util.Optional;
 public interface ViewedProductRepository extends JpaRepository<ViewedProduct, Long> {
     List<ViewedProduct> findByUserOrderByViewedAtDesc(User user);
     Optional<ViewedProduct> findByUserAndBook(User user, Book book);
+    long deleteByUser(User user);
 }

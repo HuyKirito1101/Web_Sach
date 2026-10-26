@@ -16,6 +16,19 @@
                 <h3 class="fw-bold mb-0"><i class="fa-solid fa-boxes-packing text-primary me-2"></i>Giám Sát Tất Cả Đơn Hàng Toàn Chuỗi</h3>
             </div>
 
+            <c:if test="${not empty successMessage}">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+            <c:if test="${not empty errorMessage}">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i><c:out value="${errorMessage}"/>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </c:if>
+
             <div class="card border-0 shadow-sm rounded-3">
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -58,13 +71,30 @@
                                             </form>
                                         </td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}">
-                                                <i class="fa-solid fa-truck-ramp-box me-1"></i> Gán Shipper
-                                            </button>
+                                            <c:choose>
+                                                <c:when test="${o.orderStatus == 'CANCELLED'}">
+                                                    <form action="/admin/orders/${o.id}/delete" method="post" class="d-inline"
+                                                          onsubmit="return confirm('Xóa vĩnh viễn đơn hàng đã hủy ${o.orderCode}? Đơn sẽ biến mất khỏi lịch sử của người dùng.')">
+                                                        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                            <i class="fa-solid fa-trash-can me-1"></i>Xóa Đơn
+                                                        </button>
+                                                    </form>
+                                                </c:when>
+                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED'}">
+                                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}">
+                                                        <i class="fa-solid fa-truck-ramp-box me-1"></i> Gán Shipper
+                                                    </button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-light text-secondary border">Chưa thể gán Shipper</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                     </tr>
 
                                     <!-- Modal Assign Shipper -->
+                                    <c:if test="${o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED'}">
                                     <div class="modal fade" id="assignModal${o.id}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content text-start">
@@ -98,6 +128,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    </c:if>
                                 </c:forEach>
                             </tbody>
                         </table>

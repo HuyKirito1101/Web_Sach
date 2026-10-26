@@ -14,6 +14,19 @@
         </div>
     </c:if>
 
+    <c:if test="${not empty successMessage}">
+        <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i><c:out value="${successMessage}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+    <c:if test="${not empty errorMessage}">
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i><c:out value="${errorMessage}"/>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </c:if>
+
     <c:if test="${param.paymentSuccess}">
         <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4 shadow-sm" role="alert">
             <i class="fa-solid fa-circle-check me-2"></i><strong>Thanh toán trực tuyến thành công!</strong> Đơn hàng đã được xác nhận thanh toán.
@@ -80,11 +93,65 @@
                 </div>
             </div>
 
+            <c:if test="${order.paymentMethod == 'MOMO'}">
+                <div class="card border-danger-subtle shadow-sm rounded-3 p-4 mb-4">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                        <h5 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-qrcode me-2"></i>Thanh Toán MoMo Demo</h5>
+                        <c:choose>
+                            <c:when test="${order.paymentStatus == 'PAID'}"><span class="badge bg-success fs-6">ĐÃ THANH TOÁN</span></c:when>
+                            <c:when test="${order.paymentStatus == 'AWAITING_CONFIRMATION'}"><span class="badge bg-warning text-dark fs-6">CHỜ CỬA HÀNG XÁC NHẬN</span></c:when>
+                            <c:when test="${order.paymentStatus == 'FAILED'}"><span class="badge bg-danger fs-6">ĐÃ HỦY / THẤT BẠI</span></c:when>
+                            <c:otherwise><span class="badge bg-secondary fs-6">CHƯA CHUYỂN TIỀN</span></c:otherwise>
+                        </c:choose>
+                    </div>
+
+                    <c:if test="${order.paymentStatus == 'PENDING'}">
+                        <div class="row align-items-center g-4">
+                            <div class="col-md-5 text-center">
+                                <img src="/images/momo-demo-qr.png" alt="Mã QR MoMo demo" class="img-fluid rounded-3 border" style="max-height: 390px;">
+                            </div>
+                            <div class="col-md-7">
+                                <div class="alert alert-warning small">
+                                    Hãy kiểm tra đúng người nhận trên QR trước khi chuyển. Đây là thanh toán demo được Manager xác nhận thủ công.
+                                </div>
+                                <p class="mb-2"><strong>Số tiền:</strong>
+                                    <span class="text-danger fw-bold fs-5"><fmt:formatNumber value="${order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                </p>
+                                <p class="mb-3"><strong>Nội dung chuyển tiền:</strong>
+                                    <code class="fs-6 user-select-all"><c:out value="${order.orderCode}"/></code>
+                                </p>
+                                <form action="/orders/${order.id}/momo-transferred" method="POST"
+                                      onsubmit="return confirm('Bạn xác nhận đã chuyển đúng số tiền và nội dung mã đơn?');">
+                                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                    <button type="submit" class="btn btn-danger fw-bold rounded-pill px-4">
+                                        <i class="fa-solid fa-paper-plane me-1"></i>Tôi Đã Chuyển Tiền
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </c:if>
+
+                    <c:if test="${order.paymentStatus == 'AWAITING_CONFIRMATION'}">
+                        <div class="alert alert-warning mb-0">
+                            <i class="fa-solid fa-clock me-2"></i>Yêu cầu đã được gửi. Manager của <strong><c:out value="${order.branch.name}"/></strong> đang kiểm tra giao dịch có nội dung <code><c:out value="${order.orderCode}"/></code>.
+                        </div>
+                    </c:if>
+                    <c:if test="${order.paymentStatus == 'PAID'}">
+                        <div class="alert alert-success mb-0"><i class="fa-solid fa-circle-check me-2"></i>Cửa hàng đã xác nhận nhận đủ tiền MoMo.</div>
+                    </c:if>
+                </div>
+            </c:if>
+
             <!-- Actions -->
             <div class="card border-0 shadow-sm rounded-3 p-4">
                 <h5 class="fw-bold mb-3">Thao Tác Đơn Hàng</h5>
                 <c:choose>
                     <c:when test="${order.orderStatus == 'NEW' || order.orderStatus == 'CONFIRMED'}">
+                        <c:choose>
+                            <c:when test="${order.paymentMethod == 'MOMO' && order.paymentStatus == 'PAID'}">
+                                <div class="alert alert-info mb-0">Đơn MoMo đã thanh toán. Vui lòng liên hệ cửa hàng nếu cần hủy và hoàn tiền.</div>
+                            </c:when>
+                            <c:otherwise>
                         <form action="/orders/${order.id}/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?');">
                             <c:if test="${not empty _csrf}">
                                 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
@@ -95,6 +162,8 @@
                             </div>
                             <button type="submit" class="btn btn-danger btn-sm rounded-pill fw-bold">Hủy Đơn Hàng</button>
                         </form>
+                            </c:otherwise>
+                        </c:choose>
                     </c:when>
 
                     <c:when test="${order.orderStatus == 'DELIVERED'}">
@@ -263,7 +332,16 @@
                     <p class="mb-1"><strong>Shipper:</strong> <c:out value="${assignment.shipper.fullName}"/> (<c:out value="${assignment.shipper.phone}"/>)</p>
                 </c:if>
                 <p class="mb-1"><strong>Phương thức thanh toán:</strong> ${order.paymentMethod}</p>
-                <p class="mb-3"><strong>Trạng thái thanh toán:</strong> <span class="badge bg-secondary">${order.paymentStatus}</span></p>
+                <p class="mb-3"><strong>Trạng thái thanh toán:</strong>
+                    <span class="badge ${order.paymentStatus == 'PAID' ? 'bg-success' : (order.paymentStatus == 'AWAITING_CONFIRMATION' ? 'bg-warning text-dark' : (order.paymentStatus == 'FAILED' ? 'bg-danger' : 'bg-secondary'))}">
+                        <c:choose>
+                            <c:when test="${order.paymentStatus == 'PAID'}">Đã thanh toán</c:when>
+                            <c:when test="${order.paymentStatus == 'AWAITING_CONFIRMATION'}">Chờ cửa hàng xác nhận</c:when>
+                            <c:when test="${order.paymentStatus == 'FAILED'}">Đã hủy / thất bại</c:when>
+                            <c:otherwise>Chưa thanh toán</c:otherwise>
+                        </c:choose>
+                    </span>
+                </p>
 
                 <hr>
                 <div class="d-flex justify-content-between mb-1">

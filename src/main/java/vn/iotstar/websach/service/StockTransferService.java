@@ -13,5 +13,5 @@ public interface StockTransferService {
     Optional<StockTransfer> findById(Long id);
     StockTransfer approveTransfer(Long transferId, String userEmail);
     StockTransfer rejectTransfer(Long transferId, String userEmail);
-    StockTransfer completeTransfer(Long transferId);
+    StockTransfer completeTransfer(Long transferId, String userEmail);
 }

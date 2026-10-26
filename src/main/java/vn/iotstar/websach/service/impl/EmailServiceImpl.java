@@ -20,12 +20,23 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendOtpEmail(String toEmail, String otpCode) {
+        send(toEmail, otpCode, "[WebSachCu] Mã OTP Kích Hoạt Tài Khoản",
+                "Mã OTP kích hoạt tài khoản của bạn là: ");
+    }
+
+    @Override
+    public void sendPasswordResetOtpEmail(String toEmail, String otpCode) {
+        send(toEmail, otpCode, "[WebSachCu] Mã OTP Đặt Lại Mật Khẩu",
+                "Mã OTP đặt lại mật khẩu của bạn là: ");
+    }
+
+    private void send(String toEmail, String otpCode, String subject, String prefix) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("[WebSachCu] Mã OTP Kích Hoạt Tài Khoản");
-            message.setText("Mã OTP kích hoạt tài khoản của bạn là: " + otpCode + "\n\nMã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho ai.");
+            message.setSubject(subject);
+            message.setText(prefix + otpCode + "\n\nMã có hiệu lực trong 5 phút. Vui lòng không chia sẻ mã này cho ai.");
             mailSender.send(message);
             log.info("Đã gửi mã OTP thực tế tới Gmail: {}", toEmail);
         } catch (Exception e) {
