@@ -1,7 +1,6 @@
 package vn.iotstar.websach.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,10 +9,12 @@ import vn.iotstar.websach.dto.VendorDashboardDTO;
 import vn.iotstar.websach.dto.VendorProductRequest;
 import vn.iotstar.websach.dto.VendorRevenueAnalyticsDTO;
 import vn.iotstar.websach.dto.VendorShipperDTO;
+import vn.iotstar.websach.dto.MasterBookRequest;
 import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.*;
 import vn.iotstar.websach.repository.*;
 import vn.iotstar.websach.service.CloudinaryService;
+import vn.iotstar.websach.service.RealtimeNotificationService;
 import vn.iotstar.websach.service.VendorService;
 
 import java.time.LocalDate;
@@ -35,11 +36,12 @@ public class VendorServiceImpl implements VendorService {
     private final PromotionRepository promotionRepository;
     private final SellRequestRepository sellRequestRepository;
     private final CloudinaryService cloudinaryService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RealtimeNotificationService realtimeNotificationService;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final CartItemRepository cartItemRepository;
     private final ShippingProviderRepository shippingProviderRepository;
     private final SellRequestQuoteRepository sellRequestQuoteRepository;
+    private final vn.iotstar.websach.service.BookService bookService;
 
     private User requireVendor(String email) {
         User vendor = userRepository.findByEmail(email)
@@ -109,6 +111,49 @@ public class VendorServiceImpl implements VendorService {
     public List<BookCopy> getProducts(String vendorEmail) {
         User vendor = requireVendor(vendorEmail);
         return bookCopyRepository.findBySellerId(vendor.getId());
+    }
+
+    @Override
+    public List<Book> getProductCatalog(String vendorEmail) {
+        Map<String, Book> uniqueBooks = new LinkedHashMap<>();
+        for (BookCopy copy : getProducts(vendorEmail)) {
+            if (copy.getBook() != null && copy.getBook().getTitle() != null
+                    && !copy.getBook().getTitle().isBlank()) {
+                uniqueBooks.putIfAbsent(copy.getBook().getTitle().trim().toLowerCase(Locale.ROOT), copy.getBook());
+            }
+        }
+        for (Book book : bookRepository.findAll()) {
+            if (book.getTitle() != null && !book.getTitle().isBlank()) {
+                uniqueBooks.putIfAbsent(book.getTitle().trim().toLowerCase(Locale.ROOT), book);
+            }
+        }
+        return new ArrayList<>(uniqueBooks.values());
+    }
+
+    @Override
+    @Transactional
+    public BookCopy createMasterBookProduct(String vendorEmail,
+                                            MasterBookRequest request,
+                                            MultipartFile coverFile) {
+        User vendor = requireVendor(vendorEmail);
+        Branch shop = requireActiveShop(vendorEmail);
+        Book book = bookService.createMasterBook(request, coverFile);
+        BookCopy copy = BookCopy.builder()
+                .book(book)
+                .branch(shop)
+                .seller(vendor)
+                .purchasePrice(request.getPurchasePrice() != null ? request.getPurchasePrice() : 0.0)
+                .sellingPrice(request.getSellingPrice() != null && request.getSellingPrice() > 0
+                        ? request.getSellingPrice() : 50000.0)
+                .quantity(request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1)
+                .conditionRating(request.getConditionRating() != null
+                        ? request.getConditionRating() : BookCondition.LIKE_NEW)
+                .note(request.getNote() != null && !request.getNote().isBlank()
+                        ? request.getNote().trim() : "Sản phẩm mới nhập gian hàng")
+                .imageUrl(book.getCoverUrl())
+                .status(BookCopyStatus.UNPUBLISHED)
+                .build();
+        return bookCopyRepository.save(copy);
     }
 
     @Override
@@ -406,6 +451,63 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
+    public Map<Long, DeliveryAssignment> getOrderAssignments(String vendorEmail, List<Order> orders) {
+        Set<Long> allowedOrderIds = getOrders(vendorEmail, null).stream()
+                .map(Order::getId)
+                .collect(Collectors.toSet());
+        Map<Long, DeliveryAssignment> assignments = new HashMap<>();
+        for (Order order : orders == null ? List.<Order>of() : orders) {
+            if (!allowedOrderIds.contains(order.getId())) {
+                continue;
+            }
+            deliveryAssignmentRepository.findByOrderId(order.getId()).ifPresent(assignment -> {
+                if (order.getOrderStatus() == OrderStatus.NEW
+                        || order.getOrderStatus() == OrderStatus.CONFIRMED
+                        || order.getOrderStatus() == OrderStatus.PACKING) {
+                    return;
+                }
+                if (order.getOrderStatus() == OrderStatus.READY_FOR_PICKUP
+                        && (assignment.getStatus() == DeliveryStatus.SHIPPING
+                        || assignment.getStatus() == DeliveryStatus.DELIVERED)) {
+                    return;
+                }
+                assignments.put(order.getId(), assignment);
+            });
+        }
+        return assignments;
+    }
+
+    @Override
+    public Map<Long, DeliveryAssignment> getReturnAssignments(String vendorEmail, List<Order> orders) {
+        Set<Long> allowedOrderIds = getReturnOrders(vendorEmail).stream()
+                .map(Order::getId)
+                .collect(Collectors.toSet());
+        Map<Long, DeliveryAssignment> assignments = new HashMap<>();
+        for (Order order : orders == null ? List.<Order>of() : orders) {
+            if (!allowedOrderIds.contains(order.getId())) {
+                continue;
+            }
+            deliveryAssignmentRepository.findByOrderId(order.getId()).ifPresent(assignment -> {
+                if (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED
+                        && assignment.getStatus() == DeliveryStatus.DELIVERED
+                        && (assignment.getNote() == null
+                        || (!assignment.getNote().toLowerCase(Locale.ROOT).contains("thu hồi")
+                        && !assignment.getNote().toLowerCase(Locale.ROOT).contains("hoàn trả")))) {
+                    return;
+                }
+                assignments.put(order.getId(), assignment);
+            });
+        }
+        return assignments;
+    }
+
+    @Override
+    public Optional<DeliveryAssignment> getOrderAssignment(String vendorEmail, Long orderId) {
+        getOrder(vendorEmail, orderId);
+        return deliveryAssignmentRepository.findByOrderId(orderId);
+    }
+
+    @Override
     @Transactional
     public Order confirmManualMomoPayment(String vendorEmail, Long orderId) {
         User vendor = userRepository.findByEmail(vendorEmail)
@@ -438,7 +540,7 @@ public class VendorServiceImpl implements VendorService {
         order.setPaymentConfirmedAt(LocalDateTime.now());
         order.setPaymentConfirmedBy(vendorEmail);
         Order saved = orderRepository.save(order);
-        send("Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
+        send(order.getBranch().getId(), "Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
         return saved;
     }
 
@@ -456,7 +558,7 @@ public class VendorServiceImpl implements VendorService {
                 order.setPaymentStatus(PaymentStatus.PAID);
                 order.setPaymentConfirmedAt(LocalDateTime.now());
                 order.setPaymentConfirmedBy(vendorEmail);
-                send("Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
+                send(order.getBranch().getId(), "Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
             } else if (order.getPaymentStatus() == PaymentStatus.PENDING) {
                 throw new IllegalStateException("Đơn MoMo chưa thể duyệt vì khách hàng chưa hoàn tất chuyển tiền hoặc chưa bấm xác nhận đã chuyển.");
             } else {
@@ -498,7 +600,7 @@ public class VendorServiceImpl implements VendorService {
         }
         order.setOrderStatus(target);
         Order saved = orderRepository.save(order);
-        send("Đơn hàng #" + order.getOrderCode() + " đã chuyển sang " + target);
+        send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + " đã chuyển sang " + target);
         return saved;
     }
 
@@ -599,7 +701,7 @@ public class VendorServiceImpl implements VendorService {
             assignment.setNote("Lấy hàng tại cửa hàng: " + order.getBranch().getName());
         }
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
-        send("Đơn hàng #" + order.getOrderCode() + " đã phân công Shipper " + shipper.getFullName() + " (Đang chờ nhận đơn)");
+        send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + " đã phân công Shipper " + shipper.getFullName() + " (Đang chờ nhận đơn)");
         return saved;
     }
 
@@ -633,7 +735,7 @@ public class VendorServiceImpl implements VendorService {
 
         orderRepository.save(order);
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
-        send("Đơn hàng #" + order.getOrderCode() + ": Đã thu hồi phân công giao hàng");
+        send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + ": Đã thu hồi phân công giao hàng");
         return saved;
     }
 
@@ -684,7 +786,7 @@ public class VendorServiceImpl implements VendorService {
             }
         }
         Order saved = orderRepository.save(order);
-        send("Đơn hàng #" + order.getOrderCode() + " đã nhận lại sách hoàn trả tại kho");
+        send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + " đã nhận lại sách hoàn trả tại kho");
         return saved;
     }
 
@@ -731,7 +833,7 @@ public class VendorServiceImpl implements VendorService {
                 ("SHIPPER".equalsIgnoreCase(order.getReturnMethod()) ? " (sau khi trừ 50% phí ship hoàn: " + String.format("%,.0f", order.getReturnShippingFee() != null ? order.getReturnShippingFee() : 0.0) + "đ)" : " (hoàn 100% tiền đơn)") +
                 shipperPayoutNote);
         Order saved = orderRepository.save(order);
-        send("Đơn hàng #" + order.getOrderCode() + " đã hoàn tiền thành công và thanh toán phí cho Shipper");
+        send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + " đã hoàn tiền thành công và thanh toán phí cho Shipper");
         return saved;
     }
 
@@ -1115,6 +1217,39 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
+    public Map<Long, DeliveryAssignment> getSellRequestAssignments(String vendorEmail,
+                                                                    List<SellRequest> requests) {
+        Set<Long> allowedIds = getSellRequests(vendorEmail, null).stream()
+                .map(SellRequest::getId)
+                .collect(Collectors.toSet());
+        Map<Long, DeliveryAssignment> assignments = new HashMap<>();
+        for (SellRequest request : requests == null ? List.<SellRequest>of() : requests) {
+            if (allowedIds.contains(request.getId())) {
+                deliveryAssignmentRepository.findBySellRequestId(request.getId())
+                        .ifPresent(assignment -> assignments.put(request.getId(), assignment));
+            }
+        }
+        return assignments;
+    }
+
+    @Override
+    public Map<Long, SellRequestQuote> getSellRequestQuotes(String vendorEmail,
+                                                             List<SellRequest> requests) {
+        User vendor = requireVendor(vendorEmail);
+        Set<Long> allowedIds = getSellRequests(vendorEmail, null).stream()
+                .map(SellRequest::getId)
+                .collect(Collectors.toSet());
+        Map<Long, SellRequestQuote> quotes = new HashMap<>();
+        for (SellRequest request : requests == null ? List.<SellRequest>of() : requests) {
+            if (allowedIds.contains(request.getId())) {
+                sellRequestQuoteRepository.findBySellRequestIdAndVendorId(request.getId(), vendor.getId())
+                        .ifPresent(quote -> quotes.put(request.getId(), quote));
+            }
+        }
+        return quotes;
+    }
+
+    @Override
     @Transactional
     public SellRequest updateSellRequest(String vendorEmail, Long requestId, SellRequestStatus target,
                                          Double offeredTotal, String staffNote) {
@@ -1243,7 +1378,8 @@ public class VendorServiceImpl implements VendorService {
         }
 
         SellRequest saved = sellRequestRepository.save(request);
-        send("Yêu cầu thu mua #" + request.getId() + " đã chuyển sang " + target);
+        send(request.getBranch() == null ? null : request.getBranch().getId(),
+                "Yêu cầu thu mua #" + request.getId() + " đã chuyển sang " + target);
         return saved;
     }
 
@@ -1308,7 +1444,8 @@ public class VendorServiceImpl implements VendorService {
         }
 
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
-        send("Đơn thu gom sách #" + request.getId() + " đã phân công Shipper " + shipper.getFullName() + " (Đang chờ nhận đơn)");
+        send(request.getBranch() == null ? null : request.getBranch().getId(),
+                "Đơn thu gom sách #" + request.getId() + " đã phân công Shipper " + shipper.getFullName() + " (Đang chờ nhận đơn)");
         return saved;
     }
 
@@ -1336,8 +1473,7 @@ public class VendorServiceImpl implements VendorService {
         return deliveryAssignmentRepository.save(assignment);
     }
 
-    private void send(String message) {
-        try { messagingTemplate.convertAndSend("/topic/orders", message); }
-        catch (Exception ignored) { }
+    private void send(Long branchId, String message) {
+        realtimeNotificationService.notifyOrder(branchId, message);
     }
 }

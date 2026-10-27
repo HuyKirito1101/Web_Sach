@@ -37,7 +37,12 @@ public class ManagerAccessService {
         Branch branch = requireManagedBranch(managerEmail);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
-        if (user.getBranch() == null || !Objects.equals(user.getBranch().getId(), branch.getId())) {
+        boolean assignedToBranch = user.getBranch() != null
+                && Objects.equals(user.getBranch().getId(), branch.getId());
+        boolean purchasedAtBranch = user.getRole() != null
+                && user.getRole().getName() == RoleName.ROLE_USER
+                && orderRepository.existsByBranchIdAndCustomerId(branch.getId(), userId);
+        if (!assignedToBranch && !purchasedAtBranch) {
             throw new SecurityException("Không được quản lý người dùng của chi nhánh khác.");
         }
         return user;

@@ -19,6 +19,7 @@ import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.OrderService;
+import vn.iotstar.websach.service.RealtimeNotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +37,7 @@ public class OrderServiceImpl implements OrderService {
     private final vn.iotstar.websach.repository.BookCopyRepository bookCopyRepository;
     private final ReviewRepository reviewRepository;
     private final ManagerAccessService managerAccessService;
+    private final RealtimeNotificationService realtimeNotificationService;
 
     @Override
     public List<Order> findAllOrders() {
@@ -111,9 +113,8 @@ public class OrderServiceImpl implements OrderService {
         Order saved = orderRepository.save(order);
 
         // Gửi WebSocket Notification cập nhật trạng thái đơn
-        try {
-            messagingTemplate.convertAndSend("/topic/orders", "Đơn hàng " + order.getOrderCode() + " đã chuyển sang trạng thái: " + status);
-        } catch (Exception ignored) {}
+        realtimeNotificationService.notifyOrder(order.getBranch().getId(),
+                "Đơn hàng " + order.getOrderCode() + " đã chuyển sang trạng thái: " + status);
 
         return saved;
     }
@@ -224,9 +225,8 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.delete(order);
         orderRepository.flush();
 
-        try {
-            messagingTemplate.convertAndSend("/topic/orders", "Đơn hàng " + order.getOrderCode() + " đã được xóa.");
-        } catch (Exception ignored) {}
+        realtimeNotificationService.notifyOrder(order.getBranch().getId(),
+                "Đơn hàng " + order.getOrderCode() + " đã được xóa.");
     }
 
 }

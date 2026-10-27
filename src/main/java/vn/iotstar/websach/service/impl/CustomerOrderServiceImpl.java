@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.entity.Order;
 import vn.iotstar.websach.entity.OrderItem;
 import vn.iotstar.websach.entity.User;
+import vn.iotstar.websach.entity.DeliveryAssignment;
 import vn.iotstar.websach.entity.enums.OrderStatus;
 import vn.iotstar.websach.entity.enums.PaymentMethod;
 import vn.iotstar.websach.entity.enums.PaymentStatus;
@@ -17,6 +18,7 @@ import vn.iotstar.websach.service.CustomerOrderService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +50,14 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     @Override
     public List<OrderItem> getOrderItems(Long orderId) {
         return orderItemRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    public Optional<DeliveryAssignment> getLatestDeliveryAssignment(User user, Long orderId) {
+        if (getOrderById(user, orderId) == null) {
+            return Optional.empty();
+        }
+        return deliveryAssignmentRepository.findFirstByOrderIdOrderByIdDesc(orderId);
     }
 
     @Override

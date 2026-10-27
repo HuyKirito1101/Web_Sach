@@ -16,6 +16,7 @@ import vn.iotstar.websach.service.CustomerBookService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.text.Normalizer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -86,17 +87,43 @@ public class CustomerBookServiceImpl implements CustomerBookService {
     }
 
     private List<Book> findAvailableBooks() {
-        return bookRepository.findAll().stream()
+        Map<String, Book> uniqueBooks = new LinkedHashMap<>();
+        bookRepository.findAll().stream()
                 .filter(b -> hasAvailableCopy(b.getId()))
-                .map(b -> {
-                    // Ưu tiên hiển thị ảnh từ bản sách của vendor nếu có.
-                    bookCopyRepository.findByBookId(b.getId()).stream()
-                            .filter(c -> c.getImageUrl() != null && !c.getImageUrl().isBlank())
-                            .findFirst()
-                            .ifPresent(c -> b.setCoverUrl(c.getImageUrl()));
-                    return b;
-                })
-                .collect(Collectors.toList());
+                .forEach(book -> {
+                    // Ảnh bìa đầu sách là ảnh đại diện chuẩn. Ảnh chụp thực tế của
+                    // từng bản sách chỉ dùng làm phương án dự phòng khi chưa có bìa.
+                    if (book.getCoverUrl() == null || book.getCoverUrl().isBlank()) {
+                        bookCopyRepository.findByBookId(book.getId()).stream()
+                                .map(BookCopy::getImageUrl)
+                                .filter(url -> url != null && !url.isBlank())
+                                .findFirst()
+                                .ifPresent(book::setCoverUrl);
+                    }
+                    uniqueBooks.putIfAbsent(catalogKey(book), book);
+                });
+        return new ArrayList<>(uniqueBooks.values());
+    }
+
+    /**
+     * Một đầu sách đôi khi được nhiều vendor tạo lại thành nhiều dòng dữ liệu.
+     * Trang khách hàng chỉ hiển thị một thẻ cho cùng ISBN hoặc cùng tên sách.
+     */
+    private String catalogKey(Book book) {
+        String title = Optional.ofNullable(book.getTitle()).orElse("")
+                .replaceFirst("\\s*\\([^)]*\\)\\s*$", "")
+                .trim()
+                .toLowerCase(Locale.ROOT);
+        title = Normalizer.normalize(title, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replaceAll("[^a-z0-9]+", " ")
+                .trim();
+        if (!title.isBlank()) {
+            return "title:" + title;
+        }
+        return "isbn:" + Optional.ofNullable(book.getIsbn()).orElse("")
+                .replaceAll("[^0-9Xx]", "")
+                .toLowerCase(Locale.ROOT);
     }
 
     @Override

@@ -507,6 +507,19 @@ class CustomerWorkflowIntegrationTest {
     }
 
     @Test
+    void guestBestSellerSectionContainsOnlyBooksSoldOverTenAndIsSortedDescending() {
+        List<Book> topBooks = customerBookService.getTop10BestSellers();
+
+        assertThat(topBooks).isNotEmpty().hasSizeLessThanOrEqualTo(10);
+        List<Long> soldQuantities = topBooks.stream()
+                .map(book -> orderItemRepository.getSoldQuantityByBookId(book.getId()))
+                .toList();
+
+        assertThat(soldQuantities).allMatch(quantity -> quantity != null && quantity > 10);
+        assertThat(soldQuantities).isSortedAccordingTo((left, right) -> Long.compare(right, left));
+    }
+
+    @Test
     void customerOrderDetailWithStandardShippingLoadsSuccessfully() {
         User customer = getOrCreateCustomer("std-order-customer@example.com");
         ShippingProvider standardProvider = shippingProviderRepository.findAll().stream()

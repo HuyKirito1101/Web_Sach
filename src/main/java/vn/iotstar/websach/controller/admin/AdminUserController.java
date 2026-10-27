@@ -7,7 +7,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.User;
-import vn.iotstar.websach.repository.RoleRepository;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.UserService;
 
@@ -19,14 +18,13 @@ import java.util.List;
 public class AdminUserController {
 
     private final UserService userService;
-    private final RoleRepository roleRepository;
     private final BranchService branchService;
 
     @GetMapping
     public String listUsers(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
         List<User> users = userService.searchUsers(keyword);
         model.addAttribute("users", users);
-        model.addAttribute("roles", roleRepository.findAll());
+        model.addAttribute("roles", userService.findAllRoles());
         model.addAttribute("branches", branchService.findAllBranches());
         model.addAttribute("keyword", keyword);
         return "admin/users/list";

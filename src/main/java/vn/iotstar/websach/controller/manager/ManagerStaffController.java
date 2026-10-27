@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.User;
-import vn.iotstar.websach.entity.enums.RoleName;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.UserService;
 
@@ -27,32 +26,35 @@ public class ManagerStaffController {
                                   @RequestParam(required = false) String keyword,
                                   Model model) {
         Branch branch = managerAccessService.requireManagedBranch(authentication.getName());
-        String search = keyword == null ? "" : keyword.trim().toLowerCase();
-
-        List<User> staffList = userService.findAllUsers().stream()
-                .filter(u -> u.getBranch() != null && u.getBranch().getId().equals(branch.getId()))
-                .filter(u -> search.isEmpty()
-                        || safe(u.getFullName()).contains(search)
-                        || safe(u.getEmail()).contains(search)
-                        || safe(u.getPhone()).contains(search))
-                .toList();
+        List<User> staffList = userService.searchUsersForManagedBranch(authentication.getName(), keyword);
 
         model.addAttribute("branch", branch);
         model.addAttribute("staffList", staffList);
+        model.addAttribute("roles", userService.findBranchManageableRoles());
         model.addAttribute("keyword", keyword);
         return "manager/staff/list";
+    }
+
+    @PostMapping("/update-role-status")
+    public String updateRoleStatus(@RequestParam Long userId,
+                                   @RequestParam Long roleId,
+                                   @RequestParam String status,
+                                   Authentication authentication,
+                                   RedirectAttributes redirect) {
+        try {
+            userService.updateManagedBranchUser(authentication.getName(), userId, roleId, status);
+            redirect.addFlashAttribute("successMessage", "Đã cập nhật quyền và trạng thái tài khoản trong chi nhánh.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/manager/staff";
     }
 
     @PostMapping("/{id}/toggle-lock")
     public String toggleLock(@PathVariable Long id, Authentication authentication,
                              RedirectAttributes redirect) {
         try {
-            User user = managerAccessService.requireUserInBranch(authentication.getName(), id);
-            if (user.getRole() != null && (user.getRole().getName() == RoleName.ROLE_ADMIN
-                    || user.getRole().getName() == RoleName.ROLE_MANAGER)) {
-                throw new SecurityException("Manager không được khóa tài khoản Admin hoặc Manager.");
-            }
-            userService.toggleUserLock(id);
+            userService.toggleManagedBranchUserLock(authentication.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái tài khoản.");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
@@ -60,7 +62,15 @@ public class ManagerStaffController {
         return "redirect:/manager/staff";
     }
 
-    private String safe(String value) {
-        return value == null ? "" : value.toLowerCase();
+    @PostMapping("/{id}/delete")
+    public String deleteUser(@PathVariable Long id, Authentication authentication,
+                             RedirectAttributes redirect) {
+        try {
+            userService.deleteManagedBranchUser(authentication.getName(), id);
+            redirect.addFlashAttribute("successMessage", "Đã xóa tài khoản khỏi hệ thống.");
+        } catch (RuntimeException e) {
+            redirect.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/manager/staff";
     }
 }

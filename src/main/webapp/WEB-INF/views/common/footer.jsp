@@ -134,8 +134,14 @@
             stompClient.connect({}, function (frame) {
                 console.log('WebSocket Connected!');
 
-                <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')}">
-                stompClient.subscribe('/topic/orders', function (msg) {
+                <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
+                stompClient.subscribe('/topic/orders/admin', function (msg) {
+                    showToastNotification(msg.body);
+                });
+                </c:if>
+
+                <c:if test="${(pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')) && currentUser != null && currentUser.branch != null}">
+                stompClient.subscribe('/topic/orders/branch/${currentUser.branch.id}', function (msg) {
                     showToastNotification(msg.body);
                 });
                 </c:if>

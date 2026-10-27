@@ -62,7 +62,10 @@ INSERT IGNORE INTO `publishers` (`id`, `name`, `address`) VALUES
 (2, 'NXB Văn Học', '18 Nguyễn Trường Tộ, Ba Đình, Hà Nội'),
 (3, 'NXB Trẻ', '161B Lý Chính Thắng, P. Võ Thị Sáu, Q.3, TP.HCM'),
 (4, 'NXB Lao Động', '175 Giảng Võ, Đống Đa, Hà Nội'),
-(5, 'NXB Giáo Dục Việt Nam', '81 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội');
+(5, 'NXB Giáo Dục Việt Nam', '81 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội'),
+(6, 'NXB Hội Nhà Văn', 'Hà Nội'),
+(7, 'NXB Thế Giới', 'Hà Nội'),
+(8, 'First News - Trí Việt', 'TP.HCM');
 
 -- 4. BẢNG AUTHORS (Tác giả)
 CREATE TABLE IF NOT EXISTS `authors` (
@@ -78,7 +81,13 @@ INSERT IGNORE INTO `authors` (`id`, `name`, `bio`) VALUES
 (3, 'Ngô Tất Tố', 'Nhà văn, nhà báo, nhà nghiên cứu văn học có ảnh hưởng sâu rộng'),
 (4, 'Nguyễn Nhật Ánh', 'Nhà văn viết cho thanh thiếu niên được yêu mến hàng đầu'),
 (5, 'Dale Carnegie (Bản dịch Nguyễn Hiến Lê)', 'Tác giả sách tự lực và phát triển bản thân nổi tiếng thế giới'),
-(6, 'Nhiều Tác Giả (Bộ Giáo Dục)', 'Tập thể tác giả biên soạn sách giáo khoa');
+(6, 'Nhiều Tác Giả (Bộ Giáo Dục)', 'Tập thể tác giả biên soạn sách giáo khoa'),
+(7, 'Paulo Coelho', 'Nhà văn Brazil nổi tiếng với những tác phẩm giàu tính biểu tượng'),
+(8, 'José Mauro de Vasconcelos', 'Nhà văn Brazil, tác giả Cây Cam Ngọt Của Tôi'),
+(9, 'Rosie Nguyễn', 'Tác giả và blogger du lịch Việt Nam'),
+(10, 'James Clear', 'Tác giả chuyên viết về thói quen và cải thiện bản thân'),
+(11, 'Haruki Murakami', 'Tiểu thuyết gia đương đại nổi tiếng của Nhật Bản'),
+(12, 'Nguyên Phong', 'Tác giả và dịch giả các tác phẩm văn hóa, tâm linh phương Đông');
 
 -- 5. BẢNG SHIPPING_PROVIDERS (Đơn vị vận chuyển)
 CREATE TABLE IF NOT EXISTS `shipping_providers` (
@@ -180,13 +189,21 @@ CREATE TABLE IF NOT EXISTS `books` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO `books` (`id`, `isbn`, `title`, `description`, `category_id`, `publisher_id`, `author_id`, `publish_year`, `language`, `cover_url`) VALUES
-(1, '9786042078888', 'Dế Mèn Phiêu Lưu Ký', 'Tác phẩm văn học kinh điển dành cho thiếu nhi và người lớn của nhà văn Tô Hoài.', 1, 1, 1, 1985, 'Tiếng Việt', 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80'),
-(2, '9786045612345', 'Số Đỏ (Ấn Bản Năm 1990)', 'Tiểu thuyết trào phúng kinh điển của Vũ Trọng Phụng về nhân vật Xuân Tóc Đỏ.', 2, 2, 2, 1990, 'Tiếng Việt', 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80'),
-(3, '9786048991111', 'Tắt Đèn (Bản Cũ 1988)', 'Tác phẩm hiện thực xuất sắc tái hiện cuộc sống nông thôn Việt Nam trước Cách mạng.', 1, 2, 3, 1988, 'Tiếng Việt', 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80'),
-(4, '9786047722222', 'Tôi Thấy Hoa Vàng Trên Cỏ Xanh', 'Truyện dài cảm động về tuổi thơ nơi làng quê nghèo của Nguyễn Nhật Ánh.', 1, 3, 4, 2012, 'Tiếng Việt', 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80'),
-(5, '9786046633333', 'Đắc Nhân Tâm (Bản Dịch Nguyễn Hiến Lê 1974)', 'Bản dịch kinh điển của dịch giả Nguyễn Hiến Lê trước năm 1975, bìa cứng xưa quý hiếm.', 3, 4, 5, 1974, 'Tiếng Việt', 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80'),
-(6, '9786045544444', 'Doraemon Tập 1 (Bản In Đầu 1996)', 'Tập 1 bộ truyện tranh Doraemon bản dịch cũ mỏng giấy ngả vàng sưu tầm.', 4, 1, 1, 1996, 'Tiếng Việt', 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80'),
-(7, '9786040007777', 'Bộ Sách Giáo Khoa Lớp 12 Cũ (Đầy Đủ 12 Môn)', 'Bộ SGK lớp 12 cũ dành cho học sinh chuẩn bị ôn thi đại học và tốt nghiệp.', 6, 5, 6, 2020, 'Tiếng Việt', 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80');
+(1, '9786042078888', 'Dế Mèn Phiêu Lưu Ký', 'Tác phẩm văn học kinh điển dành cho thiếu nhi và người lớn của nhà văn Tô Hoài.', 1, 1, 1, 1985, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/d/e/de-men-phieu-luu-ki_bia-cung_to.jpg'),
+(2, '9786045612345', 'Số Đỏ (Ấn Bản Năm 1990)', 'Tiểu thuyết trào phúng kinh điển của Vũ Trọng Phụng về nhân vật Xuân Tóc Đỏ.', 2, 2, 2, 1990, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230010784_1.jpg'),
+(3, '9786048991111', 'Tắt Đèn (Bản Cũ 1988)', 'Tác phẩm hiện thực xuất sắc tái hiện cuộc sống nông thôn Việt Nam trước Cách mạng.', 1, 2, 3, 1988, 'Tiếng Việt', 'https://product.hstatic.net/1000237375/product/bia_truoc_08_b4497226ce524fd79a1d81b9086b99a9_master.jpg'),
+(4, '9786047722222', 'Tôi Thấy Hoa Vàng Trên Cỏ Xanh', 'Truyện dài cảm động về tuổi thơ nơi làng quê nghèo của Nguyễn Nhật Ánh.', 1, 3, 4, 2012, 'Tiếng Việt', 'https://cdn0.fahasa.com/media/catalog/product/8/9/8934974158448.jpg'),
+(5, '9786046633333', 'Đắc Nhân Tâm (Bản Dịch Nguyễn Hiến Lê 1974)', 'Bản dịch kinh điển của dịch giả Nguyễn Hiến Lê trước năm 1975, bìa cứng xưa quý hiếm.', 3, 4, 5, 1974, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230006015.jpg'),
+(6, '9786045544444', 'Doraemon Tập 1 (Bản In Đầu 1996)', 'Tập 1 bộ truyện tranh Doraemon bản dịch cũ mỏng giấy ngả vàng sưu tầm.', 4, 1, 1, 1996, 'Tiếng Việt', 'https://bizweb.dktcdn.net/thumb/1024x1024/100/576/749/products/1-09e4d57d2e8d45f6ae65b8936811fa81.jpg?v=1760791370697'),
+(7, '9786040007777', 'Bộ Sách Giáo Khoa Lớp 12 Cũ (Đầy Đủ 12 Môn)', 'Bộ SGK lớp 12 cũ dành cho học sinh chuẩn bị ôn thi đại học và tốt nghiệp.', 6, 5, 6, 2020, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/9/7/9786040392503.jpg'),
+(8, '8935235200524', 'Nhà Giả Kim', 'Tiểu thuyết giàu tính biểu tượng về hành trình theo đuổi ước mơ và khám phá chính mình.', 1, 2, 7, 1988, 'Tiếng Việt', 'https://is1-ssl.mzstatic.com/image/thumb/Publication69/v4/10/23/8c/10238cf2-8bdb-4ad0-853b-715e5a9431d2/nha_gia_kim_paulo_coelho.png/1200x1200wz.jpg'),
+(9, '9786043945674', 'Cây Cam Ngọt Của Tôi', 'Câu chuyện cảm động về tuổi thơ, tình yêu thương và hành trình trưởng thành của cậu bé Zezé.', 1, 6, 8, 2020, 'Tiếng Việt', 'https://bizweb.dktcdn.net/thumb/1024x1024/100/567/082/products/image-217480.jpg?v=1747326206683'),
+(10, '9786045678906', 'Tuổi Trẻ Đáng Giá Bao Nhiêu?', 'Những chia sẻ thực tế về học tập, trải nghiệm, làm việc và cách sống trọn vẹn với tuổi trẻ.', 3, 6, 9, 2021, 'Tiếng Việt', 'https://salt.tikicdn.com/cache/750x750/ts/product/66/51/30/c2815ed03a54650766df95003ed0d809.jpg'),
+(11, '9786041122336', 'Cho Tôi Xin Một Vé Đi Tuổi Thơ', 'Một chuyến tàu hóm hỉnh và trong trẻo trở về thế giới tuổi thơ của bốn người bạn nhỏ.', 1, 3, 4, 2008, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/i/m/image_195509_1_20306.jpg'),
+(12, '9786043344557', 'Mắt Biếc', 'Câu chuyện tình đầu trong trẻo, day dứt giữa Ngạn và Hà Lan tại làng Đo Đo.', 1, 3, 4, 2019, 'Tiếng Việt', 'https://www.sachkhaitri.com/Data/Sites/2/Product/65549/mat-biec-tai-ban-2019.jpg'),
+(13, '9786049988773', 'Atomic Habits - Thay Đổi Tí Hon, Hiệu Quả Bất Ngờ', 'Phương pháp thực tế giúp xây dựng thói quen tốt bằng những thay đổi nhỏ nhưng bền vững.', 3, 7, 10, 2023, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/i/m/image_195509_1_43387.jpg'),
+(14, '9786047766550', 'Rừng Na Uy', 'Tiểu thuyết sâu lắng về tình yêu, tuổi trẻ, ký ức và mất mát của Haruki Murakami.', 1, 6, 11, 2024, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935235245815.jpg'),
+(15, '9786044455665', 'Muôn Kiếp Nhân Sinh - Tập 1', 'Những câu chuyện và chiêm nghiệm về nhân quả, luân hồi cùng cách con người lựa chọn lối sống thiện lành.', 3, 8, 12, 2020, 'Tiếng Việt', 'https://nxbhcm.com.vn/Image/Biasach/muonkiepnhansinh.png');
 
 -- 9. BẢNG BOOK_COPIES (Bản sao cuốn sách thực tế trong kho chi nhánh)
 CREATE TABLE IF NOT EXISTS `book_copies` (
@@ -210,13 +227,44 @@ CREATE TABLE IF NOT EXISTS `book_copies` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO `book_copies` (`id`, `book_id`, `branch_id`, `seller_id`, `condition_rating`, `purchase_price`, `selling_price`, `quantity`, `status`, `note`, `image_url`) VALUES
-(1, 1, 1, 4, 'LIKE_NEW', 40000.0, 65000.0, 10, 'AVAILABLE', 'Bìa mới 95%, không ố vàng, trang sách đầy đủ', 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80'),
-(2, 2, 2, 6, 'GOOD', 30000.0, 50000.0, 5, 'AVAILABLE', 'Bìa hơi sờn góc, trang hơi ngả vàng theo thời gian', 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80'),
-(3, 3, 1, 4, 'VERY_GOOD', 35000.0, 55000.0, 8, 'AVAILABLE', 'Giấy giữ màu tốt, không rách gáy', 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80'),
-(4, 4, 1, 4, 'LIKE_NEW', 50000.0, 75000.0, 12, 'AVAILABLE', 'Sách như mới 98%, đẹp sạch sẽ', 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80'),
-(5, 5, 2, 6, 'FAIR', 120000.0, 180000.0, 3, 'AVAILABLE', 'Ấn bản hiếm 1974, bìa vải ngả màu thời gian, cực kỳ giá trị', 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80'),
-(6, 6, 1, 4, 'GOOD', 20000.0, 35000.0, 7, 'AVAILABLE', 'Truyện tranh cũ 1996, ruột sạch sẽ đủ trang', 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80'),
-(7, 7, 1, 5, 'GOOD', 45000.0, 70000.0, 15, 'AVAILABLE', 'Bộ sách giáo khoa 12 môn còn đầy đủ bìa và ruột sạch sẽ', 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80');
+(1, 1, 1, 4, 'LIKE_NEW', 40000.0, 65000.0, 10, 'AVAILABLE', 'Bìa mới 95%, không ố vàng, trang sách đầy đủ', 'https://cdn1.fahasa.com/media/catalog/product/d/e/de-men-phieu-luu-ki_bia-cung_to.jpg'),
+(2, 2, 2, 6, 'GOOD', 30000.0, 50000.0, 5, 'AVAILABLE', 'Bìa hơi sờn góc, trang hơi ngả vàng theo thời gian', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230010784_1.jpg'),
+(3, 3, 1, 4, 'VERY_GOOD', 35000.0, 55000.0, 8, 'AVAILABLE', 'Giấy giữ màu tốt, không rách gáy', 'https://product.hstatic.net/1000237375/product/bia_truoc_08_b4497226ce524fd79a1d81b9086b99a9_master.jpg'),
+(4, 4, 1, 4, 'LIKE_NEW', 50000.0, 75000.0, 12, 'AVAILABLE', 'Sách như mới 98%, đẹp sạch sẽ', 'https://cdn0.fahasa.com/media/catalog/product/8/9/8934974158448.jpg'),
+(5, 5, 2, 6, 'FAIR', 120000.0, 180000.0, 3, 'AVAILABLE', 'Ấn bản hiếm 1974, bìa vải ngả màu thời gian, cực kỳ giá trị', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230006015.jpg'),
+(6, 6, 1, 4, 'GOOD', 20000.0, 35000.0, 7, 'AVAILABLE', 'Truyện tranh cũ 1996, ruột sạch sẽ đủ trang', 'https://bizweb.dktcdn.net/thumb/1024x1024/100/576/749/products/1-09e4d57d2e8d45f6ae65b8936811fa81.jpg?v=1760791370697'),
+(7, 7, 1, 5, 'GOOD', 45000.0, 70000.0, 15, 'AVAILABLE', 'Bộ sách giáo khoa 12 môn còn đầy đủ bìa và ruột sạch sẽ', 'https://cdn1.fahasa.com/media/catalog/product/9/7/9786040392503.jpg'),
+(8, 8, 1, 4, 'VERY_GOOD', 32000.0, 52000.0, 8, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://is1-ssl.mzstatic.com/image/thumb/Publication69/v4/10/23/8c/10238cf2-8bdb-4ad0-853b-715e5a9431d2/nha_gia_kim_paulo_coelho.png/1200x1200wz.jpg'),
+(9, 9, 1, 4, 'LIKE_NEW', 49000.0, 79000.0, 7, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://bizweb.dktcdn.net/thumb/1024x1024/100/567/082/products/image-217480.jpg?v=1747326206683'),
+(10, 10, 2, 6, 'VERY_GOOD', 42000.0, 68000.0, 11, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://salt.tikicdn.com/cache/750x750/ts/product/66/51/30/c2815ed03a54650766df95003ed0d809.jpg'),
+(11, 11, 1, 4, 'GOOD', 37000.0, 59000.0, 9, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://cdn1.fahasa.com/media/catalog/product/i/m/image_195509_1_20306.jpg'),
+(12, 12, 1, 4, 'LIKE_NEW', 45000.0, 72000.0, 6, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://www.sachkhaitri.com/Data/Sites/2/Product/65549/mat-biec-tai-ban-2019.jpg'),
+(13, 13, 2, 6, 'LIKE_NEW', 71000.0, 115000.0, 10, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://cdn1.fahasa.com/media/catalog/product/i/m/image_195509_1_43387.jpg'),
+(14, 14, 1, 4, 'VERY_GOOD', 79000.0, 128000.0, 5, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935235245815.jpg'),
+(15, 15, 2, 6, 'GOOD', 65000.0, 105000.0, 7, 'AVAILABLE', 'Sách cũ tuyển chọn, bìa đẹp và ruột đầy đủ', 'https://nxbhcm.com.vn/Image/Biasach/muonkiepnhansinh.png');
+
+-- Đồng bộ lại ảnh bìa nếu database đã từng nạp bộ dữ liệu mẫu cũ dùng ảnh chung chung.
+UPDATE `books` SET `cover_url` = CASE `isbn`
+  WHEN '9786042078888' THEN 'https://cdn1.fahasa.com/media/catalog/product/d/e/de-men-phieu-luu-ki_bia-cung_to.jpg'
+  WHEN '9786045612345' THEN 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230010784_1.jpg'
+  WHEN '9786048991111' THEN 'https://product.hstatic.net/1000237375/product/bia_truoc_08_b4497226ce524fd79a1d81b9086b99a9_master.jpg'
+  WHEN '9786047722222' THEN 'https://cdn0.fahasa.com/media/catalog/product/8/9/8934974158448.jpg'
+  WHEN '9786046633333' THEN 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935230006015.jpg'
+  WHEN '9786045544444' THEN 'https://bizweb.dktcdn.net/thumb/1024x1024/100/576/749/products/1-09e4d57d2e8d45f6ae65b8936811fa81.jpg?v=1760791370697'
+  WHEN '9786040007777' THEN 'https://cdn1.fahasa.com/media/catalog/product/9/7/9786040392503.jpg'
+  ELSE `cover_url`
+END
+WHERE `id` > 0
+  AND `isbn` IN ('9786042078888', '9786045612345', '9786048991111', '9786047722222',
+                 '9786046633333', '9786045544444', '9786040007777');
+
+UPDATE `book_copies` bc
+JOIN `books` b ON b.`id` = bc.`book_id`
+SET bc.`image_url` = b.`cover_url`
+WHERE bc.`id` > 0
+  AND b.`isbn` IN ('9786042078888', '9786045612345', '9786048991111', '9786047722222',
+                   '9786046633333', '9786045544444', '9786040007777')
+  AND (bc.`image_url` IS NULL OR bc.`image_url` = '' OR bc.`image_url` LIKE '%images.unsplash.com%');
 
 -- 10. BẢNG PROMOTIONS (Khuyến mãi)
 CREATE TABLE IF NOT EXISTS `promotions` (
@@ -384,5 +432,74 @@ CREATE TABLE IF NOT EXISTS `support_messages` (
   CONSTRAINT `fk_support_message_conversation` FOREIGN KEY (`conversation_id`)
     REFERENCES `support_conversations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 19. DOANH SỐ MẪU CHO TRANG GUEST
+-- Ba đơn đã giao này giúp phần "Sách đã bán trên 10 cuốn" luôn có dữ liệu
+-- ngay sau khi import SQL. Các câu lệnh đều idempotent, chạy lại không nhân đôi.
+INSERT INTO `orders` (
+  `order_code`, `customer_id`, `branch_id`, `receiver_name`, `receiver_phone`,
+  `shipping_address`, `total_amount`, `shipping_fee`, `discount_amount`,
+  `app_commission_amount`, `final_amount`, `payment_method`, `payment_status`,
+  `order_status`, `note`, `created_at`, `updated_at`
+)
+SELECT 'DEMO-SOLD-001', 9, 1, 'Khách Hàng Mẫu', '0955555555',
+       '01 Võ Văn Ngân, TP. Thủ Đức, TP.HCM', 1040000, 0, 0,
+       104000, 1040000, 'COD', 'PAID', 'DELIVERED',
+       'Đơn lịch sử mẫu dùng minh họa doanh số trên trang Guest.',
+       DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_SUB(NOW(), INTERVAL 28 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM `orders` WHERE `order_code` = 'DEMO-SOLD-001');
+
+INSERT INTO `orders` (
+  `order_code`, `customer_id`, `branch_id`, `receiver_name`, `receiver_phone`,
+  `shipping_address`, `total_amount`, `shipping_fee`, `discount_amount`,
+  `app_commission_amount`, `final_amount`, `payment_method`, `payment_status`,
+  `order_status`, `note`, `created_at`, `updated_at`
+)
+SELECT 'DEMO-SOLD-002', 9, 1, 'Khách Hàng Mẫu', '0955555555',
+       '01 Võ Văn Ngân, TP. Thủ Đức, TP.HCM', 1050000, 0, 0,
+       105000, 1050000, 'COD', 'PAID', 'DELIVERED',
+       'Đơn lịch sử mẫu dùng minh họa doanh số trên trang Guest.',
+       DATE_SUB(NOW(), INTERVAL 25 DAY), DATE_SUB(NOW(), INTERVAL 23 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM `orders` WHERE `order_code` = 'DEMO-SOLD-002');
+
+INSERT INTO `orders` (
+  `order_code`, `customer_id`, `branch_id`, `receiver_name`, `receiver_phone`,
+  `shipping_address`, `total_amount`, `shipping_fee`, `discount_amount`,
+  `app_commission_amount`, `final_amount`, `payment_method`, `payment_status`,
+  `order_status`, `note`, `created_at`, `updated_at`
+)
+SELECT 'DEMO-SOLD-003', 9, 1, 'Khách Hàng Mẫu', '0955555555',
+       '01 Võ Văn Ngân, TP. Thủ Đức, TP.HCM', 840000, 0, 0,
+       84000, 840000, 'COD', 'PAID', 'DELIVERED',
+       'Đơn lịch sử mẫu dùng minh họa doanh số trên trang Guest.',
+       DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 18 DAY)
+WHERE NOT EXISTS (SELECT 1 FROM `orders` WHERE `order_code` = 'DEMO-SOLD-003');
+
+INSERT INTO `order_items` (`order_id`, `book_copy_id`, `quantity`, `price`)
+SELECT o.`id`, 1, 16, 65000
+FROM `orders` o
+WHERE o.`order_code` = 'DEMO-SOLD-001'
+  AND NOT EXISTS (
+    SELECT 1 FROM `order_items` oi
+    WHERE oi.`order_id` = o.`id` AND oi.`book_copy_id` = 1
+  );
+
+INSERT INTO `order_items` (`order_id`, `book_copy_id`, `quantity`, `price`)
+SELECT o.`id`, 4, 14, 75000
+FROM `orders` o
+WHERE o.`order_code` = 'DEMO-SOLD-002'
+  AND NOT EXISTS (
+    SELECT 1 FROM `order_items` oi
+    WHERE oi.`order_id` = o.`id` AND oi.`book_copy_id` = 4
+  );
+
+INSERT INTO `order_items` (`order_id`, `book_copy_id`, `quantity`, `price`)
+SELECT o.`id`, 7, 12, 70000
+FROM `orders` o
+WHERE o.`order_code` = 'DEMO-SOLD-003'
+  AND NOT EXISTS (
+    SELECT 1 FROM `order_items` oi
+    WHERE oi.`order_id` = o.`id` AND oi.`book_copy_id` = 7
+  );
 
 SET FOREIGN_KEY_CHECKS = 1;

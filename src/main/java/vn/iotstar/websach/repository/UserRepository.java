@@ -21,4 +21,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u WHERE LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')) OR u.phone LIKE CONCAT('%', :keyword, '%')")
     List<User> searchUsers(@Param("keyword") String keyword);
+
+    @Query("""
+            SELECT DISTINCT u FROM User u
+            WHERE u.role.name IN :roles
+              AND (u.branch.id = :branchId OR EXISTS (
+                    SELECT o.id FROM Order o
+                    WHERE o.customer.id = u.id AND o.branch.id = :branchId
+              ))
+              AND (:keyword = ''
+                   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                   OR u.phone LIKE CONCAT('%', :keyword, '%'))
+            ORDER BY u.id DESC
+            """)
+    List<User> searchManageableUsersByBranch(@Param("branchId") Long branchId,
+                                              @Param("roles") List<RoleName> roles,
+                                              @Param("keyword") String keyword);
 }

@@ -7,10 +7,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.iotstar.websach.dto.MasterBookRequest;
 import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.BookCondition;
-import vn.iotstar.websach.repository.AuthorRepository;
-import vn.iotstar.websach.repository.PublisherRepository;
 import vn.iotstar.websach.service.*;
 
 import java.util.List;
@@ -22,11 +21,7 @@ public class ManagerBookController {
 
     private final BookCopyService bookCopyService;
     private final BookService bookService;
-    private final BranchService branchService;
     private final CategoryService categoryService;
-    private final AuthorRepository authorRepository;
-    private final PublisherRepository publisherRepository;
-    private final CloudinaryService cloudinaryService;
     private final ManagerAccessService managerAccessService;
 
     @GetMapping
@@ -58,29 +53,7 @@ public class ManagerBookController {
                                Authentication authentication,
                                RedirectAttributes redirect) {
         try {
-            String email = authentication.getName();
-            Long branchId = managerAccessService.requireManagedBranch(email).getId();
-
-            if (bookCopy.getId() != null) {
-                managerAccessService.requireCopyInBranch(email, bookCopy.getId());
-            }
-
-            Book book = bookService.findById(bookId).orElseThrow(() -> new RuntimeException("Đầu sách không tồn tại"));
-            Branch branch = branchService.findById(branchId).orElseThrow(() -> new RuntimeException("Chi nhánh không tồn tại"));
-
-            bookCopy.setBook(book);
-            bookCopy.setBranch(branch);
-
-            if (imageFile != null && !imageFile.isEmpty()) {
-                String imageUrl = cloudinaryService.uploadFile(imageFile);
-                bookCopy.setImageUrl(imageUrl);
-            }
-
-            if (bookCopy.getId() == null) {
-                bookCopyService.saveCopy(bookCopy);
-            } else {
-                bookCopyService.updateCopy(bookCopy.getId(), bookCopy);
-            }
+            bookCopyService.saveManagedCopy(authentication.getName(), bookCopy, bookId, imageFile);
             redirect.addFlashAttribute("successMessage", "Đã lưu bản sách thành công.");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
@@ -100,41 +73,15 @@ public class ManagerBookController {
                                    @RequestParam(value = "coverFile", required = false) MultipartFile coverFile,
                                    RedirectAttributes redirect) {
         try {
-            String finalCover = coverUrl;
-            if (coverFile != null && !coverFile.isEmpty()) {
-                // Upload trước khi ghi Author/Publisher để tránh dữ liệu dở dang
-                // nếu Cloudinary gặp lỗi.
-                finalCover = cloudinaryService.uploadFile(coverFile);
-            }
-            if (finalCover == null || finalCover.trim().isEmpty()) {
-                finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
-            }
-
-            Category category = (categoryId != null) ? categoryService.findById(categoryId).orElse(null) : null;
-            Author author = null;
-            if (authorName != null && !authorName.trim().isEmpty()) {
-                author = authorRepository.findByName(authorName.trim()).orElseGet(() ->
-                        authorRepository.save(Author.builder().name(authorName.trim()).build())
-                );
-            }
-            Publisher publisher = null;
-            if (publisherName != null && !publisherName.trim().isEmpty()) {
-                publisher = publisherRepository.findByName(publisherName.trim()).orElseGet(() ->
-                        publisherRepository.save(Publisher.builder().name(publisherName.trim()).build())
-                );
-            }
-
-            Book book = Book.builder()
+            bookService.createMasterBook(MasterBookRequest.builder()
                     .title(title)
                     .isbn(isbn)
-                    .author(author)
-                    .publisher(publisher)
+                    .authorName(authorName)
+                    .publisherName(publisherName)
                     .publishYear(publishYear)
-                    .category(category)
-                    .coverUrl(finalCover)
-                    .build();
-
-            bookService.saveBook(book);
+                    .categoryId(categoryId)
+                    .coverUrl(coverUrl)
+                    .build(), coverFile);
             redirect.addFlashAttribute("successMessage", "Đã thêm đầu sách mới thành công.");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
@@ -144,8 +91,7 @@ public class ManagerBookController {
 
     @PostMapping("/delete/{id}")
     public String deleteBookCopy(@PathVariable("id") Long id, Authentication authentication) {
-        managerAccessService.requireCopyInBranch(authentication.getName(), id);
-        bookCopyService.deleteCopy(id);
+        bookCopyService.deleteManagedCopy(authentication.getName(), id);
         return "redirect:/manager/books?deleted";
     }
 }

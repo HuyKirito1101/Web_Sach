@@ -10,7 +10,6 @@ import vn.iotstar.websach.entity.Order;
 import vn.iotstar.websach.entity.OrderItem;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.enums.OrderStatus;
-import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.service.CustomerOrderService;
 import vn.iotstar.websach.service.UserService;
 
@@ -23,7 +22,6 @@ public class CustomerOrderController {
 
     private final CustomerOrderService customerOrderService;
     private final UserService userService;
-    private final DeliveryAssignmentRepository deliveryAssignmentRepository;
 
     @GetMapping
     public String listOrders(@RequestParam(value = "status", required = false) OrderStatus status,
@@ -62,7 +60,8 @@ public class CustomerOrderController {
         model.addAttribute("order", order);
         model.addAttribute("items", items);
         model.addAttribute("success", success);
-        deliveryAssignmentRepository.findFirstByOrderIdOrderByIdDesc(id).ifPresent(da -> model.addAttribute("assignment", da));
+        customerOrderService.getLatestDeliveryAssignment(user, id)
+                .ifPresent(assignment -> model.addAttribute("assignment", assignment));
 
         return "customer/order-detail";
     }

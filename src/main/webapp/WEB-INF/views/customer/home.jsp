@@ -36,15 +36,16 @@
         </div>
     </div>
 
-    <!-- Top 10 sản phẩm cho Guest (bán trên 10 cuốn hoặc bán chạy theo số lượng giảm dần) -->
+    <!-- Sản phẩm cho Guest: chỉ lấy sách đã bán trên 10 cuốn và sắp xếp giảm dần theo doanh số. -->
+    <c:if test="${not empty topBooks}">
     <div class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
-                <i class="fa-solid fa-fire text-danger me-2"></i>Top 10 Sách Bán Chạy Nhất
+                <i class="fa-solid fa-fire text-danger me-2"></i>Sách Đã Bán Trên 10 Cuốn
             </h3>
             <a href="/books" class="btn btn-outline-warning text-dark btn-sm rounded-pill fw-bold">Xem tất cả <i class="fa-solid fa-arrow-right ms-1"></i></a>
         </div>
-        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3">
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3" id="topBooksGrid">
             <c:forEach var="b" items="${topBooks}">
                 <div class="col">
                     <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden">
@@ -70,9 +71,39 @@
             </c:forEach>
         </div>
     </div>
+    </c:if>
+
+    <div class="mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+            <div>
+                <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-1">
+                    <i class="fa-solid fa-layer-group text-primary me-2"></i>Khám Phá Kho Sách
+                </h3>
+                <p class="text-muted mb-0 ps-3">Chọn một tiêu chí để xem, tránh lặp lại nhiều danh sách giống nhau trên trang.</p>
+            </div>
+            <div class="ranking-tabs d-flex flex-wrap gap-2" role="tablist" aria-label="Tiêu chí xếp hạng sách">
+                <button type="button" class="btn btn-warning rounded-pill fw-semibold active"
+                        onclick="showRankingSection('newBooksSection', this)">
+                    <i class="fa-solid fa-sparkles me-1"></i>Mới cập nhật
+                </button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-semibold"
+                        onclick="showRankingSection('bestSellersSection', this)">
+                    <i class="fa-solid fa-chart-line me-1"></i>Bán chạy
+                </button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-semibold"
+                        onclick="showRankingSection('topRatedSection', this)">
+                    <i class="fa-solid fa-star me-1"></i>Đánh giá cao
+                </button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-semibold"
+                        onclick="showRankingSection('favoritesSection', this)">
+                    <i class="fa-solid fa-heart me-1"></i>Yêu thích
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Top 20 Sản phẩm mới (User) với lazy loading -->
-    <div class="mb-5">
+    <div class="mb-5 home-ranking-section active" id="newBooksSection">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
                 <i class="fa-solid fa-sparkles text-warning me-2"></i>Sách Mới Cập Nhật
@@ -112,7 +143,7 @@
     </div>
 
     <!-- Top 20 Bán chạy -->
-    <div class="mb-5">
+    <div class="mb-5 home-ranking-section" id="bestSellersSection">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
                 <i class="fa-solid fa-chart-line text-success me-2"></i>Sách Bán Chạy Nhất
@@ -152,7 +183,7 @@
     </div>
 
     <!-- Top 20 Đánh giá cao -->
-    <div class="mb-5">
+    <div class="mb-5 home-ranking-section" id="topRatedSection">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
                 <i class="fa-solid fa-star text-warning me-2"></i>Sách Được Đánh Giá Cao
@@ -192,7 +223,7 @@
     </div>
 
     <!-- Top 20 Yêu thích -->
-    <div class="mb-5">
+    <div class="mb-5 home-ranking-section" id="favoritesSection">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-dark border-start border-4 border-warning ps-3 mb-0">
                 <i class="fa-solid fa-heart text-danger me-2"></i>Sách Được Yêu Thích Nhất
@@ -244,9 +275,58 @@
 <style>
 .lazy-hidden { display: none !important; }
 .book-card-item { transition: all 0.3s ease; }
+.home-ranking-section { display: none; }
+.home-ranking-section.active { display: block; }
+.ranking-tabs .btn { min-width: 132px; }
+#topBooksGrid .card,
+#newBooksGrid .card,
+#bestSellersGrid .card,
+#topRatedGrid .card,
+#favoriteGrid .card {
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+#topBooksGrid .card:hover,
+#newBooksGrid .card:hover,
+#bestSellersGrid .card:hover,
+#topRatedGrid .card:hover,
+#favoriteGrid .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .75rem 1.5rem rgba(15, 23, 42, .14) !important;
+}
+#topBooksGrid .card-img-top,
+#newBooksGrid .card-img-top,
+#bestSellersGrid .card-img-top,
+#topRatedGrid .card-img-top,
+#favoriteGrid .card-img-top {
+    height: 230px !important;
+    object-fit: contain !important;
+    padding: 12px;
+    background: linear-gradient(145deg, #fffdf7, #f1f5f9);
+}
+@media (max-width: 575.98px) {
+    .ranking-tabs .btn { flex: 1 1 calc(50% - .5rem); min-width: 0; }
+    #topBooksGrid .card-img-top,
+    #newBooksGrid .card-img-top,
+    #bestSellersGrid .card-img-top,
+    #topRatedGrid .card-img-top,
+    #favoriteGrid .card-img-top { height: 190px !important; }
+}
 </style>
 
 <script>
+function showRankingSection(sectionId, button) {
+    document.querySelectorAll('.home-ranking-section').forEach(function(section) {
+        section.classList.toggle('active', section.id === sectionId);
+    });
+    document.querySelectorAll('.ranking-tabs .btn').forEach(function(tab) {
+        var active = tab === button;
+        tab.classList.toggle('btn-warning', active);
+        tab.classList.toggle('btn-outline-secondary', !active);
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+}
+
 function loadMoreBooks(gridId, btn) {
     var grid = document.getElementById(gridId);
     var hidden = grid.querySelectorAll('.lazy-hidden');

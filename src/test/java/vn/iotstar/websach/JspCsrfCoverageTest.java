@@ -60,4 +60,16 @@ class JspCsrfCoverageTest {
                         && !managerOrders.contains("/manager/orders/assign-shipper"),
                 "Manager chỉ được giám sát, không được đổi trạng thái hoặc phân Shipper thay Vendor.");
     }
+
+    @Test
+    void managementNavbarSeparatesStaffAndCustomerFeatures() throws IOException {
+        String navbar = Files.readString(VIEW_ROOT.resolve("common/navbar.jsp"));
+
+        assertTrue(navbar.contains("test=\"${not isStaff}\"")
+                        && navbar.contains("value=\"/admin/dashboard\"")
+                        && navbar.contains("value=\"/manager/dashboard\"")
+                        && navbar.contains("value=\"/vendor/dashboard\"")
+                        && navbar.contains("value=\"/shipper/dashboard\""),
+                "Navbar phải ẩn chức năng mua sách với nhân sự và trỏ logo về đúng dashboard.");
+    }
 }

@@ -9,17 +9,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.dto.VendorChatMessageDTO;
-import vn.iotstar.websach.entity.BookCopy;
-import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.VendorConversation;
 import vn.iotstar.websach.entity.VendorMessage;
-import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.service.VendorChatService;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Controller
 @RequiredArgsConstructor
@@ -27,7 +23,6 @@ import java.util.Objects;
 public class CustomerVendorChatController {
 
     private final VendorChatService vendorChatService;
-    private final BookCopyRepository bookCopyRepository;
 
     @GetMapping("/messages")
     public String messagesDispatcher(Authentication authentication) {
@@ -55,28 +50,7 @@ public class CustomerVendorChatController {
 
             // 1. Trường hợp bấm "Chat với Shop" từ sản phẩm sách cụ thể
             if (bookCopyId != null) {
-                BookCopy copy = bookCopyRepository.findById(bookCopyId).orElse(null);
-                if (copy == null) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Sản phẩm sách cũ không tồn tại hoặc đã bị xóa.");
-                    return "redirect:/books";
-                }
-
-                User vendor = copy.getSeller();
-                if (vendor == null && copy.getBranch() != null) {
-                    vendor = copy.getBranch().getOwner();
-                }
-
-                if (vendor == null) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Sản phẩm này hiện chưa có thông tin người bán để liên hệ.");
-                    return "redirect:/books/" + copy.getBook().getId();
-                }
-
-                if (currentEmail.equalsIgnoreCase(vendor.getEmail())) {
-                    redirectAttributes.addFlashAttribute("errorMessage", "Bạn là người bán của sản phẩm này, không thể tự nhắn tin cho chính mình.");
-                    return "redirect:/books/" + copy.getBook().getId();
-                }
-
-                selectedConversation = vendorChatService.getOrCreateConversation(currentEmail, vendor.getId(), copy.getId());
+                selectedConversation = vendorChatService.getOrCreateConversationForBook(currentEmail, bookCopyId);
             } else if (vendorId != null) {
                 // 2. Nhắn tin cho vendor theo vendorId
                 selectedConversation = vendorChatService.getOrCreateConversation(currentEmail, vendorId, null);

@@ -5,10 +5,93 @@
 <c:set var="isBooks" value="${currentUri.startsWith('/books')}" />
 <c:set var="isSellBooks" value="${currentUri.startsWith('/sell-books')}" />
 <c:set var="isCart" value="${currentUri.startsWith('/cart')}" />
+<c:set var="isAdmin" value="${pageContext.request.isUserInRole('ADMIN')}" />
+<c:set var="isManager" value="${pageContext.request.isUserInRole('MANAGER')}" />
+<c:set var="isVendor" value="${pageContext.request.isUserInRole('VENDOR')}" />
+<c:set var="isShipper" value="${pageContext.request.isUserInRole('SHIPPER')}" />
+<c:set var="isStaff" value="${isAdmin || isManager || isVendor || isShipper}" />
+<c:choose>
+    <c:when test="${isAdmin}"><c:set var="roleHome" value="/admin/dashboard"/><c:set var="roleAreaLabel" value="QUẢN TRỊ HỆ THỐNG"/></c:when>
+    <c:when test="${isManager}"><c:set var="roleHome" value="/manager/dashboard"/><c:set var="roleAreaLabel" value="QUẢN LÝ CHI NHÁNH"/></c:when>
+    <c:when test="${isVendor}"><c:set var="roleHome" value="/vendor/dashboard"/><c:set var="roleAreaLabel" value="QUẢN LÝ GIAN HÀNG"/></c:when>
+    <c:when test="${isShipper}"><c:set var="roleHome" value="/shipper/dashboard"/><c:set var="roleAreaLabel" value="KHU VỰC GIAO HÀNG"/></c:when>
+    <c:otherwise><c:set var="roleHome" value="/"/><c:set var="roleAreaLabel" value=""/></c:otherwise>
+</c:choose>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom px-4 py-2 sticky-top shadow-sm">
+<style>
+    .app-navbar .navbar-brand,
+    .app-navbar .nav-main-link,
+    .app-navbar .account-dropdown-link {
+        white-space: nowrap;
+    }
+
+    .app-navbar .navbar-brand,
+    .app-navbar .app-navbar-menu {
+        flex-shrink: 0;
+    }
+
+    .app-navbar .customer-search-form {
+        flex: 1 1 320px;
+        min-width: 190px;
+        max-width: 450px;
+    }
+
+    .app-navbar .app-navbar-menu {
+        flex-wrap: nowrap;
+        gap: .25rem !important;
+    }
+
+    .app-navbar .nav-main-link {
+        display: flex;
+        align-items: center;
+        padding-left: .45rem;
+        padding-right: .45rem;
+    }
+
+    @media (max-width: 1399.98px) and (min-width: 992px) {
+        .app-navbar {
+            padding-left: .75rem !important;
+            padding-right: .75rem !important;
+        }
+
+        .app-navbar .navbar-brand {
+            margin-right: .75rem !important;
+        }
+
+        .app-navbar .customer-search-form {
+            max-width: 330px;
+        }
+
+        .app-navbar .nav-main-link {
+            font-size: .92rem;
+            padding-left: .3rem;
+            padding-right: .3rem;
+        }
+
+        .app-navbar .account-name {
+            display: inline-block;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .app-navbar .customer-search-form {
+            max-width: none;
+        }
+
+        .app-navbar .app-navbar-menu {
+            align-items: stretch !important;
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom px-4 py-2 sticky-top shadow-sm app-navbar">
     <div class="container-fluid">
-        <a class="navbar-brand fw-bold text-warning d-flex align-items-center me-4" href="/">
+        <a class="navbar-brand fw-bold text-warning d-flex align-items-center me-4" href="${roleHome}">
             <i class="fa-solid fa-book-journal-whills me-2 fs-4"></i>
             <span>Sách Cũ Việt</span>
         </a>
@@ -17,17 +100,32 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarContent">
-            <!-- Search bar -->
-            <form class="d-flex my-2 my-lg-0 mx-auto" action="/books" method="GET" style="max-width: 450px; width: 100%;">
-                <div class="input-group">
-                    <input class="form-control border-end-0 rounded-start-pill ps-3" type="search" name="keyword" placeholder="Tìm tên sách, tác giả, ISBN..." value="<c:out value='${param.keyword}'/>">
-                    <button class="btn btn-warning rounded-end-pill px-3" type="submit">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                </div>
-            </form>
+            <c:choose>
+                <c:when test="${isStaff}">
+                    <div class="d-none d-lg-flex align-items-center gap-3 mx-auto text-light fw-semibold">
+                        <i class="fa-solid fa-shield-halved text-warning me-2"></i>
+                        <c:out value="${roleAreaLabel}"/>
+                        <c:if test="${isVendor}">
+                            <a href="/books" class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                                <i class="fa-solid fa-store me-1"></i>Khu mua sách
+                            </a>
+                        </c:if>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <form class="d-flex my-2 my-lg-0 mx-auto customer-search-form" action="/books" method="GET">
+                        <div class="input-group">
+                            <input class="form-control border-end-0 rounded-start-pill ps-3" type="search" name="keyword" placeholder="Tìm tên sách, tác giả, ISBN..." value="<c:out value='${param.keyword}'/>">
+                            <button class="btn btn-warning rounded-end-pill px-3" type="submit">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </form>
+                </c:otherwise>
+            </c:choose>
 
-            <ul class="navbar-nav ms-auto align-items-center gap-2 mb-2 mb-lg-0">
+            <ul class="navbar-nav ms-auto align-items-center gap-2 mb-2 mb-lg-0 app-navbar-menu">
+                <c:if test="${not isStaff}">
                 <li class="nav-item">
                     <a class="nav-link nav-main-link ${isHome ? 'text-warning' : 'text-white'} fw-medium" href="/"><i class="fa-solid fa-house me-1"></i>Trang chủ</a>
                 </li>
@@ -53,6 +151,7 @@
                             </c:if>
                         </a>
                     </li>
+                </c:if>
                 </c:if>
 
                 <c:choose>
@@ -144,7 +243,7 @@
                         </c:if>
 
                         <li class="nav-item dropdown ms-1">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white fw-medium" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 text-white fw-medium account-dropdown-link" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                                 <c:set var="fallbackAvatar" value="https://ui-avatars.com/api/?name=${pageContext.request.userPrincipal.name}&background=FFC107&color=000" />
                                 <c:set var="navbarAvatar" value="${not empty currentUser.avatarUrl ? currentUser.avatarUrl : fallbackAvatar}" />
                                 <img src="<c:out value='${navbarAvatar}'/>"
@@ -152,7 +251,7 @@
                                      class="rounded-circle border border-warning"
                                      width="35" height="35" alt="Ảnh đại diện"
                                      style="object-fit: cover;">
-                                <span><c:out value="${pageContext.request.userPrincipal.name}"/></span>
+                                <span class="account-name"><c:out value="${pageContext.request.userPrincipal.name}"/></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="userDropdown">
                                 <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
@@ -184,20 +283,22 @@
                                 <c:if test="${pageContext.request.isUserInRole('ADMIN') || pageContext.request.isUserInRole('MANAGER') || pageContext.request.isUserInRole('VENDOR') || pageContext.request.isUserInRole('SHIPPER')}">
                                     <li><hr class="dropdown-divider"></li>
                                 </c:if>
-                                <li><a class="dropdown-item" href="/profile"><i class="fa-solid fa-user me-2 text-primary"></i>Hồ sơ cá nhân</a></li>
-                                <li>
-                                    <a class="dropdown-item d-flex align-items-center justify-content-between" href="/chat/vendor">
-                                        <div><i class="fa-solid fa-comments me-2 text-primary"></i>Tin nhắn người bán</div>
-                                        <c:if test="${userMessageBadge > 0}">
-                                            <span class="badge bg-danger rounded-pill" style="font-size: 11px;">${userMessageBadge}</span>
-                                        </c:if>
-                                    </a>
-                                </li>
-                                <li><a class="dropdown-item" href="/orders"><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng của tôi</a></li>
-                                <li><a class="dropdown-item" href="/sell-books"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Yêu cầu thu mua sách</a></li>
-                                <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>
-                                <li><a class="dropdown-item" href="/viewed-products"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Sách đã xem</a></li>
-                                <li><hr class="dropdown-divider"></li>
+                                <c:if test="${not isStaff || isVendor}">
+                                    <li><a class="dropdown-item" href="/profile"><i class="fa-solid fa-user me-2 text-primary"></i>Hồ sơ cá nhân</a></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center justify-content-between" href="/chat/vendor">
+                                            <div><i class="fa-solid fa-comments me-2 text-primary"></i>Tin nhắn người bán</div>
+                                            <c:if test="${userMessageBadge > 0}">
+                                                <span class="badge bg-danger rounded-pill" style="font-size: 11px;">${userMessageBadge}</span>
+                                            </c:if>
+                                        </a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="/orders"><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng của tôi</a></li>
+                                    <li><a class="dropdown-item" href="/sell-books"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Yêu cầu thu mua sách</a></li>
+                                    <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>
+                                    <li><a class="dropdown-item" href="/viewed-products"><i class="fa-solid fa-clock-rotate-left me-2 text-info"></i>Sách đã xem</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                </c:if>
                                 <li>
                                     <form action="/auth/logout" method="post" class="m-0">
                                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">

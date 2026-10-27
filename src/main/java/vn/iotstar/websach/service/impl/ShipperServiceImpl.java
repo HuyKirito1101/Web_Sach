@@ -3,7 +3,6 @@ package vn.iotstar.websach.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.iotstar.websach.dto.ShipperDashboardDTO;
@@ -18,6 +17,7 @@ import vn.iotstar.websach.repository.OrderRepository;
 import vn.iotstar.websach.repository.SellRequestRepository;
 import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.OrderService;
+import vn.iotstar.websach.service.RealtimeNotificationService;
 import vn.iotstar.websach.service.ShipperService;
 
 import java.time.LocalDate;
@@ -40,7 +40,7 @@ public class ShipperServiceImpl implements ShipperService {
     private final DeliveryAssignmentRepository assignmentRepository;
     private final OrderRepository orderRepository;
     private final SellRequestRepository sellRequestRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final RealtimeNotificationService realtimeNotificationService;
     
     @Autowired
     @Lazy
@@ -219,15 +219,19 @@ public class ShipperServiceImpl implements ShipperService {
                         LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM")) +
                         ". Lý do: " + failureReason.trim());
                 orderRepository.save(order);
-                try {
-                    messagingTemplate.convertAndSend("/topic/orders", "Shipper " + shipper.getFullName() + " đã từ chối đơn #" + order.getOrderCode() + ": " + failureReason.trim());
-                } catch (Exception ignored) { }
+                realtimeNotificationService.notifyOrder(order.getBranch().getId(),
+                        "Shipper " + shipper.getFullName() + " đã từ chối đơn #"
+                                + order.getOrderCode() + ": " + failureReason.trim());
             }
         }
         DeliveryAssignment saved = assignmentRepository.save(assignment);
-        try {
-            messagingTemplate.convertAndSend("/topic/orders", "Đơn " + order.getOrderCode() + " cập nhật giao hàng: " + target);
-        } catch (Exception ignored) { }
+        Long branchId = order != null && order.getBranch() != null
+                ? order.getBranch().getId()
+                : sellRequest != null && sellRequest.getBranch() != null ? sellRequest.getBranch().getId() : null;
+        String referenceCode = order != null ? order.getOrderCode()
+                : "THU-MUA-" + (sellRequest == null ? assignment.getId() : sellRequest.getId());
+        realtimeNotificationService.notifyOrder(branchId,
+                "Đơn " + referenceCode + " cập nhật giao hàng: " + target);
         return saved;
     }
 

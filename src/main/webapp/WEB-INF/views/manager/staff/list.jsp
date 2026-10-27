@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<c:set var="title" value="Nhân Viên Chi Nhánh - Manager" scope="request" />
+<c:set var="title" value="Quản Lý Người Dùng Chi Nhánh - Manager" scope="request" />
 <jsp:include page="../../common/header.jsp" />
 
 <div class="d-flex">
@@ -12,7 +12,10 @@
 
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <div><h3 class="fw-bold mb-0"><i class="fa-solid fa-user-group text-primary me-2"></i>Người Dùng Chi Nhánh</h3><small class="text-muted"><c:out value="${branch.name}"/></small></div>
+                <div>
+                    <h3 class="fw-bold mb-0"><i class="fa-solid fa-users-gear text-primary me-2"></i>Quản Lý Người Dùng Chi Nhánh</h3>
+                    <small class="text-muted"><c:out value="${branch.name}"/> — gồm User, Vendor và Shipper thuộc hoặc đã mua hàng tại chi nhánh</small>
+                </div>
                 <form action="/manager/staff" method="get" class="d-flex gap-2">
                     <input name="keyword" value="<c:out value='${keyword}'/>" class="form-control" placeholder="Tên, email, số điện thoại">
                     <button class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -47,13 +50,28 @@
                                         <td><span class="badge bg-primary"><c:out value="${s.role.name}"/></span></td>
                                         <td><span class="badge ${s.status == 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${s.status}</span></td>
                                         <td class="text-end">
-                                            <c:choose>
-                                                <c:when test="${s.role.name == 'ROLE_ADMIN' || s.role.name == 'ROLE_MANAGER'}"><span class="text-muted small">Được bảo vệ</span></c:when>
-                                                <c:otherwise><form action="/manager/staff/${s.id}/toggle-lock" method="post">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"><button class="btn btn-sm ${s.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'}"><i class="fa-solid ${s.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'} me-1"></i>${s.status == 'LOCKED' ? 'Mở khóa' : 'Khóa'}</button></form></c:otherwise>
-                                            </c:choose>
+                                            <button class="btn btn-sm btn-outline-primary me-1" type="button"
+                                                    data-bs-toggle="modal" data-bs-target="#editModal${s.id}"
+                                                    title="Sửa quyền và trạng thái">
+                                                <i class="fa-solid fa-user-pen"></i> Sửa
+                                            </button>
+                                            <form action="/manager/staff/${s.id}/toggle-lock" method="post" class="d-inline">
+                                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                <button class="btn btn-sm ${s.status == 'LOCKED' ? 'btn-outline-success' : 'btn-outline-warning'} me-1"
+                                                        title="${s.status == 'LOCKED' ? 'Mở khóa' : 'Khóa'} tài khoản">
+                                                    <i class="fa-solid ${s.status == 'LOCKED' ? 'fa-lock-open' : 'fa-lock'}"></i>
+                                                </button>
+                                            </form>
+                                            <form action="/manager/staff/${s.id}/delete" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Chỉ tài khoản không còn đơn hàng hoặc dữ liệu liên quan mới được xóa. Tiếp tục kiểm tra?')">
+                                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                                <button class="btn btn-sm btn-outline-danger" title="Xóa nếu không còn dữ liệu liên quan">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
+
                                 </c:forEach>
                                 <c:if test="${empty staffList}"><tr><td colspan="7" class="text-center text-muted py-5">Không tìm thấy người dùng trong chi nhánh.</td></tr></c:if>
                             </tbody>
@@ -61,6 +79,48 @@
                     </div>
                 </div>
             </div>
+
+            <c:forEach var="s" items="${staffList}">
+                <div class="modal fade" id="editModal${s.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content text-start">
+                            <form action="/manager/staff/update-role-status" method="post">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                <input type="hidden" name="userId" value="${s.id}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Cập Nhật: <c:out value="${s.fullName}"/></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-info py-2 small">
+                                        Tài khoản luôn được giới hạn trong chi nhánh <strong><c:out value="${branch.name}"/></strong>.
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Quyền</label>
+                                        <select name="roleId" class="form-select" required>
+                                            <c:forEach var="r" items="${roles}">
+                                                <option value="${r.id}" ${s.role.id == r.id ? 'selected' : ''}><c:out value="${r.name}"/></option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Trạng thái</label>
+                                        <select name="status" class="form-select" required>
+                                            <option value="ACTIVE" ${s.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
+                                            <option value="INACTIVE" ${s.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                                            <option value="LOCKED" ${s.status == 'LOCKED' ? 'selected' : ''}>LOCKED</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </c:forEach>
         </div>
     </div>
 </div>

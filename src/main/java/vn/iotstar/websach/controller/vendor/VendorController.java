@@ -9,14 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.dto.VendorDashboardDTO;
+import vn.iotstar.websach.dto.MasterBookRequest;
 import vn.iotstar.websach.dto.VendorProductRequest;
 import vn.iotstar.websach.dto.VendorRevenueAnalyticsDTO;
 import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.*;
-import vn.iotstar.websach.repository.AuthorRepository;
-import vn.iotstar.websach.repository.PublisherRepository;
-import vn.iotstar.websach.repository.BookCopyRepository;
-import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.*;
 
 import java.time.LocalDate;
@@ -28,16 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VendorController {
     private final VendorService vendorService;
-    private final BookService bookService;
     private final CategoryService categoryService;
-    private final AuthorRepository authorRepository;
-    private final PublisherRepository publisherRepository;
-    private final UserService userService;
-    private final CloudinaryService cloudinaryService;
-    private final BookCopyRepository bookCopyRepository;
-    private final vn.iotstar.websach.repository.DeliveryAssignmentRepository deliveryAssignmentRepository;
-    private final vn.iotstar.websach.repository.SellRequestQuoteRepository sellRequestQuoteRepository;
-    private final UserRepository userRepository;
 
     @ModelAttribute("vendorPendingOrdersCount")
     public long vendorPendingOrdersCount(Authentication auth) {
@@ -123,24 +111,10 @@ public class VendorController {
 
     @GetMapping("/products")
     public String products(Authentication auth, Model model) {
-        java.util.List<Book> rawBooks = bookService.findAllBooks();
         java.util.List<BookCopy> vendorProducts = vendorService.getProducts(auth.getName());
 
-        java.util.Map<String, Book> uniqueBooksMap = new java.util.LinkedHashMap<>();
-        for (BookCopy copy : vendorProducts) {
-            if (copy.getBook() != null && copy.getBook().getTitle() != null && !copy.getBook().getTitle().isBlank()) {
-                uniqueBooksMap.putIfAbsent(copy.getBook().getTitle().trim().toLowerCase(), copy.getBook());
-            }
-        }
-        for (Book b : rawBooks) {
-            if (b.getTitle() != null && !b.getTitle().isBlank()) {
-                uniqueBooksMap.putIfAbsent(b.getTitle().trim().toLowerCase(), b);
-            }
-        }
-        java.util.List<Book> allBooks = new java.util.ArrayList<>(uniqueBooksMap.values());
-
         model.addAttribute("products", vendorProducts);
-        model.addAttribute("allBooks", allBooks);
+        model.addAttribute("allBooks", vendorService.getProductCatalog(auth.getName()));
         model.addAttribute("categories", categoryService.findAllCategories());
         model.addAttribute("conditions", BookCondition.values());
         model.addAttribute("statuses", BookCopyStatus.values());
@@ -178,57 +152,20 @@ public class VendorController {
                                    @RequestParam(value = "coverFile", required = false) MultipartFile coverFile,
                                    RedirectAttributes redirect) {
         try {
-            String finalCover = coverUrl;
-            if (coverFile != null && !coverFile.isEmpty()) {
-                finalCover = cloudinaryService.uploadFile(coverFile);
-            }
-            if (finalCover == null || finalCover.trim().isEmpty()) {
-                finalCover = "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80";
-            }
-
-            Category category = (categoryId != null) ? categoryService.findById(categoryId).orElse(null) : null;
-            Author author = null;
-            if (authorName != null && !authorName.trim().isEmpty()) {
-                author = authorRepository.findByName(authorName.trim()).orElseGet(() ->
-                        authorRepository.save(Author.builder().name(authorName.trim()).build())
-                );
-            }
-            Publisher publisher = null;
-            if (publisherName != null && !publisherName.trim().isEmpty()) {
-                publisher = publisherRepository.findByName(publisherName.trim()).orElseGet(() ->
-                        publisherRepository.save(Publisher.builder().name(publisherName.trim()).build())
-                );
-            }
-
-            Book book = Book.builder()
+            vendorService.createMasterBookProduct(auth.getName(), MasterBookRequest.builder()
                     .title(title)
                     .isbn(isbn)
-                    .author(author)
-                    .publisher(publisher)
+                    .authorName(authorName)
+                    .publisherName(publisherName)
                     .publishYear(publishYear)
-                    .category(category)
-                    .coverUrl(finalCover)
-                    .build();
-
-            Book savedBook = bookService.saveBook(book);
-
-            User vendor = userService.findByEmail(auth.getName()).orElse(null);
-            Branch shop = vendorService.getShop(auth.getName());
-            if (vendor != null && shop != null) {
-                BookCopy copy = BookCopy.builder()
-                        .book(savedBook)
-                        .branch(shop)
-                        .seller(vendor)
-                        .purchasePrice(purchasePrice != null ? purchasePrice : 0.0)
-                        .sellingPrice(sellingPrice != null && sellingPrice > 0 ? sellingPrice : 50000.0)
-                        .quantity(quantity != null && quantity > 0 ? quantity : 1)
-                        .conditionRating(conditionRating != null ? conditionRating : BookCondition.LIKE_NEW)
-                        .note(note != null && !note.trim().isEmpty() ? note.trim() : "Sản phẩm mới nhập gian hàng")
-                        .imageUrl(finalCover)
-                        .status(BookCopyStatus.UNPUBLISHED)
-                        .build();
-                bookCopyRepository.save(copy);
-            }
+                    .categoryId(categoryId)
+                    .coverUrl(coverUrl)
+                    .sellingPrice(sellingPrice)
+                    .purchasePrice(purchasePrice)
+                    .conditionRating(conditionRating)
+                    .quantity(quantity)
+                    .note(note)
+                    .build(), coverFile);
             redirect.addFlashAttribute("successMessage", "Đã thêm đầu sách mới thành công");
         } catch (Exception e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
@@ -285,19 +222,7 @@ public class VendorController {
         List<Order> returnOrders = vendorService.getReturnOrders(auth.getName());
         model.addAttribute("orders", returnOrders);
         model.addAttribute("shippers", vendorService.getBranchShippers(auth.getName()));
-        java.util.Map<Long, DeliveryAssignment> assignments = new java.util.HashMap<>();
-        for (Order o : returnOrders) {
-            deliveryAssignmentRepository.findByOrderId(o.getId()).ifPresent(da -> {
-                // Đảm bảo không nhầm lẫn với phân công giao hàng chiều đi trước đó
-                if (o.getOrderStatus() == OrderStatus.RETURN_REQUESTED && da.getStatus() == DeliveryStatus.DELIVERED) {
-                    if (da.getNote() == null || (!da.getNote().toLowerCase().contains("thu hồi") && !da.getNote().toLowerCase().contains("hoàn trả"))) {
-                        return;
-                    }
-                }
-                assignments.put(o.getId(), da);
-            });
-        }
-        model.addAttribute("assignments", assignments);
+        model.addAttribute("assignments", vendorService.getReturnAssignments(auth.getName(), returnOrders));
         return "vendor/returns/list";
     }
 
@@ -390,24 +315,7 @@ public class VendorController {
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("selectedStatus", status);
         model.addAttribute("shippers", vendorService.getBranchShippers(auth.getName()));
-        java.util.Map<Long, DeliveryAssignment> assignments = new java.util.HashMap<>();
-        for (Order o : orders) {
-            deliveryAssignmentRepository.findByOrderId(o.getId()).ifPresent(da -> {
-                // Không gán phân công cho đơn chưa sẵn sàng (NEW, CONFIRMED, PACKING)
-                if (o.getOrderStatus() == OrderStatus.NEW 
-                        || o.getOrderStatus() == OrderStatus.CONFIRMED 
-                        || o.getOrderStatus() == OrderStatus.PACKING) {
-                    return;
-                }
-                // Nếu đơn đang READY_FOR_PICKUP nhưng assignment lại mang trạng thái cũ (SHIPPING / DELIVERED), bỏ qua dữ liệu cũ
-                if (o.getOrderStatus() == OrderStatus.READY_FOR_PICKUP 
-                        && (da.getStatus() == DeliveryStatus.SHIPPING || da.getStatus() == DeliveryStatus.DELIVERED)) {
-                    return;
-                }
-                assignments.put(o.getId(), da);
-            });
-        }
-        model.addAttribute("assignments", assignments);
+        model.addAttribute("assignments", vendorService.getOrderAssignments(auth.getName(), orders));
         return "vendor/orders/list";
     }
 
@@ -415,7 +323,8 @@ public class VendorController {
     public String orderDetail(Authentication auth, @PathVariable Long id, Model model) {
         model.addAttribute("order", vendorService.getOrder(auth.getName(), id));
         model.addAttribute("items", vendorService.getOrderItems(auth.getName(), id));
-        deliveryAssignmentRepository.findByOrderId(id).ifPresent(da -> model.addAttribute("assignment", da));
+        vendorService.getOrderAssignment(auth.getName(), id)
+                .ifPresent(assignment -> model.addAttribute("assignment", assignment));
         return "vendor/orders/detail";
     }
 
@@ -488,21 +397,8 @@ public class VendorController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("shippers", vendorService.getBranchShippers(auth.getName()));
 
-        java.util.Map<Long, DeliveryAssignment> assignments = new java.util.HashMap<>();
-        for (SellRequest r : requests) {
-            deliveryAssignmentRepository.findBySellRequestId(r.getId()).ifPresent(da -> assignments.put(r.getId(), da));
-        }
-        model.addAttribute("assignments", assignments);
-
-        User currentVendor = userRepository.findByEmail(auth.getName()).orElse(null);
-        java.util.Map<Long, vn.iotstar.websach.entity.SellRequestQuote> myQuotes = new java.util.HashMap<>();
-        if (currentVendor != null) {
-            for (SellRequest r : requests) {
-                sellRequestQuoteRepository.findBySellRequestIdAndVendorId(r.getId(), currentVendor.getId())
-                        .ifPresent(q -> myQuotes.put(r.getId(), q));
-            }
-        }
-        model.addAttribute("myQuotes", myQuotes);
+        model.addAttribute("assignments", vendorService.getSellRequestAssignments(auth.getName(), requests));
+        model.addAttribute("myQuotes", vendorService.getSellRequestQuotes(auth.getName(), requests));
 
         // Đếm số lượng theo trạng thái cho dashboard
         List<SellRequest> allVisible = vendorService.getSellRequests(auth.getName(), null);

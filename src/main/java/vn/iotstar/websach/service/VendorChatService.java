@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface VendorChatService {
 
+    VendorConversation getOrCreateConversationForBook(String customerEmail, Long bookCopyId);
+
     VendorConversation getOrCreateConversation(String customerEmail, Long vendorId, Long bookCopyId);
 
     VendorConversation getConversation(Long conversationId, String userEmail);

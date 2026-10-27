@@ -99,6 +99,7 @@
 
         <c:if test="${pageContext.request.isUserInRole('ROLE_VENDOR') || pageContext.request.isUserInRole('VENDOR')}">
             <li class="nav-item"><a href="/vendor/dashboard" class="nav-link ${pageContext.request.requestURI.contains('/vendor/dashboard') ? 'active' : ''}"><i class="fa-solid fa-chart-pie"></i> Dashboard Vendor</a></li>
+            <li class="nav-item"><a href="/books" class="nav-link"><i class="fa-solid fa-bag-shopping"></i> Khu Mua Sách (User)</a></li>
             <li class="nav-item"><a href="/vendor/shop" class="nav-link ${pageContext.request.requestURI.contains('/vendor/shop') ? 'active' : ''}"><i class="fa-solid fa-store"></i> Hồ Sơ Cửa Hàng</a></li>
             <li class="nav-item"><a href="/vendor/products" class="nav-link ${pageContext.request.requestURI.contains('/vendor/products') ? 'active' : ''}"><i class="fa-solid fa-book-open"></i> Sản Phẩm Sách Cũ</a></li>
             <li class="nav-item">

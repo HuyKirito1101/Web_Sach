@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Component
+@org.springframework.core.annotation.Order(1)
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
@@ -428,7 +429,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p1)
                 .publishYear(1985)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80")
+                .coverUrl("https://cdn1.fahasa.com/media/catalog/product/d/e/de-men-phieu-luu-ki_bia-cung_to.jpg")
                 .build());
 
         Book book2 = bookRepository.save(Book.builder()
@@ -440,7 +441,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p2)
                 .publishYear(1990)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80")
+                .coverUrl("https://cdn1.fahasa.com/media/catalog/product/8/9/8935230010784_1.jpg")
                 .build());
 
         Book book3 = bookRepository.save(Book.builder()
@@ -452,7 +453,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p2)
                 .publishYear(1988)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80")
+                .coverUrl("https://product.hstatic.net/1000237375/product/bia_truoc_08_b4497226ce524fd79a1d81b9086b99a9_master.jpg")
                 .build());
 
         Book book4 = bookRepository.save(Book.builder()
@@ -464,7 +465,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p3)
                 .publishYear(2012)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80")
+                .coverUrl("https://cdn0.fahasa.com/media/catalog/product/8/9/8934974158448.jpg")
                 .build());
 
         Book book5 = bookRepository.save(Book.builder()
@@ -476,7 +477,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p4)
                 .publishYear(1974)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80")
+                .coverUrl("https://cdn1.fahasa.com/media/catalog/product/8/9/8935230006015.jpg")
                 .build());
 
         Book book6 = bookRepository.save(Book.builder()
@@ -488,7 +489,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p1)
                 .publishYear(1996)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
+                .coverUrl("https://bizweb.dktcdn.net/thumb/1024x1024/100/576/749/products/1-09e4d57d2e8d45f6ae65b8936811fa81.jpg?v=1760791370697")
                 .build());
 
         Book book7 = bookRepository.save(Book.builder()
@@ -500,7 +501,7 @@ public class DataInitializer implements CommandLineRunner {
                 .publisher(p5)
                 .publishYear(2020)
                 .language("Tiếng Việt")
-                .coverUrl("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80")
+                .coverUrl("https://cdn1.fahasa.com/media/catalog/product/9/7/9786040392503.jpg")
                 .build());
 
         // 7. BookCopies across Branches & Specialized Vendors
@@ -514,7 +515,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(10)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Bìa mới 95%, không ố vàng, trang sách đầy đủ")
-                .imageUrl("https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80")
+                .imageUrl("https://cdn1.fahasa.com/media/catalog/product/d/e/de-men-phieu-luu-ki_bia-cung_to.jpg")
                 .build());
 
         BookCopy copy2 = bookCopyRepository.save(BookCopy.builder()
@@ -527,7 +528,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(5)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Bìa hơi sờn góc, trang hơi ngả vàng theo thời gian")
-                .imageUrl("https://images.unsplash.com/photo-1512820790803-83ca734da794?w=500&q=80")
+                .imageUrl("https://cdn1.fahasa.com/media/catalog/product/8/9/8935230010784_1.jpg")
                 .build());
 
         BookCopy copy3 = bookCopyRepository.save(BookCopy.builder()
@@ -540,7 +541,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(8)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Giấy giữ màu tốt, không rách gáy")
-                .imageUrl("https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&q=80")
+                .imageUrl("https://product.hstatic.net/1000237375/product/bia_truoc_08_b4497226ce524fd79a1d81b9086b99a9_master.jpg")
                 .build());
 
         BookCopy copy4 = bookCopyRepository.save(BookCopy.builder()
@@ -553,7 +554,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(12)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Sách như mới 98%, đẹp sạch sẽ")
-                .imageUrl("https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80")
+                .imageUrl("https://cdn0.fahasa.com/media/catalog/product/8/9/8934974158448.jpg")
                 .build());
 
         BookCopy copy5 = bookCopyRepository.save(BookCopy.builder()
@@ -566,7 +567,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(3)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Ấn bản hiếm 1974, bìa vải ngả màu thời gian, cực kỳ giá trị cho dân sưu tầm")
-                .imageUrl("https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&q=80")
+                .imageUrl("https://cdn1.fahasa.com/media/catalog/product/8/9/8935230006015.jpg")
                 .build());
 
         BookCopy copy6 = bookCopyRepository.save(BookCopy.builder()
@@ -579,7 +580,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(7)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Truyện tranh cũ 1996, ruột sạch sẽ đủ trang")
-                .imageUrl("https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&q=80")
+                .imageUrl("https://bizweb.dktcdn.net/thumb/1024x1024/100/576/749/products/1-09e4d57d2e8d45f6ae65b8936811fa81.jpg?v=1760791370697")
                 .build());
 
         BookCopy copy7 = bookCopyRepository.save(BookCopy.builder()
@@ -592,7 +593,7 @@ public class DataInitializer implements CommandLineRunner {
                 .quantity(15)
                 .status(BookCopyStatus.AVAILABLE)
                 .note("Bộ sách giáo khoa 12 môn còn đầy đủ bìa và ruột sạch sẽ")
-                .imageUrl("https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=500&q=80")
+                .imageUrl("https://cdn1.fahasa.com/media/catalog/product/9/7/9786040392503.jpg")
                 .build());
 
         // 8. App Discounts & Promotions

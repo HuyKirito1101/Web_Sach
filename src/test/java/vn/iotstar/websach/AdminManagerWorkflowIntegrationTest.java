@@ -9,16 +9,20 @@ import vn.iotstar.websach.entity.BookCopy;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.Promotion;
 import vn.iotstar.websach.entity.SupportConversation;
+import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.entity.enums.PromotionType;
+import vn.iotstar.websach.entity.enums.RoleName;
 import vn.iotstar.websach.dto.StockTransferRequest;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BranchRepository;
+import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.PromotionService;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.StockTransferService;
 import vn.iotstar.websach.service.SupportChatService;
+import vn.iotstar.websach.service.UserService;
 
 import java.time.LocalDate;
 
@@ -39,6 +43,8 @@ class AdminManagerWorkflowIntegrationTest {
     @Autowired private BranchService branchService;
     @Autowired private StockTransferService stockTransferService;
     @Autowired private SupportChatService supportChatService;
+    @Autowired private UserService userService;
+    @Autowired private UserRepository userRepository;
 
     @Test
     void adminCanEditBranchInformationWithoutClearingCurrentImage() {
@@ -175,5 +181,43 @@ class AdminManagerWorkflowIntegrationTest {
         assertThatThrownBy(() -> supportChatService.getCustomerConversation(conversation.getPublicToken()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Không tìm thấy hội thoại");
+    }
+
+    @Test
+    void managerCanManageUsersVendorsAndShippersOnlyInsideManagedBranch() {
+        Branch managedBranch = managerAccessService.requireManagedBranch(MANAGER_EMAIL);
+        var managedUsers = userService.searchUsersForManagedBranch(MANAGER_EMAIL, "");
+
+        assertThat(managedUsers).isNotEmpty();
+        assertThat(managedUsers)
+                .allMatch(user -> user.getRole() != null
+                        && (user.getRole().getName() == RoleName.ROLE_USER
+                        || user.getRole().getName() == RoleName.ROLE_VENDOR
+                        || user.getRole().getName() == RoleName.ROLE_SHIPPER));
+        assertThat(managedUsers).anyMatch(user -> user.getRole().getName() == RoleName.ROLE_USER);
+        assertThat(managedUsers).anyMatch(user -> user.getRole().getName() == RoleName.ROLE_VENDOR);
+        assertThat(managedUsers).anyMatch(user -> user.getRole().getName() == RoleName.ROLE_SHIPPER);
+
+        User branchUser = managedUsers.stream()
+                .filter(user -> user.getRole().getName() == RoleName.ROLE_USER)
+                .findFirst().orElseThrow();
+        Long shipperRoleId = userService.findBranchManageableRoles().stream()
+                .filter(role -> role.getName() == RoleName.ROLE_SHIPPER)
+                .findFirst().orElseThrow().getId();
+
+        User updated = userService.updateManagedBranchUser(
+                MANAGER_EMAIL, branchUser.getId(), shipperRoleId, "ACTIVE");
+        assertThat(updated.getRole().getName()).isEqualTo(RoleName.ROLE_SHIPPER);
+        assertThat(updated.getBranch().getId()).isEqualTo(managedBranch.getId());
+
+        User otherBranchUser = userRepository.findAll().stream()
+                .filter(user -> user.getBranch() != null)
+                .filter(user -> !user.getBranch().getId().equals(managedBranch.getId()))
+                .filter(user -> user.getRole() != null && user.getRole().getName() == RoleName.ROLE_VENDOR)
+                .findFirst().orElseThrow();
+        assertThatThrownBy(() -> userService.toggleManagedBranchUserLock(
+                MANAGER_EMAIL, otherBranchUser.getId()))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("chi nhánh khác");
     }
 }

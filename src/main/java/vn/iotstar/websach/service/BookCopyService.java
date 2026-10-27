@@ -1,5 +1,6 @@
 package vn.iotstar.websach.service;
 
+import org.springframework.web.multipart.MultipartFile;
 import vn.iotstar.websach.entity.BookCopy;
 import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.entity.enums.BookCopyStatus;
@@ -14,6 +15,8 @@ public interface BookCopyService {
     Optional<BookCopy> findById(Long id);
     BookCopy saveCopy(BookCopy copy);
     BookCopy updateCopy(Long id, BookCopy copyDetails);
+    BookCopy saveManagedCopy(String managerEmail, BookCopy copyDetails, Long bookId, MultipartFile imageFile);
+    void deleteManagedCopy(String managerEmail, Long copyId);
     void deleteCopy(Long id);
     BookCopy updateStock(Long copyId, int quantityChange);
 }

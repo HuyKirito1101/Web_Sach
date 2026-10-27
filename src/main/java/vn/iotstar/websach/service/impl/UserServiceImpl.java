@@ -23,6 +23,7 @@ import vn.iotstar.websach.repository.OtpTokenRepository;
 import vn.iotstar.websach.repository.RoleRepository;
 import vn.iotstar.websach.repository.UserRepository;
 import vn.iotstar.websach.service.EmailService;
+import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.UserService;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,8 @@ public class UserServiceImpl implements UserService {
     private static final String REGISTER_OTP_TYPE = "REGISTER";
     private static final String FORGOT_PASSWORD_OTP_TYPE = "FORGOT_PASSWORD";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final List<RoleName> BRANCH_MANAGEABLE_ROLES = List.of(
+            RoleName.ROLE_USER, RoleName.ROLE_VENDOR, RoleName.ROLE_SHIPPER);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -49,6 +52,7 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
     private final EmailService emailService;
+    private final ManagerAccessService managerAccessService;
 
     @Override
     @Transactional
@@ -218,6 +222,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public String getLandingPage(String email) {
+        User user = userRepository.findByEmail(normalizeEmail(email))
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản."));
+        if (user.getRole() == null || user.getRole().getName() == null) {
+            return "/";
+        }
+        return switch (user.getRole().getName()) {
+            case ROLE_ADMIN -> "/admin/dashboard";
+            case ROLE_MANAGER -> "/manager/dashboard";
+            case ROLE_VENDOR -> "/vendor/dashboard";
+            case ROLE_SHIPPER -> "/shipper/dashboard";
+            default -> "/";
+        };
+    }
+
+    @Override
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
@@ -225,6 +245,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> findAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public List<Role> findAllRoles() {
+        return roleRepository.findAll();
     }
 
     @Override
@@ -319,6 +344,72 @@ public class UserServiceImpl implements UserService {
             // Bảo vệ trường hợp dữ liệu liên quan phát sinh ngay sau bước kiểm tra.
             throw new IllegalStateException("Không thể xóa tài khoản vì vẫn còn dữ liệu liên quan trong hệ thống. "
                     + "Vui lòng tải lại danh sách và thử lại.", ex);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> searchUsersForManagedBranch(String managerEmail, String keyword) {
+        Branch branch = managerAccessService.requireManagedBranch(managerEmail);
+        String normalizedKeyword = keyword == null ? "" : keyword.trim();
+        return userRepository.searchManageableUsersByBranch(
+                branch.getId(), BRANCH_MANAGEABLE_ROLES, normalizedKeyword);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Role> findBranchManageableRoles() {
+        return BRANCH_MANAGEABLE_ROLES.stream()
+                .map(roleName -> roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new IllegalStateException("Thiếu quyền hệ thống " + roleName)))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public User updateManagedBranchUser(String managerEmail, Long userId, Long roleId, String statusStr) {
+        Branch branch = managerAccessService.requireManagedBranch(managerEmail);
+        User user = managerAccessService.requireUserInBranch(managerEmail, userId);
+        ensureManagerCanManage(user);
+
+        Role selectedRole = roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại."));
+        if (!BRANCH_MANAGEABLE_ROLES.contains(selectedRole.getName())) {
+            throw new SecurityException("Manager chỉ được gán quyền User, Vendor hoặc Shipper.");
+        }
+
+        user.setRole(selectedRole);
+        user.setBranch(branch);
+        if (statusStr != null && !statusStr.isBlank()) {
+            try {
+                user.setStatus(UserStatus.valueOf(statusStr.trim().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Trạng thái tài khoản không hợp lệ.");
+            }
+        }
+        return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User toggleManagedBranchUserLock(String managerEmail, Long userId) {
+        User user = managerAccessService.requireUserInBranch(managerEmail, userId);
+        ensureManagerCanManage(user);
+        user.setStatus(user.getStatus() == UserStatus.LOCKED ? UserStatus.ACTIVE : UserStatus.LOCKED);
+        return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deleteManagedBranchUser(String managerEmail, Long userId) {
+        User user = managerAccessService.requireUserInBranch(managerEmail, userId);
+        ensureManagerCanManage(user);
+        deleteUser(userId);
+    }
+
+    private void ensureManagerCanManage(User user) {
+        if (user.getRole() == null || !BRANCH_MANAGEABLE_ROLES.contains(user.getRole().getName())) {
+            throw new SecurityException("Manager không được quản lý tài khoản Admin hoặc Manager.");
         }
     }
 

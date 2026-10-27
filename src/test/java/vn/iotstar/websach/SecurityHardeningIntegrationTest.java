@@ -90,4 +90,30 @@ class SecurityHardeningIntegrationTest {
                         .param("content", "Tôi cần hỗ trợ"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void internalRolesOpeningStorefrontRootAreRedirectedToTheirDashboards() throws Exception {
+        assertRootRedirect("admin@websachcu.vn", "/admin/dashboard");
+        assertRootRedirect("manager@websachcu.vn", "/manager/dashboard");
+        assertRootRedirect("vendor.thuduc1@websachcu.vn", "/vendor/dashboard");
+        assertRootRedirect("shipper.thuduc1@websachcu.vn", "/shipper/dashboard");
+    }
+
+    @Test
+    void customerCanStillOpenStorefrontRoot() throws Exception {
+        User user = userRepository.findByEmail("user@websachcu.vn").orElseThrow();
+        String token = jwtUtils.generateJwtToken(user.getEmail(), user.getRole().getName().name());
+
+        mockMvc.perform(get("/").cookie(new Cookie("JWT_TOKEN", token)))
+                .andExpect(status().isOk());
+    }
+
+    private void assertRootRedirect(String email, String expectedUrl) throws Exception {
+        User user = userRepository.findByEmail(email).orElseThrow();
+        String token = jwtUtils.generateJwtToken(user.getEmail(), user.getRole().getName().name());
+
+        mockMvc.perform(get("/").cookie(new Cookie("JWT_TOKEN", token)))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(expectedUrl));
+    }
 }

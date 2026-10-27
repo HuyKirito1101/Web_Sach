@@ -6,18 +6,23 @@ import vn.iotstar.websach.dto.VendorDashboardDTO;
 import vn.iotstar.websach.dto.VendorProductRequest;
 import vn.iotstar.websach.dto.VendorRevenueAnalyticsDTO;
 import vn.iotstar.websach.dto.VendorShipperDTO;
+import vn.iotstar.websach.dto.MasterBookRequest;
 import vn.iotstar.websach.entity.*;
 import vn.iotstar.websach.entity.enums.OrderStatus;
 import vn.iotstar.websach.entity.enums.SellRequestStatus;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 public interface VendorService {
     Branch getShop(String vendorEmail);
     Branch saveShop(String vendorEmail, Branch details, MultipartFile logo, MultipartFile cover);
     List<BookCopy> getProducts(String vendorEmail);
+    List<Book> getProductCatalog(String vendorEmail);
     BookCopy saveProduct(String vendorEmail, VendorProductRequest request, MultipartFile imageFile);
+    BookCopy createMasterBookProduct(String vendorEmail, MasterBookRequest request, MultipartFile coverFile);
     void hideProduct(String vendorEmail, Long productId);
     void publishProduct(String vendorEmail, Long productId);
     void unpublishProduct(String vendorEmail, Long productId);
@@ -25,6 +30,9 @@ public interface VendorService {
     List<Order> getOrders(String vendorEmail, OrderStatus status);
     Order getOrder(String vendorEmail, Long orderId);
     List<OrderItem> getOrderItems(String vendorEmail, Long orderId);
+    Map<Long, DeliveryAssignment> getOrderAssignments(String vendorEmail, List<Order> orders);
+    Map<Long, DeliveryAssignment> getReturnAssignments(String vendorEmail, List<Order> orders);
+    Optional<DeliveryAssignment> getOrderAssignment(String vendorEmail, Long orderId);
     Order confirmManualMomoPayment(String vendorEmail, Long orderId);
     Order updateOrderStatus(String vendorEmail, Long orderId, OrderStatus target);
     List<Promotion> getPromotions(String vendorEmail);
@@ -34,6 +42,8 @@ public interface VendorService {
     List<ProductSalesDTO> getTopProducts(String vendorEmail, LocalDate from, LocalDate to);
     VendorRevenueAnalyticsDTO getRevenueAnalytics(String vendorEmail, Integer year, Integer month);
     List<SellRequest> getSellRequests(String vendorEmail, SellRequestStatus status);
+    Map<Long, DeliveryAssignment> getSellRequestAssignments(String vendorEmail, List<SellRequest> requests);
+    Map<Long, SellRequestQuote> getSellRequestQuotes(String vendorEmail, List<SellRequest> requests);
     SellRequest updateSellRequest(String vendorEmail, Long requestId, SellRequestStatus status,
                                   Double offeredTotal, String staffNote);
     DeliveryAssignment assignSellRequestShipper(String vendorEmail, Long requestId, Long shipperId, String note);

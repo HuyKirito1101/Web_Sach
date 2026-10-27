@@ -14,7 +14,9 @@ import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.repository.UserRepository;
+import vn.iotstar.websach.repository.VendorConversationRepository;
 
 import java.security.Principal;
 
@@ -24,6 +26,7 @@ import java.security.Principal;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final UserRepository userRepository;
+    private final VendorConversationRepository vendorConversationRepository;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -58,12 +61,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         });
     }
 
-    private void authorizeSubscription(String destination, Authentication authentication) {
+    void authorizeSubscription(String destination, Authentication authentication) {
         if (destination == null) {
             throw new AccessDeniedException("Kênh WebSocket không hợp lệ.");
         }
-        if ("/topic/orders".equals(destination)) {
-            requireAnyRole(authentication, "ROLE_ADMIN", "ROLE_MANAGER", "ROLE_VENDOR", "ROLE_SHIPPER");
+        if ("/topic/orders".equals(destination) || "/topic/orders/admin".equals(destination)) {
+            requireAnyRole(authentication, "ROLE_ADMIN");
+            return;
+        }
+        if (destination.startsWith("/topic/orders/branch/")) {
+            if (hasRole(authentication, "ROLE_ADMIN")) {
+                return;
+            }
+            requireAnyRole(authentication, "ROLE_MANAGER", "ROLE_VENDOR", "ROLE_SHIPPER");
+            Long requestedBranchId = parseIdAfterPrefix(destination, "/topic/orders/branch/",
+                    "Kenh don hang chi nhanh khong hop le.");
+            User currentUser = requireCurrentUser(authentication);
+            if (currentUser.getBranch() == null
+                    || !requestedBranchId.equals(currentUser.getBranch().getId())) {
+                throw new AccessDeniedException("Khong duoc theo doi don hang cua chi nhanh khac.");
+            }
             return;
         }
         if ("/topic/transfers".equals(destination)) {
@@ -107,13 +124,56 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             return;
         }
         if (destination.startsWith("/topic/vendor-chat/")) {
+            Long conversationId = parseIdAfterPrefix(destination, "/topic/vendor-chat/",
+                    "Kenh hoi thoai khong hop le.");
+            if (hasRole(authentication, "ROLE_ADMIN")) {
+                return;
+            }
+            Long currentUserId = requireCurrentUser(authentication).getId();
+            boolean isParticipant = vendorConversationRepository.findById(conversationId)
+                    .map(conversation -> currentUserId.equals(conversation.getCustomer().getId())
+                            || currentUserId.equals(conversation.getVendor().getId()))
+                    .orElse(false);
+            if (!isParticipant) {
+                throw new AccessDeniedException("Khong duoc theo doi hoi thoai cua nguoi khac.");
+            }
             return;
         }
         if (destination.startsWith("/topic/vendor/")) {
-            requireAnyRole(authentication, "ROLE_ADMIN", "ROLE_VENDOR");
+            if (hasRole(authentication, "ROLE_ADMIN")) {
+                return;
+            }
+            requireAnyRole(authentication, "ROLE_VENDOR");
+            String prefix = "/topic/vendor/";
+            String suffix = "/notifications";
+            if (!destination.endsWith(suffix)) {
+                throw new AccessDeniedException("Kenh thong bao Vendor khong hop le.");
+            }
+            String idPart = destination.substring(prefix.length(), destination.length() - suffix.length());
+            Long requestedVendorId = parseId(idPart, "Kenh thong bao Vendor khong hop le.");
+            if (!requestedVendorId.equals(requireCurrentUser(authentication).getId())) {
+                throw new AccessDeniedException("Khong duoc theo doi thong bao cua Vendor khac.");
+            }
             return;
         }
         throw new AccessDeniedException("Không được phép đăng ký kênh WebSocket này.");
+    }
+
+    private Long parseIdAfterPrefix(String destination, String prefix, String errorMessage) {
+        return parseId(destination.substring(prefix.length()), errorMessage);
+    }
+
+    private Long parseId(String value, String errorMessage) {
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException ex) {
+            throw new AccessDeniedException(errorMessage);
+        }
+    }
+
+    private User requireCurrentUser(Authentication authentication) {
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new AccessDeniedException("Khong tim thay tai khoan WebSocket."));
     }
 
     private void requireAnyRole(Authentication authentication, String... roles) {

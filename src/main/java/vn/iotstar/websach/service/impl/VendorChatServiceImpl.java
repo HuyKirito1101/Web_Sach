@@ -34,6 +34,21 @@ public class VendorChatServiceImpl implements VendorChatService {
 
     @Override
     @Transactional
+    public VendorConversation getOrCreateConversationForBook(String customerEmail, Long bookCopyId) {
+        BookCopy copy = bookCopyRepository.findById(bookCopyId)
+                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm sách cũ không tồn tại hoặc đã bị xóa."));
+        User vendor = copy.getSeller();
+        if (vendor == null && copy.getBranch() != null) {
+            vendor = copy.getBranch().getOwner();
+        }
+        if (vendor == null) {
+            throw new IllegalArgumentException("Sản phẩm này hiện chưa có thông tin người bán để liên hệ.");
+        }
+        return getOrCreateConversation(customerEmail, vendor.getId(), copy.getId());
+    }
+
+    @Override
+    @Transactional
     public VendorConversation getOrCreateConversation(String customerEmail, Long vendorId, Long bookCopyId) {
         User customer = userRepository.findByEmail(customerEmail)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông tin tài khoản người mua."));

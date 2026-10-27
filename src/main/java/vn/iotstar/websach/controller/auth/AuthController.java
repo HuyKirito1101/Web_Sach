@@ -64,9 +64,7 @@ public class AuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             authRateLimiter.clear("login", limitKey);
 
-            // Sau đăng nhập, mọi vai trò đều trở về trang chủ. Dashboard vẫn
-            // được mở từ menu hoặc URL tương ứng khi người dùng cần quản trị.
-            return "redirect:/";
+            return "redirect:" + userService.getLandingPage(request.getEmail());
         } catch (Exception e) {
             log.warn("Đăng nhập thất bại cho {} từ {}", request.getEmail(), servletRequest.getRemoteAddr());
             String message = e.getMessage();

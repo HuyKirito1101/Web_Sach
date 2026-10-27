@@ -94,60 +94,62 @@
                                         </td>
                                     </tr>
 
-                                    <!-- Edit User Modal -->
-                                    <div class="modal fade" id="editModal${u.id}" tabindex="-1">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content text-start">
-                                                <form action="/admin/users/update-role-status" method="post">
-                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-                                                    <input type="hidden" name="userId" value="${u.id}" />
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: <c:out value="${u.fullName}"/></h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Chọn Role</label>
-                                                            <select name="roleId" class="form-select">
-                                                                <c:forEach var="r" items="${roles}">
-                                                                    <option value="${r.id}" ${u.role.id == r.id ? 'selected' : ''}><c:out value="${r.name}"/></option>
-                                                                </c:forEach>
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Chi Nhánh (Cho Manager/Shipper/Vendor)</label>
-                                                            <select name="branchId" class="form-select">
-                                                                <option value="">-- Không chọn --</option>
-                                                                <c:forEach var="b" items="${branches}">
-                                                                    <option value="${b.id}" ${u.branch != null && u.branch.id == b.id ? 'selected' : ''}><c:out value="${b.name}"/></option>
-                                                                </c:forEach>
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="mb-3">
-                                                            <label class="form-label">Trạng Thái Tài Khoản</label>
-                                                            <select name="status" class="form-select">
-                                                                <option value="ACTIVE" ${u.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-                                                                <option value="INACTIVE" ${u.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
-                                                                <option value="LOCKED" ${u.status == 'LOCKED' ? 'selected' : ''}>LOCKED</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                        <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </c:forEach>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
+            <c:forEach var="u" items="${users}">
+                <div class="modal fade" id="editModal${u.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content text-start">
+                            <form action="/admin/users/update-role-status" method="post">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+                                <input type="hidden" name="userId" value="${u.id}" />
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Cập Nhật Quyền & Chi Nhánh: <c:out value="${u.fullName}"/></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Chọn Role</label>
+                                        <select name="roleId" class="form-select">
+                                            <c:forEach var="r" items="${roles}">
+                                                <option value="${r.id}" ${u.role.id == r.id ? 'selected' : ''}><c:out value="${r.name}"/></option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Chi Nhánh (Cho Manager/Shipper/Vendor)</label>
+                                        <select name="branchId" class="form-select">
+                                            <option value="">-- Không chọn --</option>
+                                            <c:forEach var="b" items="${branches}">
+                                                <option value="${b.id}" ${u.branch != null && u.branch.id == b.id ? 'selected' : ''}><c:out value="${b.name}"/></option>
+                                            </c:forEach>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Trạng Thái Tài Khoản</label>
+                                        <select name="status" class="form-select">
+                                            <option value="ACTIVE" ${u.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
+                                            <option value="INACTIVE" ${u.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                                            <option value="LOCKED" ${u.status == 'LOCKED' ? 'selected' : ''}>LOCKED</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary">Lưu Thay Đổi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </c:forEach>
         </div>
     </div>
 </div>
