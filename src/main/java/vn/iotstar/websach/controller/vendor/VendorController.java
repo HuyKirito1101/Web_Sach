@@ -357,8 +357,36 @@ public class VendorController {
 
     @GetMapping("/orders")
     public String orders(Authentication auth, @RequestParam(required = false) OrderStatus status, Model model) {
-        List<Order> orders = vendorService.getOrders(auth.getName(), status);
+        List<Order> allOrders = vendorService.getOrders(auth.getName(), null);
+        List<Order> orders = (status != null)
+                ? allOrders.stream().filter(o -> o.getOrderStatus() == status).toList()
+                : allOrders;
+
+        long newCount = allOrders.stream().filter(o -> o.getOrderStatus() == OrderStatus.NEW).count();
+        long awaitingMomoCount = allOrders.stream()
+                .filter(o -> o.getPaymentMethod() == PaymentMethod.MOMO && o.getPaymentStatus() == PaymentStatus.AWAITING_CONFIRMATION)
+                .count();
+        long processingCount = allOrders.stream()
+                .filter(o -> o.getOrderStatus() == OrderStatus.CONFIRMED || o.getOrderStatus() == OrderStatus.PACKING)
+                .count();
+        long readyForPickupCount = allOrders.stream()
+                .filter(o -> o.getOrderStatus() == OrderStatus.READY_FOR_PICKUP)
+                .count();
+        long deliveredCount = allOrders.stream()
+                .filter(o -> o.getOrderStatus() == OrderStatus.DELIVERED)
+                .count();
+        long returnsCount = allOrders.stream()
+                .filter(o -> o.getOrderStatus() == OrderStatus.RETURN_REQUESTED || o.getOrderStatus() == OrderStatus.RETURNED || o.getOrderStatus() == OrderStatus.REFUNDED)
+                .count();
+
         model.addAttribute("orders", orders);
+        model.addAttribute("totalCount", allOrders.size());
+        model.addAttribute("newCount", newCount);
+        model.addAttribute("awaitingMomoCount", awaitingMomoCount);
+        model.addAttribute("processingCount", processingCount);
+        model.addAttribute("readyForPickupCount", readyForPickupCount);
+        model.addAttribute("deliveredCount", deliveredCount);
+        model.addAttribute("returnsCount", returnsCount);
         model.addAttribute("statuses", OrderStatus.values());
         model.addAttribute("selectedStatus", status);
         model.addAttribute("shippers", vendorService.getBranchShippers(auth.getName()));
@@ -395,8 +423,16 @@ public class VendorController {
     public String updateOrder(Authentication auth, @PathVariable Long id,
                               @RequestParam OrderStatus status, RedirectAttributes redirect) {
         try {
-            vendorService.updateOrderStatus(auth.getName(), id, status);
-            redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái đơn hàng");
+            Order updated = vendorService.updateOrderStatus(auth.getName(), id, status);
+            if (updated.getPaymentMethod() == PaymentMethod.MOMO && status == OrderStatus.CONFIRMED && updated.getPaymentStatus() == PaymentStatus.PAID) {
+                redirect.addFlashAttribute("successMessage", "Đã xác nhận thanh toán MoMo và duyệt đơn hàng #" + updated.getOrderCode() + " thành công!");
+            } else if (status == OrderStatus.CONFIRMED) {
+                redirect.addFlashAttribute("successMessage", "Đã xác nhận duyệt đơn hàng #" + updated.getOrderCode() + " thành công!");
+            } else if (status == OrderStatus.CANCELLED) {
+                redirect.addFlashAttribute("successMessage", "Đã hủy đơn hàng #" + updated.getOrderCode() + " thành công!");
+            } else {
+                redirect.addFlashAttribute("successMessage", "Đã cập nhật đơn hàng #" + updated.getOrderCode() + " sang trạng thái " + status.getDisplayName());
+            }
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
         }
@@ -407,8 +443,8 @@ public class VendorController {
     public String confirmMomoPayment(Authentication auth, @PathVariable Long id,
                                      RedirectAttributes redirect) {
         try {
-            vendorService.confirmManualMomoPayment(auth.getName(), id);
-            redirect.addFlashAttribute("successMessage", "Đã xác nhận cửa hàng nhận được tiền MoMo.");
+            Order updated = vendorService.confirmManualMomoPayment(auth.getName(), id);
+            redirect.addFlashAttribute("successMessage", "Đã xác nhận nhận được tiền MoMo cho đơn hàng #" + updated.getOrderCode() + ".");
         } catch (RuntimeException e) {
             redirect.addFlashAttribute("errorMessage", e.getMessage());
         }

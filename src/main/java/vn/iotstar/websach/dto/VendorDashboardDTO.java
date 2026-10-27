@@ -10,7 +10,9 @@ public class VendorDashboardDTO {
     private long totalStock;
     private long newOrders;
     private long totalOrders;
-    private double deliveredRevenue;
+    private double grossRevenue;              // Tổng doanh số bán sách trước khi giảm giá
+    private double totalDiscount;             // Toàn bộ tiền khuyến mãi/voucher đã trừ vào thu nhập vendor
+    private double deliveredRevenue;          // Doanh thu đơn hàng sau khi khấu trừ khuyến mãi/giảm giá
     private double commission;
     private double bookAcquisitionCost;       // Tiền trả khách khi mua sách cũ
     private double shippingAcquisitionCost;   // Tiền trả cho shipper khi thu gom sách cũ về kho

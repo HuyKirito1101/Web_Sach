@@ -14,6 +14,7 @@ public interface ShipperService {
     DeliveryAssignment getAssignment(String shipperEmail, Long assignmentId);
     DeliveryAssignment updateStatus(String shipperEmail, Long assignmentId,
                                     DeliveryStatus target, String failureReason);
+    double calculateAssignmentIncome(DeliveryAssignment assignment);
     ShipperDashboardDTO getDashboard(String shipperEmail, LocalDate from, LocalDate to);
     ShipperIncomeAnalyticsDTO getIncomeAnalytics(String shipperEmail, Integer year, Integer month);
 }

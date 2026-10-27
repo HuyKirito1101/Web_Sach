@@ -16,6 +16,7 @@ import vn.iotstar.websach.service.PromotionService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -115,33 +116,94 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
                 .sum();
 
-        // 3. Kiểm tra Voucher (ngày bắt đầu, hết hạn, min order value)
-        AppDiscount promo = null;
-        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            String normalizedVoucherCode = voucherCode.trim().toUpperCase(Locale.ROOT);
-            promo = appDiscountRepository.findByCodeAndActiveTrue(normalizedVoucherCode).orElse(null);
-            if (promo == null) {
-                throw new IllegalArgumentException("Mã voucher '" + voucherCode.trim() + "' không tồn tại hoặc đã bị khóa!");
-            }
-            LocalDate today = LocalDate.now();
-            if (promo.getStartDate() != null && today.isBefore(promo.getStartDate())) {
-                throw new IllegalArgumentException("Mã voucher '" + promo.getCode() + "' chưa có hiệu lực (bắt đầu từ " + promo.getStartDate() + ")!");
-            }
-            if (promo.getEndDate() != null && today.isAfter(promo.getEndDate())) {
-                throw new IllegalArgumentException("Mã voucher '" + promo.getCode() + "' đã hết hạn vào ngày " + promo.getEndDate() + "!");
-            }
-            if (promo.getMinOrderValue() != null && totalCartSubtotal < promo.getMinOrderValue()) {
-                throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu "
-                        + String.format("%,.0f đ", promo.getMinOrderValue())
-                        + " để áp dụng mã này (giá trị hiện tại: "
-                        + String.format("%,.0f đ", totalCartSubtotal) + ")!");
-            }
-        }
+        // 3. Kiểm tra Voucher / Promotion
+        Promotion appliedPromo = null;
+        AppDiscount appliedDiscount = null;
         double totalVoucherDiscount = 0.0;
-        if (promo != null && promo.getDiscountPercent() != null && promo.getDiscountPercent() > 0) {
-            totalVoucherDiscount = totalCartSubtotal * promo.getDiscountPercent() / 100.0;
-            if (promo.getMaxDiscountAmount() != null) {
-                totalVoucherDiscount = Math.min(totalVoucherDiscount, promo.getMaxDiscountAmount());
+
+        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
+            String q = voucherCode.trim();
+            // Thử tìm trong Promotion trước
+            appliedPromo = promotionService.findByCodeOrTitle(q).orElse(null);
+            if (appliedPromo == null) {
+                // Thử tìm trong AppDiscount
+                appliedDiscount = appDiscountRepository.findByCodeAndActiveTrue(q.toUpperCase(Locale.ROOT)).orElse(null);
+            }
+
+            if (appliedPromo == null && appliedDiscount == null) {
+                throw new IllegalArgumentException("Mã voucher '" + q + "' không tồn tại hoặc đã bị khóa!");
+            }
+
+            LocalDate today = LocalDate.now();
+
+            if (appliedPromo != null) {
+                if (!Boolean.TRUE.equals(appliedPromo.getActive())) {
+                    throw new IllegalArgumentException("Mã khuyến mãi '" + appliedPromo.getTitle() + "' đang tạm dừng!");
+                }
+                if (appliedPromo.getStartDate() != null && today.isBefore(appliedPromo.getStartDate())) {
+                    throw new IllegalArgumentException("Mã voucher '" + appliedPromo.getDisplayCode() + "' chưa có hiệu lực (bắt đầu từ " + appliedPromo.getStartDate() + ")!");
+                }
+                if (appliedPromo.getEndDate() != null && today.isAfter(appliedPromo.getEndDate())) {
+                    throw new IllegalArgumentException("Mã voucher '" + appliedPromo.getDisplayCode() + "' đã hết hạn vào ngày " + appliedPromo.getEndDate() + "!");
+                }
+
+                // Kiểm tra phạm vi áp dụng (Scope)
+                final Promotion promoToCheck = appliedPromo;
+                double eligibleSubtotal;
+                if (appliedPromo.isAdminPromotion()) {
+                    // Admin: áp dụng cho mọi sách
+                    eligibleSubtotal = totalCartSubtotal;
+                } else if (appliedPromo.isManagerPromotion()) {
+                    // Manager: áp dụng cho tất cả vendor của cơ sở đó
+                    eligibleSubtotal = cartItems.stream()
+                            .filter(ci -> ci.getBookCopy().getBranch() != null && Objects.equals(ci.getBookCopy().getBranch().getId(), promoToCheck.getBranch().getId()))
+                            .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
+                            .sum();
+                    if (eligibleSubtotal <= 0) {
+                        String branchName = appliedPromo.getBranch() != null ? appliedPromo.getBranch().getName() : "cơ sở";
+                        throw new IllegalArgumentException("Mã giảm giá '" + appliedPromo.getTitle() + "' chỉ áp dụng cho sản phẩm thuộc cơ sở " + branchName + "!");
+                    }
+                } else {
+                    // Vendor: chỉ áp dụng cho sản phẩm do vendor đó bán
+                    eligibleSubtotal = cartItems.stream()
+                            .filter(ci -> ci.getBookCopy().getSeller() != null && Objects.equals(ci.getBookCopy().getSeller().getId(), promoToCheck.getVendor().getId()))
+                            .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
+                            .sum();
+                    if (eligibleSubtotal <= 0) {
+                        String vendorName = appliedPromo.getVendor() != null
+                                ? (appliedPromo.getVendor().getFullName() != null && !appliedPromo.getVendor().getFullName().isBlank() ? appliedPromo.getVendor().getFullName() : appliedPromo.getVendor().getEmail())
+                                : "gian hàng";
+                        throw new IllegalArgumentException("Mã giảm giá '" + appliedPromo.getTitle() + "' chỉ áp dụng cho sản phẩm do gian hàng " + vendorName + " bán!");
+                    }
+                }
+
+                if (appliedPromo.getMinOrderValue() != null && eligibleSubtotal < appliedPromo.getMinOrderValue()) {
+                    throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu "
+                            + String.format("%,.0f đ", appliedPromo.getMinOrderValue())
+                            + " để áp dụng mã này (giá trị hiện tại: "
+                            + String.format("%,.0f đ", eligibleSubtotal) + ")!");
+                }
+
+                if (appliedPromo.getType() == PromotionType.SHIPPING_PERCENT) {
+                    totalVoucherDiscount = cappedDiscount(baseShipFee, appliedPromo);
+                } else {
+                    totalVoucherDiscount = cappedDiscount(eligibleSubtotal, appliedPromo);
+                }
+            } else {
+                // AppDiscount
+                if (appliedDiscount.getStartDate() != null && today.isBefore(appliedDiscount.getStartDate())) {
+                    throw new IllegalArgumentException("Mã voucher '" + appliedDiscount.getCode() + "' chưa có hiệu lực (bắt đầu từ " + appliedDiscount.getStartDate() + ")!");
+                }
+                if (appliedDiscount.getEndDate() != null && today.isAfter(appliedDiscount.getEndDate())) {
+                    throw new IllegalArgumentException("Mã voucher '" + appliedDiscount.getCode() + "' đã hết hạn vào ngày " + appliedDiscount.getEndDate() + "!");
+                }
+                if (appliedDiscount.getMinOrderValue() != null && totalCartSubtotal < appliedDiscount.getMinOrderValue()) {
+                    throw new IllegalArgumentException("Đơn hàng chưa đạt giá trị tối thiểu "
+                            + String.format("%,.0f đ", appliedDiscount.getMinOrderValue())
+                            + " để áp dụng mã này (giá trị hiện tại: "
+                            + String.format("%,.0f đ", totalCartSubtotal) + ")!");
+                }
+                totalVoucherDiscount = cappedDiscount(totalCartSubtotal, appliedDiscount);
             }
         }
 
@@ -177,27 +239,70 @@ public class CheckoutServiceImpl implements CheckoutService {
             double branchShipFee = baseShipFee;
             double branchDiscount = 0.0;
 
-            // Chia tổng mức giảm voucher theo tỷ lệ giá trị từng shop. Giới hạn
-            // giảm tối đa chỉ được áp dụng một lần cho toàn giỏ hàng.
-            if (totalVoucherDiscount > 0 && totalCartSubtotal > 0) {
-                branchDiscount += totalVoucherDiscount * branchSubtotal / totalCartSubtotal;
-            }
-
-            // Áp dụng khuyến mãi theo chi nhánh nếu có
-            if (branch != null && branch.getId() != null) {
+            // Áp dụng giảm giá theo Voucher
+            if (totalVoucherDiscount > 0) {
+                if (appliedPromo != null) {
+                    if (appliedPromo.getType() == PromotionType.SHIPPING_PERCENT) {
+                        // Khuyến mãi giảm phí ship: tiền của shipper vẫn cố định (branchShipFee giữ nguyên),
+                        // và số tiền giảm phí ship này được trừ thẳng vào thu nhập của vendor (branchDiscount += shipDiscount)
+                        boolean appliesToThisBranch = false;
+                        if (appliedPromo.isAdminPromotion()) {
+                            appliesToThisBranch = true;
+                        } else if (appliedPromo.isManagerPromotion()) {
+                            appliesToThisBranch = Objects.equals(branch.getId(), appliedPromo.getBranch().getId());
+                        } else if (appliedPromo.isVendorPromotion()) {
+                            final Promotion vendorPromo = appliedPromo;
+                            appliesToThisBranch = branchItems.stream()
+                                    .anyMatch(ci -> ci.getBookCopy().getSeller() != null && Objects.equals(ci.getBookCopy().getSeller().getId(), vendorPromo.getVendor().getId()));
+                        }
+                        if (appliesToThisBranch) {
+                            double shipDiscount = cappedDiscount(branchShipFee, appliedPromo);
+                            branchDiscount += shipDiscount;
+                        }
+                    } else {
+                        // PRODUCT_PERCENT:
+                        if (appliedPromo.isAdminPromotion()) {
+                            // Admin: áp dụng cho mọi sách, phân bổ theo tỷ lệ subtotal của branch
+                            if (totalCartSubtotal > 0) {
+                                branchDiscount += totalVoucherDiscount * branchSubtotal / totalCartSubtotal;
+                            }
+                        } else if (appliedPromo.isManagerPromotion()) {
+                            // Manager: chỉ áp dụng cho cơ sở đó
+                            if (Objects.equals(branch.getId(), appliedPromo.getBranch().getId())) {
+                                branchDiscount += totalVoucherDiscount;
+                            }
+                        } else if (appliedPromo.isVendorPromotion()) {
+                            // Vendor: chỉ áp dụng cho các sản phẩm của vendor đó
+                            final Promotion vendorPromo = appliedPromo;
+                            double vendorBranchSubtotal = branchItems.stream()
+                                    .filter(ci -> ci.getBookCopy().getSeller() != null && Objects.equals(ci.getBookCopy().getSeller().getId(), vendorPromo.getVendor().getId()))
+                                    .mapToDouble(ci -> (ci.getBookCopy().getSellingPrice() != null ? ci.getBookCopy().getSellingPrice() : 0.0) * ci.getQuantity())
+                                    .sum();
+                            if (vendorBranchSubtotal > 0) {
+                                branchDiscount += totalVoucherDiscount;
+                            }
+                        }
+                    }
+                } else if (appliedDiscount != null) {
+                    // AppDiscount: phân bổ theo tỷ lệ
+                    if (totalCartSubtotal > 0) {
+                        branchDiscount += totalVoucherDiscount * branchSubtotal / totalCartSubtotal;
+                    }
+                }
+            } else if (appliedPromo == null && appliedDiscount == null && branch != null && branch.getId() != null) {
+                // Áp dụng khuyến mãi tự động theo chi nhánh nếu user không chọn mã cụ thể
                 List<Promotion> applicablePromotions = promotionService.findApplicablePromotions(
                         branch.getId(), LocalDate.now(), branchSubtotal);
                 double productPromo = applicablePromotions.stream()
                         .filter(p -> p.getType() == null || p.getType() == PromotionType.PRODUCT_PERCENT)
                         .mapToDouble(p -> cappedDiscount(branchSubtotal, p))
                         .max().orElse(0.0);
-                final double currentShipFee = branchShipFee;
                 double shippingPromo = applicablePromotions.stream()
                         .filter(p -> p.getType() == PromotionType.SHIPPING_PERCENT)
-                        .mapToDouble(p -> cappedDiscount(currentShipFee, p))
+                        .mapToDouble(p -> cappedDiscount(branchShipFee, p))
                         .max().orElse(0.0);
-                branchDiscount += productPromo;
-                branchShipFee = Math.max(0, branchShipFee - shippingPromo);
+                // Cả tiền giảm giá sách và tiền giảm phí ship đều được trừ vào thu nhập của vendor
+                branchDiscount += (productPromo + shippingPromo);
             }
 
             double branchFinalAmount = Math.max(0, branchSubtotal + branchShipFee - branchDiscount);
@@ -206,8 +311,6 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             String orderCode = "WS-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
 
-            // COD chỉ PAID sau khi giao thành công; MoMo demo chỉ PAID sau khi
-            // khách báo đã chuyển và Manager chi nhánh kiểm tra thủ công.
             Order order = Order.builder()
                     .orderCode(orderCode)
                     .customer(user)
@@ -264,6 +367,15 @@ public class CheckoutServiceImpl implements CheckoutService {
         double value = amount * promotion.getDiscountPercent() / 100.0;
         if (promotion.getMaxDiscountAmount() != null) {
             value = Math.min(value, promotion.getMaxDiscountAmount());
+        }
+        return Math.max(0.0, value);
+    }
+
+    private double cappedDiscount(double amount, AppDiscount discount) {
+        if (discount.getDiscountPercent() == null) return 0.0;
+        double value = amount * discount.getDiscountPercent() / 100.0;
+        if (discount.getMaxDiscountAmount() != null) {
+            value = Math.min(value, discount.getMaxDiscountAmount());
         }
         return Math.max(0.0, value);
     }

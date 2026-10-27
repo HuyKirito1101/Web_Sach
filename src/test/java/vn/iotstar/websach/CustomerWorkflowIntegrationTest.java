@@ -221,6 +221,36 @@ class CustomerWorkflowIntegrationTest {
     }
 
     @Test
+    void vendorCanConfirmOrderDirectlyWhenMomoAwaitingConfirmation() {
+        User vendor = userRepository.findByEmail("vendor.thuduc1@websachcu.vn").orElseThrow();
+        User user = getOrCreateCustomer("momo-auto-confirm@example.com");
+        BookCopy copy = bookCopyRepository.findAll().stream()
+                .filter(c -> c.getSeller() != null && c.getSeller().getId().equals(vendor.getId()))
+                .filter(c -> c.getQuantity() != null && c.getQuantity() > 0)
+                .findFirst().orElseThrow();
+
+        cartService.clearCart(user);
+        cartService.addToCart(user, copy.getId(), 1);
+        Order order = checkoutService.processCheckout(user, null, "Người nhận", "0912345678",
+                "123 Võ Văn Ngân", activeProviderId(), null, "MOMO", null).getFirst();
+
+        // Khi PENDING, vendor bấm duyệt đơn sẽ báo lỗi rõ ràng
+        assertThatThrownBy(() -> vendorService.updateOrderStatus(vendor.getEmail(), order.getId(), OrderStatus.CONFIRMED))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("chưa hoàn tất chuyển tiền");
+
+        // Khách gửi thông tin đã chuyển
+        customerOrderService.markMomoTransferred(user, order.getId());
+
+        // Vendor bấm xác nhận đơn hàng -> hệ thống tự động xác nhận tiền MoMo & chuyển trạng thái CONFIRMED
+        Order confirmed = vendorService.updateOrderStatus(vendor.getEmail(), order.getId(), OrderStatus.CONFIRMED);
+        assertThat(confirmed.getOrderStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(confirmed.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(confirmed.getPaymentConfirmedAt()).isNotNull();
+        assertThat(confirmed.getPaymentConfirmedBy()).isEqualTo(vendor.getEmail());
+    }
+
+    @Test
     void managerCanClearOnlyCompletedOrdersWithoutDeletingCustomerHistory() {
         User manager = userRepository.findByEmail("manager@websachcu.vn").orElseThrow();
         User customer = getOrCreateCustomer("manager-order-history@example.com");

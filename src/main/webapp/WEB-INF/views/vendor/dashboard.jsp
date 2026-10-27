@@ -321,10 +321,16 @@
                                 <h5 class="fw-bold mb-0 text-dark">Thu Nhập Của Cửa Hàng</h5>
                             </div>
                             <p class="text-muted small mb-0 mt-1">
-                                Số tiền thực tế shop nhận được sau khi khấu trừ phí dịch vụ sàn (<fmt:formatNumber value="${shop != null && shop.appDiscountPercent != null ? shop.appDiscountPercent : 10}" pattern="#,##0"/>%), <strong class="text-danger">toàn bộ chi phí thu mua sách cũ</strong> và <strong class="text-danger">phí trả Shipper khi hoàn tất đổi trả</strong>.
+                                Số tiền thực tế shop nhận được sau khi khấu trừ khuyến mãi/giảm giá voucher, phí dịch vụ sàn (<fmt:formatNumber value="${shop != null && shop.appDiscountPercent != null ? shop.appDiscountPercent : 10}" pattern="#,##0"/>%), <strong class="text-danger">toàn bộ chi phí thu mua sách cũ</strong> và <strong class="text-danger">phí trả Shipper khi hoàn tất đổi trả</strong>.
                             </p>
-                            <c:if test="${stats.totalAcquisitionExpense > 0 || stats.returnShippingCost > 0 || stats.refundedAmount > 0}">
+                            <c:if test="${stats.grossRevenue > 0 || stats.totalDiscount > 0 || stats.totalAcquisitionExpense > 0 || stats.returnShippingCost > 0 || stats.refundedAmount > 0}">
                                 <div class="d-flex flex-wrap gap-3 small mt-2 pt-2 border-top border-success-subtle text-muted">
+                                    <c:if test="${stats.grossRevenue > 0}">
+                                        <span><i class="fa-solid fa-store text-primary me-1"></i>Doanh số bán sách: <strong><fmt:formatNumber value="${stats.grossRevenue}" pattern="#,##0 ₫"/></strong></span>
+                                    </c:if>
+                                    <c:if test="${stats.totalDiscount > 0}">
+                                        <span><i class="fa-solid fa-tags text-danger me-1"></i>Khấu trừ khuyến mãi/voucher: <strong class="text-danger">-<fmt:formatNumber value="${stats.totalDiscount}" pattern="#,##0 ₫"/></strong></span>
+                                    </c:if>
                                     <c:if test="${stats.bookAcquisitionCost > 0}">
                                         <span><i class="fa-solid fa-book text-warning me-1"></i>Tiền trả khách mua sách: <strong class="text-danger">-<fmt:formatNumber value="${stats.bookAcquisitionCost}" pattern="#,##0 ₫"/></strong></span>
                                     </c:if>

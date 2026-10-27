@@ -96,6 +96,16 @@ public class Order {
         return createdAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
     }
 
+    public String getFormattedPaymentSubmittedAt() {
+        if (paymentSubmittedAt == null) return "";
+        return paymentSubmittedAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    public String getFormattedPaymentConfirmedAt() {
+        if (paymentConfirmedAt == null) return "";
+        return paymentConfirmedAt.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

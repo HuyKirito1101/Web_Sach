@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -450,7 +451,17 @@ public class VendorServiceImpl implements VendorService {
         if (order.getPaymentMethod() == PaymentMethod.MOMO
                 && target != OrderStatus.CANCELLED
                 && order.getPaymentStatus() != PaymentStatus.PAID) {
-            throw new IllegalStateException("Đơn MoMo chưa được Vendor xác nhận thanh toán.");
+            if (target == OrderStatus.CONFIRMED && order.getPaymentStatus() == PaymentStatus.AWAITING_CONFIRMATION) {
+                // Tự động xác nhận thanh toán MoMo khi Vendor duyệt đơn
+                order.setPaymentStatus(PaymentStatus.PAID);
+                order.setPaymentConfirmedAt(LocalDateTime.now());
+                order.setPaymentConfirmedBy(vendorEmail);
+                send("Đơn hàng " + order.getOrderCode() + " đã được Vendor xác nhận thanh toán MoMo.");
+            } else if (order.getPaymentStatus() == PaymentStatus.PENDING) {
+                throw new IllegalStateException("Đơn MoMo chưa thể duyệt vì khách hàng chưa hoàn tất chuyển tiền hoặc chưa bấm xác nhận đã chuyển.");
+            } else {
+                throw new IllegalStateException("Đơn MoMo chưa được Vendor xác nhận thanh toán.");
+            }
         }
         if (order.getPaymentMethod() == PaymentMethod.MOMO
                 && target == OrderStatus.CANCELLED
@@ -795,9 +806,33 @@ public class VendorServiceImpl implements VendorService {
                 .filter(item -> to == null || !item.getOrder().getCreatedAt().toLocalDate().isAfter(to))
                 .toList();
 
-        double revenue = vendorDeliveredItems.stream()
-                .mapToDouble(i -> Optional.ofNullable(i.getPrice()).orElse(0.0) * Optional.ofNullable(i.getQuantity()).orElse(1))
-                .sum();
+        // Nhóm theo Order để tính doanh thu và khấu trừ tiền khuyến mãi/giảm giá của từng đơn (kể cả mã giảm phí ship cũng trừ vào vendor)
+        Map<Order, List<OrderItem>> itemsByOrder = vendorDeliveredItems.stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrder));
+
+        double grossRevenue = 0.0;
+        double totalDiscount = 0.0;
+
+        for (Map.Entry<Order, List<OrderItem>> entry : itemsByOrder.entrySet()) {
+            Order o = entry.getKey();
+            List<OrderItem> oItems = entry.getValue();
+
+            double vendorOrderSubtotal = oItems.stream()
+                    .mapToDouble(i -> Optional.ofNullable(i.getPrice()).orElse(0.0) * Optional.ofNullable(i.getQuantity()).orElse(1))
+                    .sum();
+            grossRevenue += vendorOrderSubtotal;
+
+            double orderTotal = (o.getTotalAmount() != null && o.getTotalAmount() > 0) ? o.getTotalAmount() : vendorOrderSubtotal;
+            double orderDiscount = Optional.ofNullable(o.getDiscountAmount()).orElse(0.0);
+
+            // Tỷ lệ phân bổ giảm giá cho vendor trong đơn này
+            double vendorDiscount = orderTotal > 0 ? (orderDiscount * (vendorOrderSubtotal / orderTotal)) : orderDiscount;
+            vendorDiscount = Math.min(vendorDiscount, vendorOrderSubtotal);
+            totalDiscount += vendorDiscount;
+        }
+
+        // Doanh thu đơn hàng đã giao sau khi trừ toàn bộ khuyến mãi (cả giảm giá sách và giảm giá phí ship)
+        double revenue = Math.max(0.0, grossRevenue - totalDiscount);
 
         double commissionRate = Optional.ofNullable(shop.getAppDiscountPercent()).orElse(10.0) / 100.0;
         double commission = revenue * commissionRate;
@@ -879,6 +914,8 @@ public class VendorServiceImpl implements VendorService {
                 .totalStock(products.stream().mapToLong(p -> Optional.ofNullable(p.getQuantity()).orElse(0)).sum())
                 .newOrders(newOrdersCount)
                 .totalOrders(vendorOrders.size())
+                .grossRevenue(grossRevenue)
+                .totalDiscount(totalDiscount)
                 .deliveredRevenue(revenue)
                 .commission(commission)
                 .bookAcquisitionCost(bookAcquisitionCost)
@@ -948,19 +985,32 @@ public class VendorServiceImpl implements VendorService {
             monthlyData.put(m, new ArrayList<>(Collections.nCopies(days, 0.0)));
         }
 
+        // Nhóm theo Order để tính doanh thu sau khi trừ toàn bộ khuyến mãi/giảm giá của từng đơn
+        Map<Order, List<OrderItem>> itemsByOrder = vendorDeliveredItems.stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrder));
+
         double totalYear = 0.0;
-        for (OrderItem item : vendorDeliveredItems) {
-            LocalDate dt = item.getOrder().getCreatedAt().toLocalDate();
+        for (Map.Entry<Order, List<OrderItem>> entry : itemsByOrder.entrySet()) {
+            Order o = entry.getKey();
+            LocalDate dt = o.getCreatedAt().toLocalDate();
             if (dt.getYear() == targetYear) {
-                double itemRev = Optional.ofNullable(item.getPrice()).orElse(0.0) * Optional.ofNullable(item.getQuantity()).orElse(1);
-                totalYear += itemRev;
+                List<OrderItem> oItems = entry.getValue();
+                double vendorOrderSubtotal = oItems.stream()
+                        .mapToDouble(i -> Optional.ofNullable(i.getPrice()).orElse(0.0) * Optional.ofNullable(i.getQuantity()).orElse(1))
+                        .sum();
+                double orderTotal = (o.getTotalAmount() != null && o.getTotalAmount() > 0) ? o.getTotalAmount() : vendorOrderSubtotal;
+                double orderDiscount = Optional.ofNullable(o.getDiscountAmount()).orElse(0.0);
+                double vendorDiscount = orderTotal > 0 ? (orderDiscount * (vendorOrderSubtotal / orderTotal)) : orderDiscount;
+                double netOrderRev = Math.max(0.0, vendorOrderSubtotal - vendorDiscount);
+
+                totalYear += netOrderRev;
                 int mIdx = dt.getMonthValue() - 1;
-                yearlyMonths.set(mIdx, yearlyMonths.get(mIdx) + itemRev);
+                yearlyMonths.set(mIdx, yearlyMonths.get(mIdx) + netOrderRev);
 
                 List<Double> daysList = monthlyData.get(dt.getMonthValue());
                 int dayIdx = dt.getDayOfMonth() - 1;
                 if (dayIdx >= 0 && dayIdx < daysList.size()) {
-                    daysList.set(dayIdx, daysList.get(dayIdx) + itemRev);
+                    daysList.set(dayIdx, daysList.get(dayIdx) + netOrderRev);
                 }
             }
         }

@@ -5,16 +5,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import vn.iotstar.websach.dto.PromotionEligibilityDTO;
+import vn.iotstar.websach.dto.PromotionPreviewResult;
 import vn.iotstar.websach.entity.Address;
 import vn.iotstar.websach.entity.CartItem;
 import vn.iotstar.websach.entity.Order;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.*;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/checkout")
@@ -27,6 +28,7 @@ public class CheckoutController {
     private final ShippingProviderService shippingProviderService;
     private final UserService userService;
     private final AppDiscountService appDiscountService;
+    private final PromotionService promotionService;
 
     @GetMapping
     public String showCheckoutPage(Authentication authentication, Model model) {
@@ -44,6 +46,10 @@ public class CheckoutController {
         List<Address> addresses = profileService.getUserAddresses(user);
         Double subtotal = cartService.getCartTotal(user);
 
+        // Đánh giá tất cả khuyến mãi (Admin: mọi sách, Manager: toàn cơ sở, Vendor: riêng shop)
+        List<PromotionEligibilityDTO> allVouchers = promotionService.evaluatePromotionsForCart(user);
+        long applicableCount = allVouchers.stream().filter(PromotionEligibilityDTO::isApplicable).count();
+
         model.addAttribute("cartItems", cartItems);
         model.addAttribute("addresses", addresses);
         model.addAttribute("shippingProviders", shippingProviderService.findAllProviders().stream()
@@ -51,13 +57,10 @@ public class CheckoutController {
                 .toList());
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("user", user);
-        // Danh sách mã giảm giá có thể dùng
-        model.addAttribute("availableDiscounts", appDiscountService.findAllDiscounts()
-                .stream().filter(d -> Boolean.TRUE.equals(d.getActive()))
-                .filter(d -> d.getStartDate() == null || !LocalDate.now().isBefore(d.getStartDate()))
-                .filter(d -> d.getEndDate() == null || !LocalDate.now().isAfter(d.getEndDate()))
-                .filter(d -> d.getMinOrderValue() == null || subtotal >= d.getMinOrderValue())
-                .toList());
+
+        model.addAttribute("allVouchers", allVouchers);
+        model.addAttribute("applicableCount", applicableCount);
+        model.addAttribute("availableDiscounts", allVouchers.stream().filter(PromotionEligibilityDTO::isApplicable).toList());
 
         return "customer/checkout";
     }
@@ -70,26 +73,16 @@ public class CheckoutController {
         }
         User user = userService.findByEmail(authentication.getName())
                 .orElseThrow(() -> new SecurityException("Tài khoản không tồn tại."));
-        double subtotal = cartService.getCartTotal(user);
-        var discount = appDiscountService.findByCode(code == null ? "" : code.trim().toUpperCase(Locale.ROOT))
-                .orElseThrow(() -> new IllegalArgumentException("Mã voucher không tồn tại hoặc đã bị khóa."));
-        LocalDate today = LocalDate.now();
-        if (discount.getStartDate() != null && today.isBefore(discount.getStartDate())) {
-            throw new IllegalArgumentException("Mã voucher chưa có hiệu lực.");
-        }
-        if (discount.getEndDate() != null && today.isAfter(discount.getEndDate())) {
-            throw new IllegalArgumentException("Mã voucher đã hết hạn.");
-        }
-        if (discount.getMinOrderValue() != null && subtotal < discount.getMinOrderValue()) {
-            throw new IllegalArgumentException("Giỏ hàng chưa đạt giá trị tối thiểu của voucher.");
-        }
-        if (discount.getDiscountPercent() == null || discount.getDiscountPercent() <= 0
-                || discount.getDiscountPercent() > 100) {
-            throw new IllegalArgumentException("Cấu hình voucher không hợp lệ.");
-        }
-        double amount = subtotal * discount.getDiscountPercent() / 100.0;
-        if (discount.getMaxDiscountAmount() != null) amount = Math.min(amount, discount.getMaxDiscountAmount());
-        return Map.of("valid", true, "discountAmount", Math.max(0.0, amount), "code", discount.getCode());
+
+        PromotionPreviewResult result = promotionService.previewPromotion(user, code);
+        Map<String, Object> response = new HashMap<>();
+        response.put("valid", result.isValid());
+        response.put("discountAmount", result.getDiscountAmount());
+        response.put("code", result.getCode());
+        response.put("title", result.getTitle() != null ? result.getTitle() : "");
+        response.put("scopeLabel", result.getScopeLabel() != null ? result.getScopeLabel() : "");
+        response.put("message", result.getMessage() != null ? result.getMessage() : "");
+        return response;
     }
 
     @ExceptionHandler({IllegalArgumentException.class, SecurityException.class})

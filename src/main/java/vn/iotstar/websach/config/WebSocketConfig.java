@@ -106,6 +106,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             }
             return;
         }
+        if (destination.startsWith("/topic/vendor-chat/")) {
+            return;
+        }
+        if (destination.startsWith("/topic/vendor/")) {
+            requireAnyRole(authentication, "ROLE_ADMIN", "ROLE_VENDOR");
+            return;
+        }
         throw new AccessDeniedException("Không được phép đăng ký kênh WebSocket này.");
     }
 

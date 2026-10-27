@@ -19,6 +19,7 @@ import vn.iotstar.websach.repository.OrderRepository;
 import vn.iotstar.websach.repository.SellRequestRepository;
 import vn.iotstar.websach.repository.SupportConversationRepository;
 import vn.iotstar.websach.repository.UserRepository;
+import vn.iotstar.websach.repository.VendorConversationRepository;
 
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,7 @@ public class NotificationControllerAdvice {
     private final SellRequestRepository sellRequestRepository;
     private final DeliveryAssignmentRepository deliveryAssignmentRepository;
     private final SupportConversationRepository supportConversationRepository;
+    private final VendorConversationRepository vendorConversationRepository;
 
     @ModelAttribute
     public void addNotificationAttributes(Model model) {
@@ -44,6 +46,9 @@ public class NotificationControllerAdvice {
 
         User user = userRepository.findByEmail(auth.getName()).orElse(null);
         if (user == null || user.getRole() == null) return;
+
+        long userMessageBadge = vendorConversationRepository.countByCustomerIdAndCustomerUnreadTrue(user.getId());
+        model.addAttribute("userMessageBadge", userMessageBadge);
 
         RoleName role = user.getRole().getName();
         if (role == RoleName.ROLE_MANAGER && user.getBranch() != null) {
@@ -83,7 +88,8 @@ public class NotificationControllerAdvice {
                     .count();
 
             long vSellBadge = sellRequestRepository.countByBranchIdAndStatus(branchId, SellRequestStatus.PENDING);
-            long vTotalNotif = vOrderBadge + vReturnBadge + vSellBadge;
+            long vMessageBadge = vendorConversationRepository.countByVendorIdAndVendorUnreadTrue(vendorId);
+            long vTotalNotif = vOrderBadge + vReturnBadge + vSellBadge + vMessageBadge;
 
             model.addAttribute("vNewOrders", vNewOrders);
             model.addAttribute("vReadyOrders", vReadyOrders);
@@ -91,6 +97,7 @@ public class NotificationControllerAdvice {
             model.addAttribute("vOrderBadge", vOrderBadge);
             model.addAttribute("vReturnBadge", vReturnBadge);
             model.addAttribute("vSellBadge", vSellBadge);
+            model.addAttribute("vMessageBadge", vMessageBadge);
             model.addAttribute("vTotalNotif", vTotalNotif);
 
         } else if (role == RoleName.ROLE_SHIPPER) {

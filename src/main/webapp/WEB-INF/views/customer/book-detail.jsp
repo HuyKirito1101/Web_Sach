@@ -1,4 +1,4 @@
-﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
@@ -142,7 +142,7 @@
                                     <td>
                                         <div class="fw-bold text-primary"><i class="fa-solid fa-store me-2"></i><c:out value="${cp.branch.name}"/></div>
                                         <c:if test="${cp.seller != null}">
-                                            <span class="badge bg-secondary font-monospace mt-1"><i class="fa-solid fa-user-tie me-1"></i><c:out value="${cp.seller.fullName}"/></span>
+                                            <a href="/chat/vendor?bookCopyId=${cp.id}" class="badge bg-secondary text-decoration-none font-monospace mt-1" title="Nhấp để nhắn tin với người bán"><i class="fa-solid fa-user-tie me-1"></i><c:out value="${cp.seller.fullName}"/> <i class="fa-solid fa-comment-dots ms-1 text-warning"></i></a>
                                         </c:if>
                                     </td>
                                     <td><span class="badge bg-info text-dark">${cp.conditionRating}</span></td>
@@ -167,6 +167,12 @@
                                             <input type="hidden" name="buyNow" value="true"/>
                                             <button type="submit" class="btn btn-danger btn-sm rounded-pill fw-bold px-3">
                                                 <i class="fa-solid fa-bolt me-1"></i>Mua Ngay
+                                            </button>
+                                        </form>
+                                        <a href="/chat/vendor?bookCopyId=${cp.id}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 ms-1" title="Nhắn tin với Shop">
+                                            <i class="fa-solid fa-comments me-1"></i>Chat với Shop
+                                        </a>
+<div style="display:none"><button>
                                             </button>
                                         </form>
                                     </td>

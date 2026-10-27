@@ -56,6 +56,11 @@
                                 <tr>
                                     <td class="ps-3 fw-bold text-dark">
                                         <c:out value="${p.title}"/>
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px;">
+                                                <i class="fa-solid fa-tag me-1 text-warning"></i>${p.displayCode}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <c:choose>
@@ -154,6 +159,10 @@
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Tên chương trình khuyến mãi: <span class="text-danger">*</span></label>
                                 <input class="form-control" name="title" placeholder="VD: Giảm giá sách văn học cuối tuần..." required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Mã khuyến mãi (Tùy chọn):</label>
+                                <input class="form-control font-monospace" name="code" placeholder="VD: SHOPVIP10 (để trống hệ thống tự tạo mã)">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label small fw-bold">Loại khuyến mãi: <span class="text-danger">*</span></label>

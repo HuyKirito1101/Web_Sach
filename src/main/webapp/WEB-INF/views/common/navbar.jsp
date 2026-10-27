@@ -42,6 +42,18 @@
                         <i class="fa-solid fa-cart-shopping me-1 fs-5"></i>Giỏ hàng
                     </a>
                 </li>
+                <c:if test="${pageContext.request.userPrincipal != null}">
+                    <li class="nav-item">
+                        <a class="nav-link nav-main-link ${currentUri.startsWith('/chat/vendor') ? 'text-warning' : 'text-white'} fw-medium position-relative" href="/chat/vendor" title="Tin nhắn với Shop">
+                            <i class="fa-solid fa-comments me-1 fs-5"></i>Tin nhắn
+                            <c:if test="${userMessageBadge > 0}">
+                                <span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger border border-dark" style="font-size: 10px;">
+                                    ${userMessageBadge}
+                                </span>
+                            </c:if>
+                        </a>
+                    </li>
+                </c:if>
 
                 <c:choose>
                     <c:when test="${pageContext.request.userPrincipal != null}">
@@ -60,6 +72,14 @@
                                         <span class="badge bg-danger rounded-pill">${vTotalNotif}</span>
                                     </li>
                                     <li><hr class="dropdown-divider my-1"></li>
+                                    <c:if test="${vMessageBadge > 0}">
+                                        <li>
+                                            <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/vendor/messages">
+                                                <div><i class="fa-solid fa-comments text-primary me-2"></i>Tin nhắn khách hàng</div>
+                                                <span class="badge bg-danger rounded-pill">${vMessageBadge}</span>
+                                            </a>
+                                        </li>
+                                    </c:if>
                                     <c:if test="${vOrderBadge > 0}">
                                         <li>
                                             <a class="dropdown-item py-2 rounded d-flex justify-content-between align-items-center small" href="/vendor/orders">
@@ -165,6 +185,14 @@
                                     <li><hr class="dropdown-divider"></li>
                                 </c:if>
                                 <li><a class="dropdown-item" href="/profile"><i class="fa-solid fa-user me-2 text-primary"></i>Hồ sơ cá nhân</a></li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center justify-content-between" href="/chat/vendor">
+                                        <div><i class="fa-solid fa-comments me-2 text-primary"></i>Tin nhắn người bán</div>
+                                        <c:if test="${userMessageBadge > 0}">
+                                            <span class="badge bg-danger rounded-pill" style="font-size: 11px;">${userMessageBadge}</span>
+                                        </c:if>
+                                    </a>
+                                </li>
                                 <li><a class="dropdown-item" href="/orders"><i class="fa-solid fa-receipt me-2 text-success"></i>Đơn hàng của tôi</a></li>
                                 <li><a class="dropdown-item" href="/sell-books"><i class="fa-solid fa-hand-holding-dollar me-2 text-warning"></i>Yêu cầu thu mua sách</a></li>
                                 <li><a class="dropdown-item" href="/favorites"><i class="fa-solid fa-heart me-2 text-danger"></i>Sách yêu thích</a></li>

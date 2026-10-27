@@ -117,6 +117,14 @@
                     </c:if>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/vendor/messages" class="nav-link d-flex align-items-center justify-content-between ${pageContext.request.requestURI.contains('/vendor/messages') ? 'active' : ''}">
+                    <div><i class="fa-solid fa-comments"></i> Tin Nhắn Khách</div>
+                    <c:if test="${vMessageBadge > 0}">
+                        <span class="badge bg-danger rounded-pill px-2 py-1" id="vendorSidebarMessageBadge" style="font-size: 11px;">${vMessageBadge}</span>
+                    </c:if>
+                </a>
+            </li>
             <li class="nav-item"><a href="/vendor/promotions" class="nav-link ${pageContext.request.requestURI.contains('/vendor/promotions') ? 'active' : ''}"><i class="fa-solid fa-percent"></i> Khuyến Mãi</a></li>
             <li class="nav-item">
                 <a href="/vendor/sell-requests" class="nav-link d-flex align-items-center justify-content-between ${pageContext.request.requestURI.contains('/vendor/sell-requests') ? 'active' : ''}">

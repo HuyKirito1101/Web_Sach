@@ -15,10 +15,10 @@
             <c:if test="${not empty successMessage}"><div class="alert alert-success"><c:out value="${successMessage}"/></div></c:if>
             <c:if test="${not empty errorMessage}"><div class="alert alert-danger"><c:out value="${errorMessage}"/></div></c:if>
             <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
-                <thead class="table-light"><tr><th>Tên</th><th>Phạm vi</th><th>Loại</th><th>Mức giảm</th><th>Đơn tối thiểu</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead>
+                <thead class="table-light"><tr><th>Tên Chương Trình</th><th>Phạm vi</th><th>Loại</th><th>Mức giảm</th><th>Đơn tối thiểu</th><th>Thời gian</th><th>Trạng thái</th><th></th></tr></thead>
                 <tbody>
                     <c:forEach var="p" items="${promotions}"><tr>
-                        <td class="fw-bold"><c:out value="${p.title}"/></td><td><c:out value="${p.branch == null ? 'Toàn hệ thống' : p.branch.name}"/></td>
+                        <td class="fw-bold"><c:out value="${p.title}"/><div class="mt-1"><span class="badge bg-light text-dark border font-monospace" style="font-size: 11px;"><i class="fa-solid fa-tag me-1 text-warning"></i>${p.displayCode}</span></div></td><td><c:out value="${p.branch == null ? 'Toàn hệ thống' : p.branch.name}"/></td>
                         <td><span class="badge bg-info text-dark">${p.type == 'SHIPPING_PERCENT' ? 'Phí vận chuyển' : 'Sản phẩm'}</span></td>
                         <td>${p.discountPercent}% <c:if test="${p.maxDiscountAmount != null}"><small class="text-muted">(tối đa <fmt:formatNumber value="${p.maxDiscountAmount}" pattern="#,##0 ₫" />)</small></c:if></td>
                         <td><fmt:formatNumber value="${p.minOrderValue}" pattern="#,##0 ₫" /></td><td>${p.startDate} → ${p.endDate}</td>
@@ -39,6 +39,7 @@
         <div class="modal-header"><h5 class="modal-title fw-bold">Tạo chương trình khuyến mãi</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
             <div class="mb-3"><label class="form-label">Tên chương trình</label><input name="title" class="form-control" required></div>
+            <div class="mb-3"><label class="form-label">Mã khuyến mãi (Tùy chọn)</label><input name="code" class="form-control font-monospace" placeholder="VD: ALLSACH10 (để trống hệ thống tự tạo mã)"></div>
             <div class="mb-3"><label class="form-label">Phạm vi</label><select name="branchId" class="form-select"><option value="">Toàn hệ thống</option><c:forEach var="b" items="${branches}"><option value="${b.id}">${b.name}</option></c:forEach></select></div>
             <div class="mb-3"><label class="form-label">Loại giảm</label><select name="type" class="form-select"><c:forEach var="item" items="${types}"><option value="${item}">${item == 'SHIPPING_PERCENT' ? 'Giảm phí vận chuyển' : 'Giảm giá sản phẩm'}</option></c:forEach></select></div>
             <div class="row"><div class="col-6 mb-3"><label class="form-label">Phần trăm giảm</label><input type="number" min="0" max="100" step="0.1" name="discountPercent" value="10" class="form-control" required></div><div class="col-6 mb-3"><label class="form-label">Giảm tối đa</label><input type="number" min="0" name="maxDiscountAmount" class="form-control"></div></div>
