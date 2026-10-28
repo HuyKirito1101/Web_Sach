@@ -155,7 +155,7 @@
                                         </div>
                                         <div class="small d-flex align-items-center gap-2 mt-1 flex-wrap">
                                             <span class="text-danger fw-bold fs-6">
-                                                <fmt:formatNumber value="${currentBookCopy.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                                <fmt:formatNumber value="${currentBookCopy.sellingPrice}" pattern="#,##0"/> đ
                                             </span>
                                             <span class="badge bg-info text-dark">${currentBookCopy.conditionRating}</span>
                                             <span class="badge bg-secondary font-monospace"><c:out value="${currentBookCopy.branch.name}"/></span>
@@ -250,7 +250,7 @@
                                                                 </a>
                                                                 <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
                                                                     <span class="text-danger fw-bold small">
-                                                                        <fmt:formatNumber value="${m.bookCopy.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                                                        <fmt:formatNumber value="${m.bookCopy.sellingPrice}" pattern="#,##0"/> đ
                                                                     </span>
                                                                     <span class="badge bg-info text-dark" style="font-size: 10px;">${m.bookCopy.conditionRating}</span>
                                                                 </div>

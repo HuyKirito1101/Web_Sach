@@ -75,11 +75,11 @@
                                         </div>
                                     </td>
                                     <td class="fw-bold">
-                                        <fmt:formatNumber value="${item.price}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                        <fmt:formatNumber value="${item.price}" pattern="#,##0"/> đ
                                     </td>
                                     <td>${item.quantity}</td>
                                     <td class="fw-bold text-danger">
-                                        <fmt:formatNumber value="${item.price * item.quantity}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                        <fmt:formatNumber value="${item.price * item.quantity}" pattern="#,##0"/> đ
                                     </td>
                                     <td>
                                         <c:if test="${order.orderStatus == 'DELIVERED'}">
@@ -115,7 +115,7 @@
                                     Hãy kiểm tra đúng người nhận trên QR trước khi chuyển. Đây là thanh toán demo được Vendor xác nhận thủ công.
                                 </div>
                                 <p class="mb-2"><strong>Số tiền:</strong>
-                                    <span class="text-danger fw-bold fs-5"><fmt:formatNumber value="${order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                    <span class="text-danger fw-bold fs-5"><fmt:formatNumber value="${order.finalAmount}" pattern="#,##0"/> đ</span>
                                 </p>
                                 <p class="mb-3"><strong>Nội dung chuyển tiền:</strong>
                                     <code class="fs-6 user-select-all"><c:out value="${order.orderCode}"/></code>
@@ -208,17 +208,17 @@
                                     <div class="mb-1"><strong>Cơ sở tiếp nhận:</strong> <c:out value="${order.branch != null ? order.branch.name : ''}"/> - <c:out value="${order.branch != null ? order.branch.address : ''}"/></div>
                                     <div class="d-flex justify-content-between align-items-center border-top pt-1 text-success fw-bold">
                                         <span>Số tiền được hoàn:</span>
-                                        <span><fmt:formatNumber value="${storeRefund}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                        <span><fmt:formatNumber value="${storeRefund}" pattern="#,##0"/> đ</span>
                                     </div>
                                 </div>
                                 <div id="calcShipperInfo" class="d-none">
                                     <div class="d-flex justify-content-between mb-1">
                                         <span>50% phí ship hoàn trả khách chịu:</span>
-                                        <span class="text-danger fw-bold">-<fmt:formatNumber value="${halfShipping}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                        <span class="text-danger fw-bold">-<fmt:formatNumber value="${halfShipping}" pattern="#,##0"/> đ</span>
                                     </div>
                                     <div class="d-flex justify-content-between border-top pt-1 text-success fw-bold">
                                         <span>Số tiền hoàn lại dự kiến:</span>
-                                        <span><fmt:formatNumber value="${shipperRefund}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                                        <span><fmt:formatNumber value="${shipperRefund}" pattern="#,##0"/> đ</span>
                                     </div>
                                 </div>
                             </div>
@@ -271,16 +271,16 @@
                                     <div class="small text-dark p-2 bg-white rounded border mb-2">
                                         <div><strong>Địa chỉ cơ sở nhận hoàn:</strong> <c:out value="${order.returnAddress}"/></div>
                                         <div><strong>Lý do:</strong> <c:out value="${order.returnReason}"/></div>
-                                        <div class="text-success fw-bold mt-1">Số tiền được hoàn: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></div>
+                                        <div class="text-success fw-bold mt-1">Số tiền được hoàn: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" pattern="#,##0"/> đ</div>
                                     </div>
                                     <div class="small text-muted fst-italic">Vui lòng mang sách đến cơ sở chi nhánh trong giờ làm việc để nhân viên kiểm tra và hoàn tiền.</div>
                                 </c:when>
                                 <c:otherwise>
-                                    <p class="small mb-2">Phương thức: <span class="badge bg-warning text-dark">Shipper đến nhận tại nhà</span> (Khách chịu 50% phí ship: <fmt:formatNumber value="${order.returnShippingFee != null ? order.returnShippingFee : 10000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>).</p>
+                                    <p class="small mb-2">Phương thức: <span class="badge bg-warning text-dark">Shipper đến nhận tại nhà</span> (Khách chịu 50% phí ship: <fmt:formatNumber value="${order.returnShippingFee != null ? order.returnShippingFee : 10000}" pattern="#,##0"/> đ).</p>
                                     <div class="small text-dark p-2 bg-white rounded border mb-2">
                                         <div><strong>Địa chỉ lấy sách:</strong> <c:out value="${order.returnAddress != null ? order.returnAddress : order.shippingAddress}"/></div>
                                         <div><strong>Lý do:</strong> <c:out value="${order.returnReason}"/></div>
-                                        <div class="text-success fw-bold mt-1">Số tiền hoàn dự kiến: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></div>
+                                        <div class="text-success fw-bold mt-1">Số tiền hoàn dự kiến: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" pattern="#,##0"/> đ</div>
                                     </div>
                                     <div class="small text-muted fst-italic">Cửa hàng đang điều phối Shipper đến địa chỉ của bạn để nhận lại sách.</div>
                                 </c:otherwise>
@@ -292,7 +292,7 @@
                         <div class="alert alert-info border-0 mb-0">
                             <h6 class="fw-bold mb-1"><i class="fa-solid fa-box-archive me-1"></i> Sách Đã Về Kho Chi Nhánh</h6>
                             <p class="small mb-1">Cửa hàng đã nhận lại sách hoàn trả. Đang tiến hành duyệt hoàn tiền cho bạn.</p>
-                            <div class="small fw-bold text-dark">Số tiền hoàn trả: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></div>
+                            <div class="small fw-bold text-dark">Số tiền hoàn trả: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" pattern="#,##0"/> đ</div>
                         </div>
                     </c:when>
 
@@ -300,7 +300,7 @@
                         <div class="alert alert-success border-0 mb-0">
                             <h6 class="fw-bold mb-1"><i class="fa-solid fa-circle-check me-1"></i> Đã Hoàn Tiền Thành Công</h6>
                             <p class="small mb-1">Giao dịch trả hàng và hoàn tiền đã hoàn tất.</p>
-                            <div class="small fw-bold text-success">Số tiền đã hoàn: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></div>
+                            <div class="small fw-bold text-success">Số tiền đã hoàn: <fmt:formatNumber value="${order.refundAmount != null ? order.refundAmount : order.finalAmount}" pattern="#,##0"/> đ</div>
                         </div>
                     </c:when>
 
@@ -346,20 +346,20 @@
                 <hr>
                 <div class="d-flex justify-content-between mb-1">
                     <span>Tạm tính sách:</span>
-                    <span><fmt:formatNumber value="${order.totalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                    <span><fmt:formatNumber value="${order.totalAmount}" pattern="#,##0"/> đ</span>
                 </div>
                 <div class="d-flex justify-content-between mb-1">
                     <span>Phí vận chuyển:</span>
-                    <span><fmt:formatNumber value="${order.shippingFee}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                    <span><fmt:formatNumber value="${order.shippingFee}" pattern="#,##0"/> đ</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2 text-success">
                     <span>Giảm giá:</span>
-                    <span>-<fmt:formatNumber value="${order.discountAmount != null ? order.discountAmount : 0}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                    <span>-<fmt:formatNumber value="${order.discountAmount != null ? order.discountAmount : 0}" pattern="#,##0"/> đ</span>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between">
                     <span class="fw-bold fs-5">Tổng thanh toán:</span>
-                    <span class="fw-bold fs-5 text-danger"><fmt:formatNumber value="${order.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                    <span class="fw-bold fs-5 text-danger"><fmt:formatNumber value="${order.finalAmount}" pattern="#,##0"/> đ</span>
                 </div>
             </div>
         </div>

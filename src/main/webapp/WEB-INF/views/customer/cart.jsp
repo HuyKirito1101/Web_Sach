@@ -64,7 +64,7 @@
                                             </td>
                                             <td class="small fw-medium text-secondary"><c:out value="${item.bookCopy.branch.name}"/></td>
                                             <td class="fw-bold text-danger">
-                                                <fmt:formatNumber value="${item.bookCopy.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                                <fmt:formatNumber value="${item.bookCopy.sellingPrice}" pattern="#,##0"/> đ
                                             </td>
                                             <td>
                                                 <form action="/cart/update" method="POST" class="d-flex align-items-center gap-1">
@@ -74,7 +74,7 @@
                                                 </form>
                                             </td>
                                             <td class="fw-bold text-dark">
-                                                <fmt:formatNumber value="${item.bookCopy.sellingPrice * item.quantity}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                                <fmt:formatNumber value="${item.bookCopy.sellingPrice * item.quantity}" pattern="#,##0"/> đ
                                             </td>
                                             <td>
                                                 <form action="/cart/delete" method="POST">
@@ -99,7 +99,7 @@
                         <div class="d-flex justify-content-between mb-2">
                             <span>Tạm tính:</span>
                             <span class="fw-bold text-dark">
-                                <fmt:formatNumber value="${totalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                <fmt:formatNumber value="${totalAmount}" pattern="#,##0"/> đ
                             </span>
                         </div>
                         <div class="d-flex justify-content-between mb-3">
@@ -110,7 +110,7 @@
                         <div class="d-flex justify-content-between mb-4">
                             <span class="fw-bold fs-5">Tổng tiền:</span>
                             <span class="fw-bold fs-5 text-danger">
-                                <fmt:formatNumber value="${totalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                <fmt:formatNumber value="${totalAmount}" pattern="#,##0"/> đ
                             </span>
                         </div>
 

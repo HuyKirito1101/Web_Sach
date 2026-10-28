@@ -67,7 +67,7 @@
                                         <div class="small text-muted text-truncate" style="max-width: 250px;"><c:out value="${p.note}"/></div>
                                     </td>
                                     <td>
-                                        <span class="fw-bold text-success"><fmt:formatNumber value="${p.sellingPrice}" pattern="#,#00 ₫"/></span>
+                                        <span class="fw-bold text-success"><fmt:formatNumber value="${p.sellingPrice}" pattern="#,##0"/> đ</span>
                                     </td>
                                     <td>
                                         <span class="fw-bold ${p.quantity > 0 ? 'text-dark' : 'text-danger'}">${p.quantity}</span>

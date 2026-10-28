@@ -119,6 +119,12 @@ public class CheckoutController {
             return "redirect:/orders?multiSuccess=" + orders.size();
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("recipientName", recipientName);
+            model.addAttribute("phone", phone);
+            model.addAttribute("shippingAddress", shippingAddress);
+            model.addAttribute("selectedShippingProviderId", shippingProviderId);
+            model.addAttribute("selectedPaymentMethod", paymentMethod);
+            model.addAttribute("note", note);
             return showCheckoutPage(authentication, model);
         }
     }

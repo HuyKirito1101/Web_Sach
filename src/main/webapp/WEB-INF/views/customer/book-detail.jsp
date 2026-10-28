@@ -148,7 +148,7 @@
                                     <td><span class="badge bg-info text-dark">${cp.conditionRating}</span></td>
                                     <td class="small text-muted"><c:out value="${cp.note != null ? cp.note : 'Không có'}"/></td>
                                     <td class="fw-bold text-danger">
-                                        <fmt:formatNumber value="${cp.sellingPrice}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                        <fmt:formatNumber value="${cp.sellingPrice}" pattern="#,##0"/> đ
                                     </td>
                                     <td><span class="badge bg-success">${cp.quantity} cuốn</span></td>
                                     <td>

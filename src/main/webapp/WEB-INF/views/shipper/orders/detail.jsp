@@ -218,7 +218,7 @@
 
                             <dt class="col-sm-4 text-secondary"><i class="fa-solid fa-money-bill-wave text-success me-1"></i>Thu nhập nhận được</dt>
                             <dd class="col-sm-8 text-success fw-bold fs-6">
-                                <fmt:formatNumber value="${assignment.forSellRequest ? 20000 : (assignment.order.shippingFee != null && assignment.order.shippingFee > 20000 ? assignment.order.shippingFee : 20000)}" pattern="#,#00 ₫"/>
+                                <fmt:formatNumber value="${assignment.forSellRequest ? 20000 : (assignment.order.shippingFee != null && assignment.order.shippingFee > 20000 ? assignment.order.shippingFee : 20000)}" pattern="#,##0"/> đ
                                 <span class="badge bg-success bg-opacity-10 text-success ms-1 small fw-normal">Phí giao nhận tiêu chuẩn</span>
                             </dd>
 

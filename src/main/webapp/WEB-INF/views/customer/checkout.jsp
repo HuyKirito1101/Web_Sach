@@ -81,13 +81,13 @@
                     <h6>Hoặc nhập địa chỉ mới:</h6>
                     <div class="row g-2">
                         <div class="col-md-6">
-                            <input type="text" name="recipientName" class="form-control form-control-sm" placeholder="Họ tên người nhận" value="<c:out value='${user.fullName}'/>">
+                            <input type="text" name="recipientName" class="form-control form-control-sm" placeholder="Họ tên người nhận" value="<c:out value='${not empty recipientName ? recipientName : user.fullName}'/>">
                         </div>
                         <div class="col-md-6">
-                            <input type="text" name="phone" class="form-control form-control-sm" placeholder="Số điện thoại" value="<c:out value='${user.phone}'/>">
+                            <input type="text" name="phone" class="form-control form-control-sm" placeholder="Số điện thoại" value="<c:out value='${not empty phone ? phone : user.phone}'/>">
                         </div>
                         <div class="col-12">
-                            <input type="text" name="shippingAddress" class="form-control form-control-sm" placeholder="Địa chỉ giao hàng đầy đủ (Số nhà, Đường, Phường, Quận, Thành phố)">
+                            <input type="text" name="shippingAddress" class="form-control form-control-sm" placeholder="Địa chỉ giao hàng đầy đủ (Số nhà, Đường, Phường, Quận, Thành phố)" value="<c:out value='${shippingAddress}'/>">
                         </div>
                     </div>
                 </div>
@@ -104,7 +104,7 @@
                             <input class="form-check-input mt-1" type="radio" name="shippingProviderId"
                                    id="sp_${sp.id}" value="${sp.id}"
                                    data-fee="${sp.baseFee != null ? sp.baseFee : 20000}"
-                                   ${loop.first ? 'checked' : ''} onchange="updateShippingFeeInfo()">
+                                   ${(not empty selectedShippingProviderId && selectedShippingProviderId == sp.id) || (empty selectedShippingProviderId && loop.first) ? 'checked' : ''} onchange="updateShippingFeeInfo()">
                             <label class="form-check-label ms-2 w-100" for="sp_${sp.id}">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
@@ -124,7 +124,7 @@
                                         <small class="text-muted"><i class="fa-regular fa-clock me-1"></i>${sp.estimatedDays != null ? sp.estimatedDays : '1-2 ngày'} | ${sp.scopeDescription != null ? sp.scopeDescription : ''}</small>
                                     </div>
                                     <span class="fw-bold text-danger fs-6">
-                                        <fmt:formatNumber value="${sp.baseFee != null ? sp.baseFee : 20000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                        <fmt:formatNumber value="${sp.baseFee != null ? sp.baseFee : 20000}" pattern="#,##0"/> đ
                                     </span>
                                 </div>
                             </label>
@@ -138,7 +138,7 @@
 
                     <!-- COD -->
                     <div class="form-check border rounded-3 p-3 mb-2">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_cod" value="COD" checked>
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_cod" value="COD" ${empty selectedPaymentMethod || selectedPaymentMethod == 'COD' ? 'checked' : ''}>
                         <label class="form-check-label ms-2 w-100" for="pm_cod">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="fa-solid fa-money-bill-wave text-success fs-5"></i>
@@ -152,7 +152,7 @@
 
                     <!-- MoMo demo: cửa hàng kiểm tra giao dịch và xác nhận thủ công -->
                     <div class="form-check border border-danger-subtle rounded-3 p-3 mb-2 bg-danger bg-opacity-10">
-                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_momo" value="MOMO">
+                        <input class="form-check-input" type="radio" name="paymentMethod" id="pm_momo" value="MOMO" ${selectedPaymentMethod == 'MOMO' ? 'checked' : ''}>
                         <label class="form-check-label ms-2 w-100" for="pm_momo">
                             <div class="d-flex align-items-center gap-2">
                                 <i class="fa-solid fa-qrcode text-danger fs-5"></i>
@@ -173,7 +173,7 @@
                 <!-- Note -->
                 <div class="card border-0 shadow-sm rounded-3 p-4">
                     <h5 class="fw-bold mb-2">Ghi chú cho đơn hàng</h5>
-                    <textarea name="note" class="form-control" rows="2" maxlength="1000" placeholder="Ghi chú thêm về thời gian giao hàng, chỉ dẫn tìm nhà..."></textarea>
+                    <textarea name="note" class="form-control" rows="2" maxlength="1000" placeholder="Ghi chú thêm về thời gian giao hàng, chỉ dẫn tìm nhà..."><c:out value="${note}"/></textarea>
                 </div>
             </div>
 
@@ -199,7 +199,7 @@
                                     </div>
                                 </div>
                                 <span class="fw-bold small">
-                                    <fmt:formatNumber value="${ci.bookCopy.sellingPrice * ci.quantity}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                    <fmt:formatNumber value="${ci.bookCopy.sellingPrice * ci.quantity}" pattern="#,##0"/> đ
                                 </span>
                             </div>
                         </c:forEach>
@@ -219,9 +219,11 @@
                         </div>
 
                         <!-- Ô nhập mã và nút Áp dụng -->
+                        <input type="hidden" name="voucherCode" id="finalVoucherCode" value="">
                         <div class="input-group input-group-sm mb-2">
-                            <input type="text" name="voucherCode" id="voucherCode" class="form-control font-monospace"
-                                   placeholder="Nhập mã hoặc chọn bên dưới" autocomplete="off">
+                            <input type="text" id="voucherCodeInput" class="form-control font-monospace"
+                                   placeholder="Nhập mã hoặc chọn bên dưới" autocomplete="off"
+                                   onkeydown="if(event.key === 'Enter'){ event.preventDefault(); applyVoucher(); }">
                             <button class="btn btn-warning text-dark fw-bold px-3" type="button" onclick="applyVoucher()">Áp Dụng</button>
                             <button class="btn btn-outline-secondary" type="button" id="btnClearVoucher" onclick="clearVoucher()" style="display: none;" title="Bỏ chọn mã">
                                 <i class="fa-solid fa-xmark"></i>
@@ -253,10 +255,10 @@
                                                         <div class="text-secondary small mt-1" style="font-size: 11px;">
                                                             Giảm <strong>${v.discountPercent}%</strong>
                                                             <c:if test="${v.maxDiscountAmount != null}">
-                                                                (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>)
+                                                                (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" pattern="#,##0"/> đ)
                                                             </c:if>
                                                             <c:if test="${v.minOrderValue != null && v.minOrderValue > 0}">
-                                                                &bull; Đơn tối thiểu: <fmt:formatNumber value="${v.minOrderValue}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                                                &bull; Đơn tối thiểu: <fmt:formatNumber value="${v.minOrderValue}" pattern="#,##0"/> đ
                                                             </c:if>
                                                         </div>
                                                     </div>
@@ -286,7 +288,7 @@
                                                         <div class="text-muted small mt-1" style="font-size: 11px;">
                                                             Giảm ${v.discountPercent}%
                                                             <c:if test="${v.maxDiscountAmount != null}">
-                                                                (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>)
+                                                                (tối đa <fmt:formatNumber value="${v.maxDiscountAmount}" pattern="#,##0"/> đ)
                                                             </c:if>
                                                         </div>
                                                         <div class="small text-danger fw-medium mt-1" style="font-size: 11px;">
@@ -308,21 +310,21 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Tạm tính sách:</span>
-                        <span class="fw-bold"><fmt:formatNumber value="${subtotal}" type="currency" currencySymbol="đ" maxFractionDigits="0"/></span>
+                        <span class="fw-bold"><fmt:formatNumber value="${subtotal}" pattern="#,##0"/> đ</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Phí giao hàng:</span>
-                        <span class="fw-bold text-primary" id="displayShipFee">20.000đ</span>
+                        <span class="fw-bold text-primary" id="displayShipFee">20.000 đ</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2" id="discountRow" style="display:none!important;">
                         <span class="text-success"><i class="fa-solid fa-tag me-1"></i>Giảm giá voucher:</span>
-                        <span class="fw-bold text-success" id="displayDiscount">0đ</span>
+                        <span class="fw-bold text-success" id="displayDiscount">0 đ</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-4">
                         <span class="fw-bold fs-5">Tổng cộng:</span>
                         <span class="fw-bold fs-5 text-danger" id="displayTotal">
-                            <fmt:formatNumber value="${subtotal + 20000}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                            <fmt:formatNumber value="${subtotal + 20000}" pattern="#,##0"/> đ
                         </span>
                     </div>
 
@@ -344,7 +346,7 @@
     let selectedVoucherCode = "";
 
     function formatVND(amount) {
-        return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + 'đ';
+        return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
     }
 
     function updateShippingFeeInfo() {
@@ -360,23 +362,29 @@
 
     function selectVoucher(code) {
         if (!code) return;
-        const inputEl = document.getElementById('voucherCode');
+        const inputEl = document.getElementById('voucherCodeInput');
         // Nếu click lại vào mã đang chọn -> hủy chọn
-        if (selectedVoucherCode === code && inputEl.value.trim().toUpperCase() === code.trim().toUpperCase()) {
+        if (selectedVoucherCode === code && inputEl && inputEl.value.trim().toUpperCase() === code.trim().toUpperCase()) {
             clearVoucher();
             return;
         }
-        inputEl.value = code;
+        if (inputEl) inputEl.value = code;
         applyVoucher();
     }
 
     function clearVoucher() {
-        document.getElementById('voucherCode').value = '';
+        const inputEl = document.getElementById('voucherCodeInput');
+        if (inputEl) inputEl.value = '';
+        const finalInput = document.getElementById('finalVoucherCode');
+        if (finalInput) finalInput.value = '';
         selectedVoucherCode = "";
         discountAmount = 0;
-        document.getElementById('voucherMsg').innerHTML = '';
-        document.getElementById('discountRow').style.display = 'none';
-        document.getElementById('btnClearVoucher').style.display = 'none';
+        const msgEl = document.getElementById('voucherMsg');
+        if (msgEl) msgEl.innerHTML = '';
+        const discRow = document.getElementById('discountRow');
+        if (discRow) discRow.style.display = 'none';
+        const clearBtn = document.getElementById('btnClearVoucher');
+        if (clearBtn) clearBtn.style.display = 'none';
         resetVoucherCards();
         updateShippingFeeInfo();
     }
@@ -393,10 +401,11 @@
     }
 
     async function applyVoucher() {
-        const inputEl = document.getElementById('voucherCode');
-        const code = inputEl.value.trim();
+        const inputEl = document.getElementById('voucherCodeInput');
+        const code = inputEl ? inputEl.value.trim() : '';
         const msgEl = document.getElementById('voucherMsg');
         const clearBtn = document.getElementById('btnClearVoucher');
+        const finalInput = document.getElementById('finalVoucherCode');
 
         if (!code) {
             clearVoucher();
@@ -414,13 +423,18 @@
 
             discountAmount = Number(result.discountAmount) || 0;
             selectedVoucherCode = result.code || code;
-            inputEl.value = selectedVoucherCode;
+            if (inputEl) inputEl.value = selectedVoucherCode;
+            if (finalInput) finalInput.value = selectedVoucherCode;
 
-            msgEl.innerHTML = '<span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>'
-                + (result.message || ('Áp dụng thành công mã: ' + selectedVoucherCode)) + '</span>';
-            document.getElementById('discountRow').style.display = 'flex';
-            document.getElementById('displayDiscount').textContent = '-' + formatVND(discountAmount);
-            clearBtn.style.display = 'block';
+            if (msgEl) {
+                msgEl.innerHTML = '<span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>'
+                    + (result.message || ('Áp dụng thành công mã: ' + selectedVoucherCode)) + '</span>';
+            }
+            const discRow = document.getElementById('discountRow');
+            if (discRow) discRow.style.display = 'flex';
+            const displayDisc = document.getElementById('displayDiscount');
+            if (displayDisc) displayDisc.textContent = '-' + formatVND(discountAmount);
+            if (clearBtn) clearBtn.style.display = 'block';
 
             // Highlight card
             resetVoucherCards();
@@ -439,9 +453,13 @@
         } catch (error) {
             discountAmount = 0;
             selectedVoucherCode = "";
-            msgEl.innerHTML = '<span class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i>' + (error.message || 'Không thể kiểm tra mã.') + '</span>';
-            document.getElementById('discountRow').style.display = 'none';
-            clearBtn.style.display = 'none';
+            if (finalInput) finalInput.value = '';
+            if (msgEl) {
+                msgEl.innerHTML = '<span class="text-danger fw-bold"><i class="fa-solid fa-circle-xmark me-1"></i>' + (error.message || 'Không thể kiểm tra mã.') + '</span>';
+            }
+            const discRow = document.getElementById('discountRow');
+            if (discRow) discRow.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
             resetVoucherCards();
         }
 
@@ -449,7 +467,19 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+        // Đảm bảo không bị dính mã giảm giá cũ từ form cache hoặc browser autofill
+        clearVoucher();
         updateShippingFeeInfo();
+
+        const form = document.getElementById('checkoutForm');
+        if (form) {
+            form.addEventListener('submit', function() {
+                const finalInput = document.getElementById('finalVoucherCode');
+                if (finalInput && !selectedVoucherCode) {
+                    finalInput.value = '';
+                }
+            });
+        }
     });
 </script>
 

@@ -175,7 +175,7 @@
                                 <div class="mb-2">
                                     <span class="text-muted small me-2">Tổng tiền:</span>
                                     <span class="fw-bold fs-5 text-danger">
-                                        <fmt:formatNumber value="${o.finalAmount}" type="currency" currencySymbol="đ" maxFractionDigits="0"/>
+                                        <fmt:formatNumber value="${o.finalAmount}" pattern="#,##0"/> đ
                                     </span>
                                 </div>
                                 <a href="/orders/${o.id}" class="btn btn-outline-warning text-dark btn-sm rounded-pill fw-bold px-3">

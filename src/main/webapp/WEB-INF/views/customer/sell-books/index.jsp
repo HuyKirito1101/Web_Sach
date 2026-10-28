@@ -303,7 +303,7 @@
                                     </td>
                                     <td>
                                         <div class="small fw-bold text-muted">
-                                            <fmt:formatNumber value="${req.expectedTotal}" pattern="#,#00 ₫"/>
+                                            <fmt:formatNumber value="${req.expectedTotal}" pattern="#,##0"/> đ
                                         </div>
                                     </td>
                                     <td>
@@ -323,7 +323,7 @@
                                                                             <i class="fa-solid fa-store text-primary me-1"></i><c:out value="${q.vendorName}"/>
                                                                         </span>
                                                                         <span class="badge text-white px-2 py-1 fw-bold fs-7" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);">
-                                                                            <fmt:formatNumber value="${q.offeredPrice}" pattern="#,#00 ₫"/>
+                                                                            <fmt:formatNumber value="${q.offeredPrice}" pattern="#,##0"/> đ
                                                                         </span>
                                                                     </div>
                                                                     <c:if test="${not empty q.note}">
@@ -336,7 +336,7 @@
                                                                             <i class="fa-regular fa-clock me-1"></i>${q.formattedCreatedAt}
                                                                         </span>
                                                                         <form method="post" action="/sell-books/${req.id}/accept-quote" class="d-inline"
-                                                                              onsubmit="return confirm('Bạn đồng ý bán sách cho shop ${q.vendorName} với giá <fmt:formatNumber value="${q.offeredPrice}" pattern="#,#00 ₫"/>? Shop sẽ phân công shipper đến tận nhà để lấy sách.');">
+                                                                              onsubmit="return confirm('Bạn đồng ý bán sách cho shop ${q.vendorName} với giá <fmt:formatNumber value="${q.offeredPrice}" pattern="#,##0"/> đ? Shop sẽ phân công shipper đến tận nhà để lấy sách.');">
                                                                             <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" /></c:if>
                                                                             <input type="hidden" name="quoteId" value="${q.id}">
                                                                             <button type="submit" class="btn btn-sm text-white rounded-pill px-3 py-1 fw-bold shadow-sm"
@@ -355,7 +355,7 @@
                                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                                 <span class="fw-bold small text-dark"><i class="fa-solid fa-store text-primary me-1"></i><c:out value="${req.buyerVendorName}"/></span>
                                                                 <span class="badge text-white px-2 py-1 fw-bold fs-7" style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);">
-                                                                    <fmt:formatNumber value="${req.offeredTotal}" pattern="#,#00 ₫"/>
+                                                                    <fmt:formatNumber value="${req.offeredTotal}" pattern="#,##0"/> đ
                                                                 </span>
                                                             </div>
                                                             <c:if test="${not empty req.staffNote}">
@@ -363,7 +363,7 @@
                                                             </c:if>
                                                             <div class="text-end mt-2 pt-1 border-top">
                                                                 <form method="post" action="/sell-books/${req.id}/accept" class="d-inline"
-                                                                      onsubmit="return confirm('Bạn đồng ý bán sách cho shop ${req.buyerVendorName} với mức giá <fmt:formatNumber value="${req.offeredTotal}" pattern="#,#00 ₫"/>?');">
+                                                                      onsubmit="return confirm('Bạn đồng ý bán sách cho shop ${req.buyerVendorName} với mức giá <fmt:formatNumber value="${req.offeredTotal}" pattern="#,##0"/> đ?');">
                                                                     <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" /></c:if>
                                                                     <button type="submit" class="btn btn-sm text-white rounded-pill px-3 py-1 fw-bold shadow-sm"
                                                                             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; font-size: 11px;">
@@ -384,7 +384,7 @@
                                                 <div class="p-2 rounded-3 bg-success bg-opacity-10 border border-success-subtle text-success small" style="min-width: 250px;">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                                         <span class="fw-bold text-dark"><i class="fa-solid fa-store text-success me-1"></i><c:out value="${req.buyerVendorName}"/></span>
-                                                        <span class="badge bg-success text-white px-2 py-1 fs-7"><fmt:formatNumber value="${req.offeredTotal}" pattern="#,#00 ₫"/></span>
+                                                        <span class="badge bg-success text-white px-2 py-1 fs-7"><fmt:formatNumber value="${req.offeredTotal}" pattern="#,##0"/> đ</span>
                                                     </div>
                                                     <div class="small text-dark mt-1">
                                                         <i class="fa-solid fa-truck-pickup text-primary me-1"></i>Shop đang phân công Shipper đến lấy sách tận nhà
@@ -400,7 +400,7 @@
                                                 <div class="p-2 rounded-3 bg-light border border-success-subtle small" style="min-width: 250px;">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                                         <span class="fw-bold text-success"><i class="fa-solid fa-circle-check me-1"></i>Đã thanh toán</span>
-                                                        <span class="badge bg-success text-white px-2 py-1 fs-7"><fmt:formatNumber value="${req.offeredTotal}" pattern="#,#00 ₫"/></span>
+                                                        <span class="badge bg-success text-white px-2 py-1 fs-7"><fmt:formatNumber value="${req.offeredTotal}" pattern="#,##0"/> đ</span>
                                                     </div>
                                                     <div class="small text-muted"><i class="fa-solid fa-store me-1"></i>Shop: <c:out value="${req.buyerVendorName}"/></div>
                                                 </div>

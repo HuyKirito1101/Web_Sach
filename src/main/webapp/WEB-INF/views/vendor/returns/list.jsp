@@ -159,7 +159,7 @@
                                                     <i class="fa-solid fa-truck me-1"></i>Shipper đến lấy
                                                 </span>
                                                 <div class="small text-danger fw-semibold">
-                                                    Khách chịu 50% ship: <fmt:formatNumber value="${o.returnShippingFee != null ? o.returnShippingFee : 10000}" pattern="#,#00 ₫"/>
+                                                    Khách chịu 50% ship: <fmt:formatNumber value="${o.returnShippingFee != null ? o.returnShippingFee : 10000}" pattern="#,##0"/> đ
                                                 </div>
                                                 <div class="small text-danger">
                                                     <i class="fa-solid fa-location-dot me-1"></i><c:out value="${not empty o.returnAddress ? o.returnAddress : o.shippingAddress}"/>
@@ -229,7 +229,7 @@
                                     </td>
                                     <td>
                                         <div class="fw-bold text-success fs-6">
-                                            <fmt:formatNumber value="${o.refundAmount != null ? o.refundAmount : o.finalAmount}" pattern="#,#00 ₫"/>
+                                            <fmt:formatNumber value="${o.refundAmount != null ? o.refundAmount : o.finalAmount}" pattern="#,##0"/> đ
                                         </div>
                                         <c:if test="${o.returnMethod == 'SHIPPER'}">
                                             <small class="text-muted d-block" style="font-size: 11px;">(Đã trừ 50% ship)</small>

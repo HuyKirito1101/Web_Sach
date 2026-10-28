@@ -218,18 +218,18 @@
                                         <div class="p-3 bg-light rounded-3 border">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                 <span class="small text-muted">Giá khách kỳ vọng:</span>
-                                                <span class="fw-bold text-dark"><fmt:formatNumber value="${r.expectedTotal}" pattern="#,#00 ₫"/></span>
+                                                <span class="fw-bold text-dark"><fmt:formatNumber value="${r.expectedTotal}" pattern="#,##0"/> đ</span>
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                                                 <span class="small text-muted">Báo giá của Shop bạn:</span>
                                                 <span class="fw-bold text-danger fs-6">
                                                     <c:choose>
                                                         <c:when test="${not empty myQuote && myQuote.offeredPrice > 0}">
-                                                            <fmt:formatNumber value="${myQuote.offeredPrice}" pattern="#,#00 ₫"/>
+                                                            <fmt:formatNumber value="${myQuote.offeredPrice}" pattern="#,##0"/> đ
                                                             <span class="badge bg-success bg-opacity-10 text-success ms-1 small fw-normal">Đã gửi</span>
                                                         </c:when>
                                                         <c:when test="${r.status == 'ACCEPTED' && r.buyerVendor != null}">
-                                                            <fmt:formatNumber value="${r.offeredTotal}" pattern="#,#00 ₫"/>
+                                                            <fmt:formatNumber value="${r.offeredTotal}" pattern="#,##0"/> đ
                                                         </c:when>
                                                         <c:otherwise><em class="text-muted small">Shop bạn chưa gửi báo giá</em></c:otherwise>
                                                     </c:choose>
@@ -285,7 +285,7 @@
                                                                 <span class="badge bg-light text-dark border small fw-normal"><c:out value="${it.conditionDescription}"/></span>
                                                             </td>
                                                             <td class="text-end fw-bold text-primary">
-                                                                <fmt:formatNumber value="${it.expectedPrice}" pattern="#,#00 ₫"/>
+                                                                <fmt:formatNumber value="${it.expectedPrice}" pattern="#,##0"/> đ
                                                             </td>
                                                         </tr>
                                                     </c:forEach>
@@ -513,7 +513,7 @@
                                                         <div class="small mb-2">
                                                             <span class="text-muted d-block">Số tiền trả cho khách:</span>
                                                             <span class="fw-bold text-success fs-6">
-                                                                <fmt:formatNumber value="${r.offeredTotal != null ? r.offeredTotal : r.expectedTotal}" pattern="#,#00 ₫"/>
+                                                                <fmt:formatNumber value="${r.offeredTotal != null ? r.offeredTotal : r.expectedTotal}" pattern="#,##0"/> đ
                                                             </span>
                                                         </div>
                                                         <div class="small mb-2">
