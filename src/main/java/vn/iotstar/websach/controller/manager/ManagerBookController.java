@@ -13,6 +13,7 @@ import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.service.*;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/books")
@@ -56,7 +57,7 @@ public class ManagerBookController {
             bookCopyService.saveManagedCopy(authentication.getName(), bookCopy, bookId, imageFile);
             redirect.addFlashAttribute("successMessage", "Đã lưu bản sách thành công.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
 
         return "redirect:/manager/books";
@@ -84,7 +85,7 @@ public class ManagerBookController {
                     .build(), coverFile);
             redirect.addFlashAttribute("successMessage", "Đã thêm đầu sách mới thành công.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/books";
     }

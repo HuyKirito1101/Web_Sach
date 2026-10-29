@@ -43,6 +43,9 @@
         <h3 class="fw-bold mb-2">Đã Có Lỗi Xảy Ra</h3>
         <p class="text-muted mb-4">
             <c:choose>
+                <c:when test="${not empty errorMessage}">
+                    <c:out value="${errorMessage}" />
+                </c:when>
                 <c:when test="${status == 403}">
                     Bạn không có quyền truy cập hoặc phiên làm việc đã hết hạn (Lỗi 403 Forbidden).
                 </c:when>

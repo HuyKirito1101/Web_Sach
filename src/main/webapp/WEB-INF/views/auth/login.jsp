@@ -28,6 +28,12 @@
 </head>
 <body>
     <div class="login-card">
+        <div class="mb-3">
+            <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="fa-solid fa-house me-1"></i> Về trang chủ
+            </a>
+        </div>
+
         <div class="text-center mb-4">
             <i class="fa-solid fa-book-bookmark fa-3x text-primary mb-2"></i>
             <h3 class="fw-bold">ĐĂNG NHẬP</h3>

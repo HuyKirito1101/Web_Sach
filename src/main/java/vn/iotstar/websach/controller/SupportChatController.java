@@ -11,6 +11,7 @@ import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.SupportChatService;
 import vn.iotstar.websach.service.UserService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequiredArgsConstructor
@@ -47,7 +48,7 @@ public class SupportChatController {
                     "Đã gửi tin nhắn đến Manager chi nhánh. Hãy lưu đường dẫn này để xem phản hồi.");
             return "redirect:/support-chat/" + conversation.getPublicToken();
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             return "redirect:/support-chat";
         }
     }
@@ -62,7 +63,7 @@ public class SupportChatController {
             model.addAttribute("messages", supportChatService.getCustomerMessages(token));
             return "customer/support-chat";
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             return "redirect:/support-chat";
         }
     }
@@ -75,7 +76,7 @@ public class SupportChatController {
             supportChatService.sendCustomerMessage(token, content);
             redirectAttributes.addFlashAttribute("successMessage", "Đã gửi tin nhắn.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/support-chat/" + token;
     }

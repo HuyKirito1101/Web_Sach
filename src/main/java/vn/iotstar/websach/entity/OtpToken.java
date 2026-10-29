@@ -28,7 +28,9 @@ public class OtpToken {
     @Column(nullable = false)
     private LocalDateTime expiryTime;
 
+    @Column(nullable = false)
     private boolean used;
 
+    @Column(length = 30)
     private String type; // REGISTER, FORGOT_PASSWORD
 }

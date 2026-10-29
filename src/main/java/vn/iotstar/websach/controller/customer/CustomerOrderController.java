@@ -14,6 +14,7 @@ import vn.iotstar.websach.service.CustomerOrderService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/orders")
@@ -85,7 +86,7 @@ public class CustomerOrderController {
                 redirectAttributes.addFlashAttribute("errorMessage", "Đơn hàng không còn ở trạng thái có thể hủy.");
             }
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/orders/" + id;
     }
@@ -104,7 +105,7 @@ public class CustomerOrderController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đã gửi yêu cầu xác nhận. Cửa hàng sẽ kiểm tra giao dịch MoMo của bạn.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/orders/" + id;
     }

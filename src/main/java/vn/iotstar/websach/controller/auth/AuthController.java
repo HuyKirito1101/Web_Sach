@@ -23,6 +23,7 @@ import vn.iotstar.websach.security.AuthRateLimiter;
 import vn.iotstar.websach.service.UserService;
 
 import java.time.Duration;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/auth")
@@ -67,7 +68,11 @@ public class AuthController {
             return "redirect:" + userService.getLandingPage(request.getEmail());
         } catch (Exception e) {
             log.warn("Đăng nhập thất bại cho {} từ {}", request.getEmail(), servletRequest.getRemoteAddr());
-            String message = e.getMessage();
+            String message = ExceptionMessages.userMessage(e);
+            if (ExceptionMessages.isDatabaseFailure(e)) {
+                model.addAttribute("errorMessage", message);
+                return "auth/login";
+            }
             boolean rateLimited = e instanceof IllegalStateException
                     && message != null
                     && message.startsWith("Bạn đã thử quá nhiều");
@@ -98,9 +103,9 @@ public class AuthController {
             model.addAttribute("otpRequest", new OtpVerificationRequest());
             return "auth/verify-otp";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(e));
             if (e instanceof IllegalStateException
-                    && "Email đã được đăng ký và kích hoạt trong hệ thống!".equals(e.getMessage())) {
+                    && "Email đã được đăng ký và kích hoạt trong hệ thống!".equals(ExceptionMessages.userMessage(e))) {
                 model.addAttribute("accountExists", true);
             }
             return "auth/register";
@@ -119,7 +124,7 @@ public class AuthController {
             userService.resendRegistrationOtp(email);
             model.addAttribute("successMessage", "Đã gửi mã OTP mới. Mã có hiệu lực trong 5 phút.");
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "auth/verify-otp";
     }
@@ -172,7 +177,7 @@ public class AuthController {
             userService.sendForgotPasswordOtp(request.getEmail());
             return "redirect:/auth/reset-password?email=" + java.net.URLEncoder.encode(request.getEmail().trim(), java.nio.charset.StandardCharsets.UTF_8) + "&sent=true";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(e));
             return "auth/forgot-password";
         }
     }
@@ -215,7 +220,7 @@ public class AuthController {
             model.addAttribute("loginRequest", new LoginRequest());
             return "auth/login";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(e));
             return "auth/reset-password";
         }
     }

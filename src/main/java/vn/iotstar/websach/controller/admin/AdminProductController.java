@@ -12,6 +12,7 @@ import vn.iotstar.websach.service.BookCopyService;
 import vn.iotstar.websach.service.BranchService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/products")
@@ -67,7 +68,7 @@ public class AdminProductController {
             bookCopyService.saveCopy(product);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật sản phẩm.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/admin/products";
     }

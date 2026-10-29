@@ -11,6 +11,7 @@ import vn.iotstar.websach.entity.Promotion;
 import vn.iotstar.websach.entity.enums.PromotionType;
 import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.PromotionService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/promotions")
@@ -38,7 +39,7 @@ public class ManagerPromotionController {
             promotionService.saveForBranch(promotion, branch.getId());
             redirect.addFlashAttribute("successMessage", "Đã lưu chương trình khuyến mãi.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/promotions";
     }
@@ -51,7 +52,7 @@ public class ManagerPromotionController {
             promotionService.deleteForBranch(id, branch.getId());
             redirect.addFlashAttribute("successMessage", "Đã xóa chương trình khuyến mãi.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/promotions";
     }

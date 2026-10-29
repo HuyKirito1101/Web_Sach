@@ -15,6 +15,7 @@ import vn.iotstar.websach.service.OrderService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/orders")
@@ -53,7 +54,7 @@ public class AdminOrderController {
             orderService.deleteCancelledOrder(orderId);
             redirectAttributes.addFlashAttribute("successMessage", "Đã xóa đơn hàng đã hủy.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/orders";
     }

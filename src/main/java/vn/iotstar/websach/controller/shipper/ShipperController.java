@@ -11,6 +11,7 @@ import vn.iotstar.websach.entity.enums.DeliveryStatus;
 import vn.iotstar.websach.service.ShipperService;
 
 import java.time.LocalDate;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/shipper")
@@ -63,7 +64,7 @@ public class ShipperController {
             shipperService.updateStatus(auth.getName(), id, status, failureReason);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái giao hàng");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/shipper/orders/" + id;
     }
@@ -76,7 +77,7 @@ public class ShipperController {
             shipperService.updateStatus(auth.getName(), id, DeliveryStatus.CANCELLED, reason);
             redirect.addFlashAttribute("successMessage", "Đã từ chối nhận đơn giao và gửi lý do về cho cửa hàng");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/shipper/orders";
     }

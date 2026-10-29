@@ -36,19 +36,24 @@ public class Order {
     @JoinColumn(name = "shipping_provider_id")
     private ShippingProvider shippingProvider;
 
-    @Column(length = 100)
+    @Column(nullable = false, length = 100)
     private String receiverName;
 
-    @Column(length = 20)
+    @Column(nullable = false, length = 20)
     private String receiverPhone;
 
-    @Column(length = 255)
+    @Column(nullable = false, length = 255)
     private String shippingAddress;
 
+    @Column(nullable = false)
     private Double totalAmount;
+
+    @Column(nullable = false)
     private Double shippingFee;
     private Double discountAmount;
     private Double appCommissionAmount; // Phí chiết khấu app được tính cho đơn hàng này
+
+    @Column(nullable = false)
     private Double finalAmount;
 
     @Enumerated(EnumType.STRING)

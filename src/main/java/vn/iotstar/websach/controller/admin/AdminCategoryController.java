@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Category;
 import vn.iotstar.websach.service.CategoryService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/categories")
@@ -33,7 +34,7 @@ public class AdminCategoryController {
             }
             redirect.addFlashAttribute("successMessage", "Đã lưu danh mục.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/categories";
     }
@@ -44,7 +45,7 @@ public class AdminCategoryController {
             categoryService.deleteCategory(id);
             redirect.addFlashAttribute("successMessage", "Đã ẩn danh mục; dữ liệu sách cũ vẫn được giữ lại.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/categories";
     }

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.SupportConversation;
 import vn.iotstar.websach.service.SupportChatService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/messages")
@@ -31,7 +32,7 @@ public class ManagerSupportChatController {
             model.addAttribute("conversations", supportChatService.getManagerConversations(managerEmail));
             return "manager/messages/list";
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             return "redirect:/manager/dashboard";
         }
     }
@@ -45,7 +46,7 @@ public class ManagerSupportChatController {
             supportChatService.replyAsManager(authentication.getName(), conversationId, content);
             redirectAttributes.addFlashAttribute("successMessage", "Đã gửi phản hồi cho khách hàng.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/messages?conversationId=" + conversationId;
     }
@@ -58,7 +59,7 @@ public class ManagerSupportChatController {
             supportChatService.deleteConversation(authentication.getName(), conversationId);
             redirectAttributes.addFlashAttribute("successMessage", "Đã xóa lịch sử hội thoại với khách hàng.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/messages";
     }

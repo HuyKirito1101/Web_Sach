@@ -19,7 +19,7 @@ public class ShippingProvider {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(length = 50)
+    @Column(nullable = false, length = 50, unique = true)
     private String code; // GHN_STANDARD, GHN_EXPRESS, SPX_EXPRESS
 
     @Column(length = 100)
@@ -34,8 +34,10 @@ public class ShippingProvider {
     @Column(length = 20)
     private String phone;
 
+    @Column(nullable = false)
     private Double baseFee;
 
+    @Column(nullable = false)
     private Boolean active;
 
     @PrePersist

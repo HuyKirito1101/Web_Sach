@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Category;
 import vn.iotstar.websach.service.CategoryService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/categories")
@@ -32,7 +33,7 @@ public class ManagerCategoryController {
             else categoryService.updateCategory(category.getId(), category);
             redirect.addFlashAttribute("successMessage", "Đã lưu danh mục.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/categories";
     }
@@ -43,7 +44,7 @@ public class ManagerCategoryController {
             categoryService.deleteCategory(id);
             redirect.addFlashAttribute("successMessage", "Đã ẩn danh mục.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/categories";
     }

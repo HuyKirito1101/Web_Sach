@@ -12,6 +12,7 @@ import vn.iotstar.websach.service.CustomerProfileService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/profile")
@@ -46,7 +47,7 @@ public class CustomerProfileController {
             profileService.updateProfile(user, fullName, phone, avatarUrl);
             redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật thông tin cá nhân.");
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/profile";
     }
@@ -67,7 +68,7 @@ public class CustomerProfileController {
             profileService.addAddress(user, recipientName, phone, street, ward, district, city, isDefault);
             redirectAttributes.addFlashAttribute("successMessage", "Đã thêm địa chỉ nhận hàng.");
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/profile";
     }
@@ -91,7 +92,7 @@ public class CustomerProfileController {
             if (user == null) return "redirect:/auth/login";
             profileService.setDefaultAddress(user, addressId);
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/profile";
     }

@@ -13,6 +13,7 @@ import vn.iotstar.websach.entity.enums.BookCondition;
 import vn.iotstar.websach.service.*;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequiredArgsConstructor
@@ -43,7 +44,7 @@ public class CustomerBookController {
                     keyword, categoryId, branchId, condition, minPrice, maxPrice, sortBy,
                     Math.max(0, page), 20);
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             minPrice = null;
             maxPrice = null;
             bookPage = customerBookService.searchAndFilterBooks(

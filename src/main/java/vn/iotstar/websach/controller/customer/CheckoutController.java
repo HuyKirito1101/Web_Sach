@@ -16,6 +16,7 @@ import vn.iotstar.websach.service.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/checkout")
@@ -89,7 +90,7 @@ public class CheckoutController {
     @ResponseBody
     @ResponseStatus(org.springframework.http.HttpStatus.BAD_REQUEST)
     public Map<String, Object> checkoutRequestError(RuntimeException ex) {
-        return Map.of("valid", false, "message", ex.getMessage());
+        return Map.of("valid", false, "message", ExceptionMessages.userMessage(ex));
     }
 
     @PostMapping("/place-order")
@@ -118,7 +119,7 @@ public class CheckoutController {
             }
             return "redirect:/orders?multiSuccess=" + orders.size();
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", ExceptionMessages.userMessage(e));
             model.addAttribute("recipientName", recipientName);
             model.addAttribute("phone", phone);
             model.addAttribute("shippingAddress", shippingAddress);

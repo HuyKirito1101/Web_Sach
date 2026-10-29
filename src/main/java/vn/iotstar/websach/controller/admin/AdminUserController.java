@@ -11,6 +11,7 @@ import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/users")
@@ -46,7 +47,7 @@ public class AdminUserController {
             userService.updateUserRoleAndStatus(userId, roleId, branchId, status);
             redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật quyền và trạng thái tài khoản.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/users";
     }
@@ -64,7 +65,7 @@ public class AdminUserController {
             userService.toggleUserLock(userId);
             redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật trạng thái khóa tài khoản.");
         } catch (RuntimeException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/users";
     }
@@ -83,7 +84,7 @@ public class AdminUserController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đã xóa hoàn toàn người dùng id: " + userId + ".");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/admin/users";
     }

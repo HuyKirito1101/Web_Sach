@@ -10,6 +10,7 @@ import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.service.CloudinaryService;
 import vn.iotstar.websach.service.ReviewService;
 import vn.iotstar.websach.service.UserService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/reviews")
@@ -54,7 +55,7 @@ public class ReviewController {
             reviewService.addReview(user, bookId, orderItemId, rating, comment, mediaUrl);
             return "redirect:/books/" + bookId + "?reviewSuccess=true";
         } catch (Exception e) {
-            return "redirect:/books/" + bookId + "?reviewError=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            return "redirect:/books/" + bookId + "?reviewError=" + java.net.URLEncoder.encode(ExceptionMessages.userMessage(e), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
 }

@@ -18,6 +18,7 @@ import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
 import java.util.Collections;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/transfers")
@@ -66,7 +67,7 @@ public class ManagerTransferController {
             stockTransferService.createTransferRequest(request, authentication.getName());
             redirect.addFlashAttribute("successMessage", "Đã tạo yêu cầu điều chuyển.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/transfers";
     }
@@ -78,7 +79,7 @@ public class ManagerTransferController {
             stockTransferService.approveTransfer(id, authentication.getName());
             redirect.addFlashAttribute("successMessage", "Đã duyệt và xuất kho điều chuyển.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/transfers";
     }
@@ -90,7 +91,7 @@ public class ManagerTransferController {
             stockTransferService.rejectTransfer(id, authentication.getName());
             redirect.addFlashAttribute("successMessage", "Đã từ chối yêu cầu điều chuyển.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/transfers";
     }
@@ -102,7 +103,7 @@ public class ManagerTransferController {
             stockTransferService.completeTransfer(id, authentication.getName());
             redirect.addFlashAttribute("successMessage", "Đã xác nhận nhận đủ sách điều chuyển.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/manager/transfers";
     }

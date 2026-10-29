@@ -17,6 +17,7 @@ import vn.iotstar.websach.entity.SellRequestQuote;
 import vn.iotstar.websach.service.CustomerSellRequestService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/sell-books")
@@ -70,7 +71,7 @@ public class CustomerSellRequestController {
             redirect.addFlashAttribute("successMessage", "Đã gửi yêu cầu thu mua sách cũ thành công! Đội ngũ "
                     + saved.getBranch().getName() + " sẽ thẩm định và gửi báo giá trong vòng 24h.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/sell-books";
     }
@@ -90,7 +91,7 @@ public class CustomerSellRequestController {
                     + String.format("%,.0f đ", quote.getOfferedPrice())
                     + "! Shop sẽ liên hệ và điều phối Shipper đến tận nhà bạn lấy sách.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/sell-books";
     }
@@ -107,7 +108,7 @@ public class CustomerSellRequestController {
             redirect.addFlashAttribute("successMessage", "Bạn đã đồng ý với mức giá đề nghị của cửa hàng! "
                     + "Cửa hàng sẽ liên hệ để thu nhận sách và thanh toán.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/sell-books";
     }
@@ -123,7 +124,7 @@ public class CustomerSellRequestController {
             SellRequest cancelled = customerSellRequestService.cancelRequest(authentication.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã hủy yêu cầu thu mua sách #" + cancelled.getId());
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/sell-books";
     }

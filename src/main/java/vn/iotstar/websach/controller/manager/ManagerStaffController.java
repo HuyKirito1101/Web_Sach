@@ -12,6 +12,7 @@ import vn.iotstar.websach.service.ManagerAccessService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/staff")
@@ -45,7 +46,7 @@ public class ManagerStaffController {
             userService.updateManagedBranchUser(authentication.getName(), userId, roleId, status);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật quyền và trạng thái tài khoản trong chi nhánh.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/staff";
     }
@@ -57,7 +58,7 @@ public class ManagerStaffController {
             userService.toggleManagedBranchUserLock(authentication.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái tài khoản.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/staff";
     }
@@ -69,7 +70,7 @@ public class ManagerStaffController {
             userService.deleteManagedBranchUser(authentication.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã xóa tài khoản khỏi hệ thống.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/staff";
     }

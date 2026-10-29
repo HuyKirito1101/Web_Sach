@@ -16,6 +16,7 @@ import vn.iotstar.websach.service.VendorChatService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequiredArgsConstructor
@@ -75,11 +76,11 @@ public class CustomerVendorChatController {
             model.addAttribute("conversations", conversations);
             return "customer/vendor-chat";
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             return "redirect:/books";
         } catch (Exception ex) {
             log.error("Lỗi khi mở giao diện chat với vendor", ex);
-            redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi khi mở tin nhắn: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi khi mở tin nhắn: " + ExceptionMessages.userMessage(ex));
             return "redirect:/books";
         }
     }
@@ -96,7 +97,7 @@ public class CustomerVendorChatController {
         try {
             vendorChatService.sendMessage(conversationId, authentication.getName(), content, bookCopyId);
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/chat/vendor?conversationId=" + conversationId;
     }
@@ -114,14 +115,14 @@ public class CustomerVendorChatController {
             VendorMessage msg = vendorChatService.sendMessage(conversationId, authentication.getName(), content, bookCopyId);
             return ResponseEntity.ok(vendorChatService.toDTO(msg, authentication.getName()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex)).body(ExceptionMessages.userMessage(ex));
         }
     }
 
     @GetMapping(value = "/chat/vendor/api/messages/{conversationId}", produces = "application/json")
     @ResponseBody
-    public ResponseEntity<List<VendorChatMessageDTO>> getMessagesApi(@PathVariable("conversationId") Long conversationId,
-                                                                     Authentication authentication) {
+    public ResponseEntity<?> getMessagesApi(@PathVariable("conversationId") Long conversationId,
+                                            Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).build();
         }
@@ -132,6 +133,10 @@ public class CustomerVendorChatController {
                     .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception ex) {
+            if (ExceptionMessages.isDatabaseFailure(ex)) {
+                return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                        .body(Map.of("error", ExceptionMessages.userMessage(ex)));
+            }
             return ResponseEntity.ok(Collections.emptyList());
         }
     }
@@ -147,7 +152,7 @@ public class CustomerVendorChatController {
             vendorChatService.deleteConversation(conversationId, authentication.getName());
             redirectAttributes.addFlashAttribute("successMessage", "Đã xóa lịch sử cuộc trò chuyện thành công.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/chat/vendor";
     }
@@ -163,7 +168,8 @@ public class CustomerVendorChatController {
             vendorChatService.deleteConversation(conversationId, authentication.getName());
             return ResponseEntity.ok(Map.of("success", true, "conversationId", conversationId));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                    .body(Map.of("error", ExceptionMessages.userMessage(ex)));
         }
     }
 
@@ -178,7 +184,8 @@ public class CustomerVendorChatController {
             vendorChatService.deleteMessage(messageId, authentication.getName());
             return ResponseEntity.ok(Map.of("success", true, "messageId", messageId));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                    .body(Map.of("error", ExceptionMessages.userMessage(ex)));
         }
     }
 }

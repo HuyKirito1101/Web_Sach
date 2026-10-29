@@ -40,6 +40,7 @@ public class Book {
     private Author author;
 
     private Integer publishYear;
+    @Column(length = 50)
     private String language;
 
     @Column(length = 500)

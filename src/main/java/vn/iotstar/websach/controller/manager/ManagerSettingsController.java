@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.ManagerAccessService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/settings")
@@ -40,7 +41,7 @@ public class ManagerSettingsController {
             branchService.saveBranch(branch);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật chiết khấu cho chi nhánh.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/settings";
     }

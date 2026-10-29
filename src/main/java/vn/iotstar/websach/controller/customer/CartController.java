@@ -11,6 +11,7 @@ import vn.iotstar.websach.service.CartService;
 import vn.iotstar.websach.service.UserService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/cart")
@@ -56,7 +57,7 @@ public class CartController {
             }
             redirectAttributes.addFlashAttribute("successMessage", "Đã thêm sản phẩm vào giỏ hàng thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/cart";
     }
@@ -75,7 +76,7 @@ public class CartController {
         try {
             cartService.updateCartItemQuantity(user, cartItemId, quantity);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/cart";
     }

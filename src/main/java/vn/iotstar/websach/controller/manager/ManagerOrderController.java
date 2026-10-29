@@ -11,6 +11,7 @@ import vn.iotstar.websach.service.OrderService;
 import vn.iotstar.websach.service.ManagerAccessService;
 
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/orders")
@@ -42,7 +43,7 @@ public class ManagerOrderController {
                         "Đã dọn " + cleared + " đơn hàng đã kết thúc khỏi danh sách quản lý.");
             }
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/orders";
     }

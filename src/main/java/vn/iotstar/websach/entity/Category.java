@@ -19,12 +19,13 @@ public class Category {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(length = 150, unique = true)
+    @Column(nullable = false, length = 150, unique = true)
     private String slug;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(nullable = false)
     private Boolean active;
 
     @PrePersist

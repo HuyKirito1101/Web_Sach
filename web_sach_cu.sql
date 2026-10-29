@@ -9,6 +9,8 @@
 -- 3. Nút sấm sét vàng là nút "Execute" (thực thi toàn bộ file script này).
 --    File này đã được cấu hình "CREATE TABLE IF NOT EXISTS" và "INSERT IGNORE"
 --    để BẢO VỆ DỮ LIỆU, tránh bị mất dữ liệu ngay cả khi lỡ ấn nút sấm sét!
+-- 4. Cuối file có bước đồng bộ schema cũ với Entity: chỉ thêm cột/khóa còn thiếu
+--    và chuẩn hóa kiểu cột; không DROP bảng hay xóa các dòng dữ liệu hiện có.
 -- ===================================================================
 
 CREATE DATABASE IF NOT EXISTS `web_sach_cu` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -54,6 +56,8 @@ CREATE TABLE IF NOT EXISTS `publishers` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `address` VARCHAR(255) DEFAULT NULL,
+  `phone` VARCHAR(20) DEFAULT NULL,
+  `active` BIT(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -72,6 +76,7 @@ CREATE TABLE IF NOT EXISTS `authors` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
   `bio` TEXT DEFAULT NULL,
+  `birth_year` INT DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -96,8 +101,8 @@ CREATE TABLE IF NOT EXISTS `shipping_providers` (
   `name` VARCHAR(150) NOT NULL,
   `phone` VARCHAR(20) DEFAULT NULL,
   `base_fee` DOUBLE NOT NULL DEFAULT 20000.0,
-  `estimated_days` VARCHAR(50) DEFAULT '2-3 ngày',
-  `service_type` VARCHAR(50) DEFAULT 'IN_PROVINCE',
+  `estimated_days` VARCHAR(100) DEFAULT '2-3 ngày',
+  `service_type` VARCHAR(100) DEFAULT 'IN_PROVINCE',
   `scope_description` VARCHAR(255) DEFAULT 'Giao hàng nội tỉnh và liên kết chi nhánh',
   `active` BIT(1) NOT NULL DEFAULT b'1',
   PRIMARY KEY (`id`)
@@ -112,15 +117,19 @@ INSERT IGNORE INTO `shipping_providers` (`id`, `code`, `name`, `phone`, `base_fe
 CREATE TABLE IF NOT EXISTS `branches` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(150) NOT NULL,
+  `description` TEXT DEFAULT NULL,
   `address` VARCHAR(255) NOT NULL,
-  `phone` VARCHAR(20) NOT NULL,
-  `email` VARCHAR(100) DEFAULT NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
+  `phone` VARCHAR(20) DEFAULT NULL,
+  `email` VARCHAR(150) DEFAULT NULL,
+  `image_url` VARCHAR(500) DEFAULT NULL,
+  `cover_url` VARCHAR(500) DEFAULT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
   `app_discount_percent` DOUBLE DEFAULT 10.0,
   `vendor_id` BIGINT DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_branches_vendor` (`vendor_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT IGNORE INTO `branches` (`id`, `name`, `address`, `phone`, `email`, `status`, `app_discount_percent`, `vendor_id`) VALUES
@@ -131,14 +140,14 @@ INSERT IGNORE INTO `branches` (`id`, `name`, `address`, `phone`, `email`, `statu
 CREATE TABLE IF NOT EXISTS `users` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `full_name` VARCHAR(100) NOT NULL,
-  `email` VARCHAR(100) NOT NULL UNIQUE,
+  `email` VARCHAR(150) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
   `phone` VARCHAR(20) DEFAULT NULL,
   `role_id` BIGINT NOT NULL,
   `branch_id` BIGINT DEFAULT NULL,
   `shipping_provider_id` BIGINT DEFAULT NULL,
   `specialized_category_id` BIGINT DEFAULT NULL,
-  `status` VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
   `avatar_url` VARCHAR(500) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -269,13 +278,14 @@ WHERE bc.`id` > 0
 -- 10. BẢNG PROMOTIONS (Khuyến mãi)
 CREATE TABLE IF NOT EXISTS `promotions` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(50) DEFAULT NULL,
   `title` VARCHAR(150) NOT NULL,
   `discount_percent` DOUBLE NOT NULL,
   `max_discount_amount` DOUBLE DEFAULT NULL,
   `min_order_value` DOUBLE DEFAULT NULL,
   `start_date` DATE DEFAULT NULL,
   `end_date` DATE DEFAULT NULL,
-  `type` ENUM('PRODUCT_PERCENT','SHIPPING_PERCENT') DEFAULT 'PRODUCT_PERCENT',
+  `type` VARCHAR(30) DEFAULT 'PRODUCT_PERCENT',
   `active` BIT(1) DEFAULT b'1',
   `branch_id` BIGINT DEFAULT NULL,
   `vendor_id` BIGINT DEFAULT NULL,
@@ -335,10 +345,11 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 -- 13. BẢNG DELIVERY_ASSIGNMENTS (Phân công giao hàng / thu hồi đổi trả)
 CREATE TABLE IF NOT EXISTS `delivery_assignments` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
-  `order_id` BIGINT NOT NULL,
+  `order_id` BIGINT DEFAULT NULL,
+  `sell_request_id` BIGINT DEFAULT NULL,
   `shipper_id` BIGINT DEFAULT NULL,
   `assigned_by` BIGINT DEFAULT NULL,
-  `status` ENUM('ASSIGNED','ACCEPTED','PICKED_UP','SHIPPING','DELIVERED','FAILED','CANCELLED') NOT NULL,
+  `status` VARCHAR(30) NOT NULL,
   `note` TEXT DEFAULT NULL,
   `tracking_code` VARCHAR(100) DEFAULT NULL,
   `rejected_shipper_ids` VARCHAR(255) DEFAULT NULL,
@@ -349,6 +360,7 @@ CREATE TABLE IF NOT EXISTS `delivery_assignments` (
   `completed_at` DATETIME(6) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_assignment_order` (`order_id`),
+  UNIQUE KEY `uk_assignment_sell_request` (`sell_request_id`),
   CONSTRAINT `fk_assignment_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_assignment_shipper` FOREIGN KEY (`shipper_id`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_assignment_assigned_by` FOREIGN KEY (`assigned_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
@@ -358,8 +370,9 @@ CREATE TABLE IF NOT EXISTS `delivery_assignments` (
 CREATE TABLE IF NOT EXISTS `sell_requests` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT NOT NULL,
-  `branch_id` BIGINT NOT NULL,
-  `status` ENUM('PENDING','INSPECTING','QUOTED','ACCEPTED','REJECTED','COMPLETED','CANCELLED') NOT NULL,
+  `branch_id` BIGINT DEFAULT NULL,
+  `buyer_vendor_id` BIGINT DEFAULT NULL,
+  `status` VARCHAR(30) NOT NULL,
   `expected_total` DOUBLE DEFAULT NULL,
   `offered_total` DOUBLE DEFAULT NULL,
   `note` TEXT DEFAULT NULL,
@@ -433,7 +446,276 @@ CREATE TABLE IF NOT EXISTS `support_messages` (
     REFERENCES `support_conversations` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 19. DOANH SỐ MẪU CHO TRANG GUEST
+-- 19. BẢNG ĐỊA CHỈ NHẬN HÀNG
+CREATE TABLE IF NOT EXISTS `addresses` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `recipient_name` VARCHAR(100) NOT NULL,
+  `phone` VARCHAR(20) NOT NULL,
+  `street` VARCHAR(255) NOT NULL,
+  `ward` VARCHAR(100) DEFAULT NULL,
+  `district` VARCHAR(100) DEFAULT NULL,
+  `city` VARCHAR(100) NOT NULL,
+  `is_default` BIT(1) DEFAULT b'0',
+  `created_at` DATETIME(6) DEFAULT NULL,
+  `updated_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_addresses_user` (`user_id`),
+  CONSTRAINT `fk_addresses_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 20. BẢNG MÃ GIẢM GIÁ TOÀN ỨNG DỤNG
+CREATE TABLE IF NOT EXISTS `app_discounts` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(50) NOT NULL,
+  `discount_percent` DOUBLE DEFAULT NULL,
+  `max_discount_amount` DOUBLE DEFAULT NULL,
+  `min_order_value` DOUBLE DEFAULT NULL,
+  `start_date` DATE DEFAULT NULL,
+  `end_date` DATE DEFAULT NULL,
+  `active` BIT(1) DEFAULT b'1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_app_discounts_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 21. BẢNG GIỎ HÀNG LƯU TRÊN DATABASE
+CREATE TABLE IF NOT EXISTS `cart_items` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `book_copy_id` BIGINT NOT NULL,
+  `quantity` INT NOT NULL DEFAULT 1,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  `updated_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_cart_items_user` (`user_id`),
+  KEY `idx_cart_items_book_copy` (`book_copy_id`),
+  CONSTRAINT `fk_cart_items_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_cart_items_book_copy` FOREIGN KEY (`book_copy_id`) REFERENCES `book_copies` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 22. BẢNG SÁCH YÊU THÍCH
+CREATE TABLE IF NOT EXISTS `favorites` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `book_id` BIGINT NOT NULL,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_favorites_user_book` (`user_id`, `book_id`),
+  KEY `idx_favorites_book` (`book_id`),
+  CONSTRAINT `fk_favorites_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_favorites_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 23. BẢNG OTP ĐĂNG KÝ / ĐẶT LẠI MẬT KHẨU (CHỈ LƯU MÃ ĐÃ HASH)
+CREATE TABLE IF NOT EXISTS `otp_tokens` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(150) NOT NULL,
+  `otp_code` VARCHAR(100) NOT NULL,
+  `expiry_time` DATETIME(6) NOT NULL,
+  `used` BIT(1) NOT NULL DEFAULT b'0',
+  `type` VARCHAR(30) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_otp_tokens_email_type` (`email`, `type`),
+  KEY `idx_otp_tokens_expiry` (`expiry_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 24. BẢNG ĐÁNH GIÁ SÁCH
+CREATE TABLE IF NOT EXISTS `reviews` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `book_id` BIGINT NOT NULL,
+  `order_item_id` BIGINT DEFAULT NULL,
+  `rating` INT NOT NULL,
+  `comment` TEXT NOT NULL,
+  `image_url` VARCHAR(500) DEFAULT NULL,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_reviews_order_item` (`order_item_id`),
+  KEY `idx_reviews_book` (`book_id`),
+  KEY `idx_reviews_user` (`user_id`),
+  CONSTRAINT `fk_reviews_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_reviews_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`),
+  CONSTRAINT `fk_reviews_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 25. BẢNG ĐIỀU CHUYỂN SÁCH GIỮA CÁC CHI NHÁNH
+CREATE TABLE IF NOT EXISTS `stock_transfers` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `transfer_code` VARCHAR(50) NOT NULL,
+  `from_branch_id` BIGINT NOT NULL,
+  `to_branch_id` BIGINT NOT NULL,
+  `book_copy_id` BIGINT NOT NULL,
+  `quantity` INT NOT NULL,
+  `status` VARCHAR(30) NOT NULL,
+  `requested_by` BIGINT DEFAULT NULL,
+  `approved_by` BIGINT DEFAULT NULL,
+  `note` TEXT DEFAULT NULL,
+  `created_at` DATETIME(6) DEFAULT NULL,
+  `updated_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_stock_transfers_code` (`transfer_code`),
+  KEY `idx_stock_transfers_from_branch` (`from_branch_id`),
+  KEY `idx_stock_transfers_to_branch` (`to_branch_id`),
+  KEY `idx_stock_transfers_book_copy` (`book_copy_id`),
+  CONSTRAINT `fk_stock_transfers_from_branch` FOREIGN KEY (`from_branch_id`) REFERENCES `branches` (`id`),
+  CONSTRAINT `fk_stock_transfers_to_branch` FOREIGN KEY (`to_branch_id`) REFERENCES `branches` (`id`),
+  CONSTRAINT `fk_stock_transfers_book_copy` FOREIGN KEY (`book_copy_id`) REFERENCES `book_copies` (`id`),
+  CONSTRAINT `fk_stock_transfers_requested_by` FOREIGN KEY (`requested_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_stock_transfers_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 26. BẢNG HỘI THOẠI KHÁCH HÀNG - VENDOR
+CREATE TABLE IF NOT EXISTS `vendor_conversations` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `customer_id` BIGINT NOT NULL,
+  `vendor_id` BIGINT NOT NULL,
+  `book_copy_id` BIGINT DEFAULT NULL,
+  `last_message` TEXT DEFAULT NULL,
+  `last_message_at` DATETIME(6) DEFAULT NULL,
+  `customer_unread` BIT(1) NOT NULL DEFAULT b'0',
+  `vendor_unread` BIT(1) NOT NULL DEFAULT b'0',
+  `created_at` DATETIME(6) DEFAULT NULL,
+  `updated_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_vendor_conversations_customer` (`customer_id`),
+  KEY `idx_vendor_conversations_vendor` (`vendor_id`),
+  KEY `idx_vendor_conversations_book_copy` (`book_copy_id`),
+  CONSTRAINT `fk_vendor_conversations_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_vendor_conversations_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_vendor_conversations_book_copy` FOREIGN KEY (`book_copy_id`) REFERENCES `book_copies` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 27. BẢNG TIN NHẮN KHÁCH HÀNG - VENDOR
+CREATE TABLE IF NOT EXISTS `vendor_messages` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `conversation_id` BIGINT NOT NULL,
+  `sender_id` BIGINT NOT NULL,
+  `content` TEXT NOT NULL,
+  `book_copy_id` BIGINT DEFAULT NULL,
+  `is_read` BIT(1) DEFAULT b'0',
+  `created_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_vendor_messages_conversation` (`conversation_id`),
+  KEY `idx_vendor_messages_sender` (`sender_id`),
+  CONSTRAINT `fk_vendor_messages_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `vendor_conversations` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vendor_messages_sender` FOREIGN KEY (`sender_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_vendor_messages_book_copy` FOREIGN KEY (`book_copy_id`) REFERENCES `book_copies` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 28. BẢNG LỊCH SỬ SÁCH ĐÃ XEM
+CREATE TABLE IF NOT EXISTS `viewed_products` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT NOT NULL,
+  `book_id` BIGINT NOT NULL,
+  `viewed_at` DATETIME(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_viewed_products_user` (`user_id`),
+  KEY `idx_viewed_products_book` (`book_id`),
+  CONSTRAINT `fk_viewed_products_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_viewed_products_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Đồng bộ an toàn các database đã import phiên bản SQL cũ.
+-- Các câu lệnh chỉ thêm cột còn thiếu hoặc mở rộng kiểu dữ liệu; không xóa bảng/dữ liệu.
+DELIMITER $$
+DROP PROCEDURE IF EXISTS `sync_web_sach_entity_schema`$$
+CREATE PROCEDURE `sync_web_sach_entity_schema`()
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'authors' AND COLUMN_NAME = 'birth_year') THEN
+    ALTER TABLE `authors` ADD COLUMN `birth_year` INT DEFAULT NULL;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'publishers' AND COLUMN_NAME = 'phone') THEN
+    ALTER TABLE `publishers` ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'publishers' AND COLUMN_NAME = 'active') THEN
+    ALTER TABLE `publishers` ADD COLUMN `active` BIT(1) NOT NULL DEFAULT b'1';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'branches' AND COLUMN_NAME = 'description') THEN
+    ALTER TABLE `branches` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `name`;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'branches' AND COLUMN_NAME = 'image_url') THEN
+    ALTER TABLE `branches` ADD COLUMN `image_url` VARCHAR(500) DEFAULT NULL AFTER `email`;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'branches' AND COLUMN_NAME = 'cover_url') THEN
+    ALTER TABLE `branches` ADD COLUMN `cover_url` VARCHAR(500) DEFAULT NULL AFTER `image_url`;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'promotions' AND COLUMN_NAME = 'code') THEN
+    ALTER TABLE `promotions` ADD COLUMN `code` VARCHAR(50) DEFAULT NULL AFTER `id`;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'delivery_assignments' AND COLUMN_NAME = 'sell_request_id') THEN
+    ALTER TABLE `delivery_assignments` ADD COLUMN `sell_request_id` BIGINT DEFAULT NULL AFTER `order_id`;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sell_requests' AND COLUMN_NAME = 'buyer_vendor_id') THEN
+    ALTER TABLE `sell_requests` ADD COLUMN `buyer_vendor_id` BIGINT DEFAULT NULL AFTER `branch_id`;
+  END IF;
+
+  ALTER TABLE `users`
+    MODIFY COLUMN `email` VARCHAR(150) NOT NULL,
+    MODIFY COLUMN `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';
+  ALTER TABLE `branches`
+    MODIFY COLUMN `phone` VARCHAR(20) DEFAULT NULL,
+    MODIFY COLUMN `email` VARCHAR(150) DEFAULT NULL,
+    MODIFY COLUMN `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';
+  ALTER TABLE `shipping_providers`
+    MODIFY COLUMN `estimated_days` VARCHAR(100) DEFAULT '2-3 ngày',
+    MODIFY COLUMN `service_type` VARCHAR(100) DEFAULT 'IN_PROVINCE';
+  ALTER TABLE `promotions`
+    MODIFY COLUMN `discount_percent` DOUBLE NOT NULL,
+    MODIFY COLUMN `type` VARCHAR(30) DEFAULT 'PRODUCT_PERCENT';
+  ALTER TABLE `delivery_assignments`
+    MODIFY COLUMN `order_id` BIGINT DEFAULT NULL,
+    MODIFY COLUMN `status` VARCHAR(30) NOT NULL;
+  ALTER TABLE `sell_requests`
+    MODIFY COLUMN `branch_id` BIGINT DEFAULT NULL,
+    MODIFY COLUMN `status` VARCHAR(30) NOT NULL;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'branches' AND COLUMN_NAME = 'vendor_id'
+        AND SEQ_IN_INDEX = 1 AND NON_UNIQUE = 0) THEN
+    ALTER TABLE `branches` ADD UNIQUE KEY `uk_branches_vendor` (`vendor_id`);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'branches' AND COLUMN_NAME = 'vendor_id'
+        AND REFERENCED_TABLE_NAME = 'users' AND REFERENCED_COLUMN_NAME = 'id') THEN
+    ALTER TABLE `branches` ADD CONSTRAINT `fk_branches_vendor`
+      FOREIGN KEY (`vendor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'delivery_assignments' AND COLUMN_NAME = 'sell_request_id'
+        AND SEQ_IN_INDEX = 1 AND NON_UNIQUE = 0) THEN
+    ALTER TABLE `delivery_assignments` ADD UNIQUE KEY `uk_assignment_sell_request` (`sell_request_id`);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'delivery_assignments' AND COLUMN_NAME = 'sell_request_id'
+        AND REFERENCED_TABLE_NAME = 'sell_requests' AND REFERENCED_COLUMN_NAME = 'id') THEN
+    ALTER TABLE `delivery_assignments` ADD CONSTRAINT `fk_assignment_sell_request`
+      FOREIGN KEY (`sell_request_id`) REFERENCES `sell_requests` (`id`) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sell_requests' AND COLUMN_NAME = 'buyer_vendor_id'
+        AND REFERENCED_TABLE_NAME = 'users' AND REFERENCED_COLUMN_NAME = 'id') THEN
+    ALTER TABLE `sell_requests` ADD CONSTRAINT `fk_sell_buyer_vendor`
+      FOREIGN KEY (`buyer_vendor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+  END IF;
+END$$
+DELIMITER ;
+
+CALL `sync_web_sach_entity_schema`();
+DROP PROCEDURE `sync_web_sach_entity_schema`;
+
+-- 29. DOANH SỐ MẪU CHO TRANG GUEST
 -- Ba đơn đã giao này giúp phần "Sách đã bán trên 10 cuốn" luôn có dữ liệu
 -- ngay sau khi import SQL. Các câu lệnh đều idempotent, chạy lại không nhân đôi.
 INSERT INTO `orders` (

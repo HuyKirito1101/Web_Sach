@@ -16,6 +16,7 @@ import vn.iotstar.websach.service.VendorChatService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/vendor/messages")
@@ -56,7 +57,7 @@ public class VendorChatController {
             return "vendor/messages/list";
         } catch (Exception ex) {
             log.error("Lỗi khi tải hộp thư tin nhắn vendor", ex);
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
             return "redirect:/vendor/dashboard";
         }
     }
@@ -74,7 +75,7 @@ public class VendorChatController {
             vendorChatService.sendMessage(conversationId, authentication.getName(), content, bookCopyId);
             redirectAttributes.addFlashAttribute("successMessage", "Đã gửi phản hồi thành công.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/vendor/messages?conversationId=" + conversationId;
     }
@@ -90,7 +91,7 @@ public class VendorChatController {
             vendorChatService.deleteConversation(conversationId, authentication.getName());
             redirectAttributes.addFlashAttribute("successMessage", "Đã xóa lịch sử cuộc trò chuyện thành công.");
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/vendor/messages";
     }
@@ -106,7 +107,8 @@ public class VendorChatController {
             vendorChatService.deleteConversation(conversationId, authentication.getName());
             return ResponseEntity.ok(Map.of("success", true, "conversationId", conversationId));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                    .body(Map.of("error", ExceptionMessages.userMessage(ex)));
         }
     }
 
@@ -123,7 +125,7 @@ public class VendorChatController {
             VendorMessage msg = vendorChatService.sendMessage(conversationId, authentication.getName(), content, bookCopyId);
             return ResponseEntity.ok(vendorChatService.toDTO(msg, authentication.getName()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex)).body(ExceptionMessages.userMessage(ex));
         }
     }
 
@@ -138,14 +140,15 @@ public class VendorChatController {
             vendorChatService.deleteMessage(messageId, authentication.getName());
             return ResponseEntity.ok(Map.of("success", true, "messageId", messageId));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                    .body(Map.of("error", ExceptionMessages.userMessage(ex)));
         }
     }
 
     @GetMapping(value = "/api/messages/{conversationId}", produces = "application/json")
     @ResponseBody
-    public ResponseEntity<List<VendorChatMessageDTO>> getMessagesApi(@PathVariable("conversationId") Long conversationId,
-                                                                     Authentication authentication) {
+    public ResponseEntity<?> getMessagesApi(@PathVariable("conversationId") Long conversationId,
+                                            Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(401).build();
         }
@@ -156,6 +159,10 @@ public class VendorChatController {
                     .toList();
             return ResponseEntity.ok(dtos);
         } catch (Exception ex) {
+            if (ExceptionMessages.isDatabaseFailure(ex)) {
+                return ResponseEntity.status(ExceptionMessages.httpStatus(ex))
+                        .body(Map.of("error", ExceptionMessages.userMessage(ex)));
+            }
             return ResponseEntity.ok(Collections.emptyList());
         }
     }

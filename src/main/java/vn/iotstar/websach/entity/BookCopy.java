@@ -39,6 +39,7 @@ public class BookCopy {
     private Double purchasePrice; // Giá thu mua vào
     private Double sellingPrice;  // Giá bán ra cho khách
 
+    @Column(nullable = false)
     private Integer quantity;
 
     @Enumerated(EnumType.STRING)

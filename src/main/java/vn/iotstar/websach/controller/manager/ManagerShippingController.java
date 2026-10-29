@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.iotstar.websach.entity.ShippingProvider;
 import vn.iotstar.websach.service.ShippingProviderService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/manager/shipping")
@@ -30,7 +31,7 @@ public class ManagerShippingController {
             else shippingProviderService.updateProvider(provider.getId(), provider);
             redirect.addFlashAttribute("successMessage", "Đã lưu nhà vận chuyển.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/shipping";
     }
@@ -41,7 +42,7 @@ public class ManagerShippingController {
             shippingProviderService.deleteProvider(id);
             redirect.addFlashAttribute("successMessage", "Đã chuyển nhà vận chuyển sang trạng thái tạm dừng.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/manager/shipping";
     }

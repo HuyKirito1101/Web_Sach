@@ -9,6 +9,7 @@ import vn.iotstar.websach.entity.Promotion;
 import vn.iotstar.websach.entity.enums.PromotionType;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.PromotionService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/promotions")
@@ -35,7 +36,7 @@ public class AdminPromotionController {
             promotionService.saveForAdmin(promotion, branchId);
             redirect.addFlashAttribute("successMessage", "Đã lưu chương trình khuyến mãi.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/admin/promotions";
     }

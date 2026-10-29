@@ -34,6 +34,7 @@ public class Promotion {
     @JoinColumn(name = "vendor_id")
     private User vendor; // Nếu null là do Admin/Manager tạo, nếu có là do Vendor tạo (áp dụng sản phẩm của vendor)
 
+    @Column(nullable = false)
     private Double discountPercent;
 
     @Enumerated(EnumType.STRING)

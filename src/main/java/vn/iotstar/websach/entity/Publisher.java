@@ -25,6 +25,7 @@ public class Publisher {
     @Column(length = 20)
     private String phone;
 
+    @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
 

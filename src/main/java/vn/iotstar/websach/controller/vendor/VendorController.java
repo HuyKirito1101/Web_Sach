@@ -19,6 +19,7 @@ import vn.iotstar.websach.service.*;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/vendor")
@@ -104,7 +105,7 @@ public class VendorController {
             vendorService.saveShop(auth.getName(), shop, logo, cover);
             redirect.addFlashAttribute("successMessage", "Cập nhật thông tin shop thành công");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/shop";
     }
@@ -130,7 +131,7 @@ public class VendorController {
             vendorService.saveProduct(auth.getName(), request, imageFile);
             redirect.addFlashAttribute("successMessage", "Đã lưu sản phẩm");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -168,7 +169,7 @@ public class VendorController {
                     .build(), coverFile);
             redirect.addFlashAttribute("successMessage", "Đã thêm đầu sách mới thành công");
         } catch (Exception e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -179,7 +180,7 @@ public class VendorController {
             vendorService.hideProduct(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật trạng thái sản phẩm");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -190,7 +191,7 @@ public class VendorController {
             vendorService.publishProduct(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã đăng bán sản phẩm lên trang web thành công!");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -201,7 +202,7 @@ public class VendorController {
             vendorService.unpublishProduct(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã gỡ sản phẩm khỏi trang web (chuyển sang Chưa đăng bán)");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -212,7 +213,7 @@ public class VendorController {
             vendorService.deleteProduct(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã gỡ bán và xóa vĩnh viễn sản phẩm khỏi gian hàng.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/products";
     }
@@ -236,7 +237,7 @@ public class VendorController {
             vendorService.assignShipper(auth.getName(), id, shipperId, note);
             redirect.addFlashAttribute("successMessage", "Đã phân công Shipper lấy đơn thành công! (Chờ Shipper xác nhận)");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return (redirectUrl != null && !redirectUrl.isBlank()) ? "redirect:" + redirectUrl : "redirect:/vendor/orders";
     }
@@ -249,7 +250,7 @@ public class VendorController {
             vendorService.revokeAssignment(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã thu hồi phân công Shipper thành công!");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return (redirectUrl != null && !redirectUrl.isBlank()) ? "redirect:" + redirectUrl : "redirect:/vendor/orders";
     }
@@ -262,7 +263,7 @@ public class VendorController {
             vendorService.confirmReturnReceived(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã xác nhận nhận lại sách hoàn trả và phục hồi số lượng tồn kho!");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return (redirectUrl != null && !redirectUrl.isBlank()) ? "redirect:" + redirectUrl : "redirect:/vendor/orders";
     }
@@ -275,7 +276,7 @@ public class VendorController {
             vendorService.approveRefund(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã hoàn tất thủ tục hoàn tiền cho khách hàng và thanh toán phí cho Shipper!");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return (redirectUrl != null && !redirectUrl.isBlank()) ? "redirect:" + redirectUrl : "redirect:/vendor/orders";
     }
@@ -343,7 +344,7 @@ public class VendorController {
                 redirect.addFlashAttribute("successMessage", "Đã cập nhật đơn hàng #" + updated.getOrderCode() + " sang trạng thái " + status.getDisplayName());
             }
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/orders";
     }
@@ -355,7 +356,7 @@ public class VendorController {
             Order updated = vendorService.confirmManualMomoPayment(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã xác nhận nhận được tiền MoMo cho đơn hàng #" + updated.getOrderCode() + ".");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/orders";
     }
@@ -373,7 +374,7 @@ public class VendorController {
             vendorService.savePromotion(auth.getName(), promotion);
             redirect.addFlashAttribute("successMessage", "Đã lưu chương trình khuyến mãi");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/promotions";
     }
@@ -384,7 +385,7 @@ public class VendorController {
             vendorService.deletePromotion(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã xóa chương trình khuyến mãi");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/promotions";
     }
@@ -426,7 +427,7 @@ public class VendorController {
             vendorService.assignSellRequestShipper(auth.getName(), id, shipperId, note);
             redirect.addFlashAttribute("successMessage", "Đã phân công Shipper lấy sách thu mua thành công! (Chờ Shipper nhận đơn)");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/sell-requests";
     }
@@ -438,7 +439,7 @@ public class VendorController {
             vendorService.revokeSellRequestAssignment(auth.getName(), id);
             redirect.addFlashAttribute("successMessage", "Đã thu hồi phân công Shipper thành công!");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/sell-requests";
     }
@@ -457,7 +458,7 @@ public class VendorController {
                 redirect.addFlashAttribute("successMessage", "Đã cập nhật yêu cầu thu mua thành công");
             }
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/vendor/sell-requests";
     }

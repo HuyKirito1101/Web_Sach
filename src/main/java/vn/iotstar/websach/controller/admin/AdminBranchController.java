@@ -10,6 +10,7 @@ import vn.iotstar.websach.entity.Branch;
 import vn.iotstar.websach.entity.enums.BranchStatus;
 import vn.iotstar.websach.service.BranchService;
 import vn.iotstar.websach.service.CloudinaryService;
+import vn.iotstar.websach.util.ExceptionMessages;
 
 @Controller
 @RequestMapping("/admin/branches")
@@ -56,7 +57,7 @@ public class AdminBranchController {
             }
             redirect.addFlashAttribute("successMessage", "Đã lưu chi nhánh thành công.");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/admin/branches";
     }
@@ -67,7 +68,7 @@ public class AdminBranchController {
             branchService.deleteBranch(id);
             redirect.addFlashAttribute("successMessage", "Đã chuyển chi nhánh sang trạng thái ngừng hoạt động.");
         } catch (RuntimeException ex) {
-            redirect.addFlashAttribute("errorMessage", ex.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(ex));
         }
         return "redirect:/admin/branches";
     }
@@ -86,7 +87,7 @@ public class AdminBranchController {
             branchService.saveBranch(branch);
             redirect.addFlashAttribute("successMessage", "Đã cập nhật chiết khấu cho " + branch.getName() + ".");
         } catch (RuntimeException e) {
-            redirect.addFlashAttribute("errorMessage", e.getMessage());
+            redirect.addFlashAttribute("errorMessage", ExceptionMessages.userMessage(e));
         }
         return "redirect:/admin/branches";
     }
