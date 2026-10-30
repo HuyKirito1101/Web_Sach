@@ -81,6 +81,11 @@
                                                         </button>
                                                     </form>
                                                 </c:when>
+                                                <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' && o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS'}">
+                                                    <span class="badge bg-warning text-dark" title="SPX Express không phân Shipper nội bộ">
+                                                        <i class="fa-solid fa-globe me-1"></i>SPX Express
+                                                    </span>
+                                                </c:when>
                                                 <c:when test="${o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED'}">
                                                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal${o.id}">
                                                         <i class="fa-solid fa-truck-ramp-box me-1"></i> Gán Shipper
@@ -94,7 +99,7 @@
                                     </tr>
 
                                     <!-- Modal Assign Shipper -->
-                                    <c:if test="${o.orderStatus == 'READY_FOR_PICKUP' || o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED'}">
+                                    <c:if test="${o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED' || (o.orderStatus == 'READY_FOR_PICKUP' && (o.shippingProvider == null || o.shippingProvider.code != 'SPX_EXPRESS'))}">
                                     <div class="modal fade" id="assignModal${o.id}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content text-start">

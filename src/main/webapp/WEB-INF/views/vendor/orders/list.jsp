@@ -577,6 +577,21 @@
                                                         <i class="fa-solid fa-user-clock me-1"></i>Chưa cần shipper
                                                     </span>
                                                 </c:when>
+                                                <c:when test="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS' && o.orderStatus == 'READY_FOR_PICKUP'}">
+                                                    <span class="badge shipper-info-badge bg-warning text-dark px-2.5 py-1" title="SPX Express không phân Shipper nội bộ">
+                                                        <i class="fa-solid fa-globe me-1"></i>SPX chờ lấy hàng
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS' && o.orderStatus == 'SHIPPING'}">
+                                                    <span class="badge shipper-info-badge bg-info text-dark px-2.5 py-1" title="Trạng thái giao SPX được cửa hàng cập nhật">
+                                                        <i class="fa-solid fa-truck-fast me-1"></i>SPX đang giao
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS' && o.orderStatus == 'DELIVERED'}">
+                                                    <span class="badge shipper-info-badge bg-success text-white px-2.5 py-1" title="Đơn SPX đã được Vendor xác nhận giao xong">
+                                                        <i class="fa-solid fa-circle-check me-1"></i>SPX giao xong
+                                                    </span>
+                                                </c:when>
                                                 <c:when test="${not empty da && not empty da.shipper}">
                                                     <c:choose>
                                                         <c:when test="${fn:contains(da.shipper.fullName, ' - ')}">
@@ -620,6 +635,18 @@
                                                                 <c:if test="${not empty shipperDriver}">
                                                                     <div class="ps-3 fw-bold" style="font-size: 12.5px;"><c:out value="${shipperDriver}"/></div>
                                                                 </c:if>
+                                                            </span>
+                                                        </c:when>
+                                                        <c:when test="${da.status == 'DELIVERED' && (o.orderStatus == 'RETURN_REQUESTED' || o.orderStatus == 'RETURNED' || o.orderStatus == 'REFUNDED') && not empty da.note && (fn:contains(fn:toLowerCase(da.note), 'hoàn trả') || fn:contains(fn:toLowerCase(da.note), 'thu hồi'))}">
+                                                            <span class="badge shipper-info-badge bg-success text-white text-start d-inline-block px-2.5 py-1.5" title="Đã nhận hàng hoàn từ Shipper ${da.shipper.fullName}">
+                                                                <div><i class="fa-solid fa-box-open me-1"></i>Đã nhận hàng hoàn</div>
+                                                                <div class="ps-3 fw-bold" style="font-size: 12.5px;"><c:out value="${shipperTeam}"/><c:if test="${not empty shipperDriver}"> - <c:out value="${shipperDriver}"/></c:if></div>
+                                                            </span>
+                                                        </c:when>
+                                                        <c:when test="${da.status == 'DELIVERED' && o.orderStatus == 'RETURN_REQUESTED' && (empty da.note || (!fn:contains(fn:toLowerCase(da.note), 'hoàn trả') && !fn:contains(fn:toLowerCase(da.note), 'thu hồi')))}">
+                                                            <span class="badge shipper-info-badge bg-success text-white text-start d-inline-block px-2.5 py-1.5" title="Shipper đã giao đơn hàng ban đầu: ${da.shipper.fullName}">
+                                                                <div><i class="fa-solid fa-circle-check me-1"></i>Đã giao đơn ban đầu</div>
+                                                                <div class="ps-3 fw-bold" style="font-size: 12.5px;"><c:out value="${shipperTeam}"/><c:if test="${not empty shipperDriver}"> - <c:out value="${shipperDriver}"/></c:if></div>
                                                             </span>
                                                         </c:when>
                                                         <c:when test="${da.status == 'DELIVERED'}">
@@ -867,6 +894,15 @@
                                             <!-- Đơn hàng SẴN SÀNG LẤY HÀNG (READY_FOR_PICKUP) -->
                                             <c:if test="${o.orderStatus == 'READY_FOR_PICKUP'}">
                                                 <c:choose>
+                                                    <c:when test="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS'}">
+                                                        <form method="post" action="/vendor/orders/${o.id}/status" class="d-inline m-0 p-0 flex-shrink-0"
+                                                              onsubmit="return confirm('Bắt đầu cập nhật trạng thái giao SPX cho đơn hàng #${o.orderCode}? Đơn này không dùng Shipper nội bộ.');">
+                                                            <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" /></c:if>
+                                                            <button type="submit" name="status" value="SHIPPING" class="btn btn-warning text-dark btn-order-action shadow-sm flex-shrink-0" title="Cập nhật trạng thái SPX đang giao">
+                                                                <i class="fa-solid fa-globe me-1"></i>Bắt đầu giao SPX
+                                                            </button>
+                                                        </form>
+                                                    </c:when>
                                                     <c:when test="${not empty da && not empty da.shipper && da.status == 'CANCELLED'}">
                                                         <button type="button" class="btn btn-danger btn-order-action shadow-sm flex-shrink-0"
                                                                 data-bs-toggle="modal" data-bs-target="#assignShipperModal${o.id}">
@@ -886,6 +922,16 @@
                                                         </button>
                                                     </c:otherwise>
                                                 </c:choose>
+                                            </c:if>
+
+                                            <c:if test="${o.orderStatus == 'SHIPPING' && o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS'}">
+                                                <form method="post" action="/vendor/orders/${o.id}/status" class="d-inline m-0 p-0 flex-shrink-0"
+                                                      onsubmit="return confirm('Xác nhận SPX đã giao thành công đơn hàng #${o.orderCode}?');">
+                                                    <c:if test="${not empty _csrf}"><input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" /></c:if>
+                                                    <button type="submit" name="status" value="DELIVERED" class="btn btn-success btn-order-action shadow-sm flex-shrink-0" title="Xác nhận SPX giao hoàn tất">
+                                                        <i class="fa-solid fa-check me-1"></i>Xác nhận SPX đã giao
+                                                    </button>
+                                                </form>
                                             </c:if>
 
                                             <!-- Đơn hàng ĐỔI TRẢ -->
@@ -914,6 +960,7 @@
                                         </form>
 
                                         <!-- Modal Phân công Shipper -->
+                                        <c:if test="${o.shippingProvider == null || o.shippingProvider.code != 'SPX_EXPRESS'}">
                                         <div class="modal fade" id="assignShipperModal${o.id}" tabindex="-1" aria-hidden="true">
                                             <div class="modal-dialog modal-dialog-centered text-start">
                                                 <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -995,9 +1042,8 @@
                                                                 <label class="form-label small fw-bold">Chọn Shipper nhận đơn: <span class="text-danger">*</span></label>
                                                                 <select name="shipperId" class="form-select" required>
                                                                     <option value="">-- Chọn đơn vị hoặc shipper --</option>
-                                                                    <c:set var="isSpxOrder" value="${o.shippingProvider != null && o.shippingProvider.code == 'SPX_EXPRESS'}"/>
                                                                     <c:forEach var="shp" items="${shippers}">
-                                                                        <c:set var="isMismatch" value="${!isSpxOrder && o.shippingProvider != null && shp.shippingProvider != null && o.shippingProvider.code != shp.shippingProvider.code}"/>
+                                                                        <c:set var="isMismatch" value="${o.shippingProvider != null && shp.shippingProvider != null && o.shippingProvider.code != shp.shippingProvider.code}"/>
                                                                         <c:if test="${!isMismatch}">
                                                                             <c:set var="isRejected" value="${not empty da && da.hasShipperRejected(shp.id)}"/>
                                                                             <c:set var="isDisabled" value="${shp.busy || isRejected}"/>
@@ -1043,6 +1089,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        </c:if>
                                     </td>
                                 </tr>
                             </c:forEach>

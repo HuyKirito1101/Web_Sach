@@ -325,6 +325,9 @@
                 <hr>
                 <p class="mb-1"><strong>Chi nhánh bán:</strong> <c:out value="${order.branch != null ? order.branch.name : ''}"/></p>
                 <p class="mb-1"><strong>Nhà vận chuyển:</strong> <c:out value="${order.shippingProvider != null ? order.shippingProvider.name : 'Giao hàng tiêu chuẩn'}"/></p>
+                <c:if test="${order.shippingProvider != null && order.shippingProvider.code == 'SPX_EXPRESS'}">
+                    <p class="small text-muted mb-2"><i class="fa-solid fa-circle-info me-1"></i>Trạng thái giao SPX do cửa hàng cập nhật; đơn này không dùng Shipper nội bộ.</p>
+                </c:if>
                 <c:if test="${not empty assignment && not empty assignment.trackingCode}">
                     <p class="mb-1"><strong>Mã vận đơn:</strong> <span class="badge bg-light text-dark border font-monospace px-2 py-1"><i class="fa-solid fa-barcode me-1 text-primary"></i><c:out value="${assignment.trackingCode}"/></span></p>
                 </c:if>

@@ -40,6 +40,7 @@ public class DataInitializer implements CommandLineRunner {
     private static final List<String> DEMO_ACCOUNT_EMAILS = List.of(
             "admin@websachcu.vn",
             "manager@websachcu.vn",
+            "manager.phunhuan@websachcu.vn",
             "user@websachcu.vn",
             "vendor.thuduc1@websachcu.vn",
             "vendor.thuduc2@websachcu.vn",
@@ -412,6 +413,11 @@ public class DataInitializer implements CommandLineRunner {
         Author a4 = authorRepository.save(Author.builder().name("Nguyễn Nhật Ánh").bio("Tác giả của nhiều tựa sách tuổi học trò được yêu thích.").build());
         Author a5 = authorRepository.save(Author.builder().name("Dale Carnegie").bio("Tác giả hàng đầu thế giới về dắc nhân tâm và giao tiếp.").build());
         Author a6 = authorRepository.save(Author.builder().name("Bộ Giáo Dục & Đào Tạo").bio("Tác giả biên soạn SGK phổ thông.").build());
+        Author a7 = authorRepository.findByName("Fujiko F. Fujio").orElseGet(() ->
+                authorRepository.save(Author.builder()
+                        .name("Fujiko F. Fujio")
+                        .bio("Bút danh của họa sĩ manga Hiroshi Fujimoto, đồng sáng tạo bộ truyện Doraemon.")
+                        .build()));
 
         Publisher p1 = publisherRepository.save(Publisher.builder().name("NXB Kim Đồng").address("Hà Nội").build());
         Publisher p2 = publisherRepository.save(Publisher.builder().name("NXB Văn Học").address("Hà Nội").build());
@@ -485,7 +491,7 @@ public class DataInitializer implements CommandLineRunner {
                 .title("Doraemon Tập 1 (Bản In Đầu 1996)")
                 .description("Tập 1 bộ truyện tranh Doraemon bản dịch cũ mỏng giấy ngả vàng sưu tầm.")
                 .category(cat4)
-                .author(a1)
+                .author(a7)
                 .publisher(p1)
                 .publishYear(1996)
                 .language("Tiếng Việt")
@@ -768,6 +774,9 @@ public class DataInitializer implements CommandLineRunner {
         ensureDemoAccount(
                 "manager@websachcu.vn", "Quản Lý Chi Nhánh", "0977777777",
                 managerRole.get(), bThuduc);
+        ensureDemoAccount(
+                "manager.phunhuan@websachcu.vn", "Quản Lý Chi Nhánh Phú Nhuận", "0978888888",
+                managerRole.get(), bPhunhuan);
 
         Optional<Role> vendorRole = roleRepository.findByName(RoleName.ROLE_VENDOR);
         if (vendorRole.isPresent()) {
@@ -843,7 +852,7 @@ public class DataInitializer implements CommandLineRunner {
             user.setRole(role);
             changed = true;
         }
-        if (branch != null && user.getBranch() == null) {
+        if (branch != null && (user.getBranch() == null || !Objects.equals(user.getBranch().getId(), branch.getId()))) {
             user.setBranch(branch);
             changed = true;
         }

@@ -550,6 +550,8 @@ public class VendorServiceImpl implements VendorService {
         User vendor = requireVendor(vendorEmail);
         Order order = getOrder(vendorEmail, orderId);
         OrderStatus current = order.getOrderStatus();
+        boolean isSpxOrder = order.getShippingProvider() != null
+                && "SPX_EXPRESS".equalsIgnoreCase(order.getShippingProvider().getCode());
         if (order.getPaymentMethod() == PaymentMethod.MOMO
                 && target != OrderStatus.CANCELLED
                 && order.getPaymentStatus() != PaymentStatus.PAID) {
@@ -573,6 +575,8 @@ public class VendorServiceImpl implements VendorService {
         boolean allowed = (current == OrderStatus.NEW && (target == OrderStatus.CONFIRMED || target == OrderStatus.CANCELLED))
                 || (current == OrderStatus.CONFIRMED && (target == OrderStatus.PACKING || target == OrderStatus.READY_FOR_PICKUP || target == OrderStatus.CANCELLED))
                 || (current == OrderStatus.PACKING && target == OrderStatus.READY_FOR_PICKUP)
+                || (isSpxOrder && current == OrderStatus.READY_FOR_PICKUP && target == OrderStatus.SHIPPING)
+                || (isSpxOrder && current == OrderStatus.SHIPPING && target == OrderStatus.DELIVERED)
                 || (current == OrderStatus.RETURN_REQUESTED && (target == OrderStatus.RETURNED || target == OrderStatus.REFUNDED))
                 || (current == OrderStatus.RETURNED && target == OrderStatus.REFUNDED);
         if (!allowed) {
@@ -597,6 +601,9 @@ public class VendorServiceImpl implements VendorService {
             if (order.getPaymentMethod() == PaymentMethod.MOMO) {
                 order.setPaymentStatus(PaymentStatus.FAILED);
             }
+        }
+        if (isSpxOrder && target == OrderStatus.DELIVERED && order.getPaymentMethod() == PaymentMethod.COD) {
+            order.setPaymentStatus(PaymentStatus.PAID);
         }
         order.setOrderStatus(target);
         Order saved = orderRepository.save(order);
@@ -636,6 +643,12 @@ public class VendorServiceImpl implements VendorService {
         User vendor = requireVendor(vendorEmail);
         Order order = getOrder(vendorEmail, orderId);
 
+        boolean isReturn = (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED || order.getOrderStatus() == OrderStatus.RETURNED);
+        if (!isReturn && order.getShippingProvider() != null
+                && "SPX_EXPRESS".equalsIgnoreCase(order.getShippingProvider().getCode())) {
+            throw new IllegalStateException("SPX Express dành cho đơn ngoại tỉnh; không phân công Shipper nội bộ.");
+        }
+
         DeliveryAssignment assignment = deliveryAssignmentRepository.findByOrderId(order.getId())
                 .orElse(DeliveryAssignment.builder().order(order).build());
 
@@ -653,7 +666,6 @@ public class VendorServiceImpl implements VendorService {
         }
 
         // Ràng buộc đơn vị vận chuyển
-        boolean isReturn = (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED || order.getOrderStatus() == OrderStatus.RETURNED);
         if (isReturn) {
             // Đơn thu hồi sách đổi trả: Bắt buộc phân công Shipper Tiêu Chuẩn
             boolean isStandardShipper = shipper.getShippingProvider() != null &&
@@ -664,8 +676,7 @@ public class VendorServiceImpl implements VendorService {
             }
         } else {
             // Đơn giao thông thường: Ràng buộc khớp đơn vị vận chuyển giữa shipper và đơn hàng của khách
-            if (order.getShippingProvider() != null && shipper.getShippingProvider() != null
-                    && !"SPX_EXPRESS".equalsIgnoreCase(order.getShippingProvider().getCode())) {
+            if (order.getShippingProvider() != null && shipper.getShippingProvider() != null) {
                 String orderCode = order.getShippingProvider().getCode();
                 String shipperCode = shipper.getShippingProvider().getCode();
                 if (!Objects.equals(orderCode, shipperCode)) {
@@ -693,13 +704,19 @@ public class VendorServiceImpl implements VendorService {
         assignment.setStatus(DeliveryStatus.ASSIGNED); // Chuyển sang trạng thái CHỜ shipper xác nhận
         assignment.setAssignedAt(LocalDateTime.now());
         assignment.setFailureReason(null); // Xóa lý do từ chối cũ
-        if (note != null && !note.isBlank()) {
-            assignment.setNote(note.trim());
-        } else if (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED) {
-            assignment.setNote("Thu hồi sách hoàn trả từ khách tại: " + (order.getReturnAddress() != null ? order.getReturnAddress() : order.getShippingAddress()));
-        } else {
-            assignment.setNote("Lấy hàng tại cửa hàng: " + order.getBranch().getName());
+        String assignmentNote = note == null ? "" : note.trim();
+        if (isReturn) {
+            if (assignmentNote.isBlank()) {
+                assignmentNote = "từ khách tại: " + (order.getReturnAddress() != null ? order.getReturnAddress() : order.getShippingAddress());
+            }
+            if (!assignmentNote.toLowerCase(Locale.ROOT).contains("hoàn trả")
+                    && !assignmentNote.toLowerCase(Locale.ROOT).contains("thu hồi")) {
+                assignmentNote = "Thu hồi sách hoàn trả - " + assignmentNote;
+            }
+        } else if (assignmentNote.isBlank()) {
+            assignmentNote = "Lấy hàng tại cửa hàng: " + order.getBranch().getName();
         }
+        assignment.setNote(assignmentNote);
         DeliveryAssignment saved = deliveryAssignmentRepository.save(assignment);
         send(order.getBranch().getId(), "Đơn hàng #" + order.getOrderCode() + " đã phân công Shipper " + shipper.getFullName() + " (Đang chờ nhận đơn)");
         return saved;
@@ -767,6 +784,12 @@ public class VendorServiceImpl implements VendorService {
                     .orElseThrow(() -> new IllegalStateException("Đơn hoàn trả qua Shipper cần được phân công Shipper trước khi nhận hàng!"));
             if (assignment.getShipper() == null) {
                 throw new IllegalStateException("Đơn hoàn trả chưa có Shipper nhận phân công!");
+            }
+            String assignmentNote = assignment.getNote() == null
+                    ? ""
+                    : assignment.getNote().toLowerCase(Locale.ROOT);
+            if (!assignmentNote.contains("hoàn trả") && !assignmentNote.contains("thu hồi")) {
+                throw new IllegalStateException("Đây là thông tin giao đơn ban đầu. Vui lòng phân công Shipper đến lấy hàng hoàn trước.");
             }
             if (assignment.getStatus() != DeliveryStatus.DELIVERED) {
                 throw new IllegalStateException("Shipper chưa giao sách hoàn về trụ sở (Trạng thái hiện tại: " + assignment.getStatus() + "). Vui lòng đợi Shipper giao sách đến trụ sở trước khi xác nhận!");

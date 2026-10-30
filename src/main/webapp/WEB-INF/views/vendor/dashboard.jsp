@@ -323,31 +323,20 @@
                             <p class="text-muted small mb-0 mt-1">
                                 Số tiền thực tế shop nhận được sau khi khấu trừ khuyến mãi/giảm giá voucher, phí dịch vụ sàn (<fmt:formatNumber value="${shop != null && shop.appDiscountPercent != null ? shop.appDiscountPercent : 10}" pattern="#,##0"/>%), <strong class="text-danger">toàn bộ chi phí thu mua sách cũ</strong> và <strong class="text-danger">phí trả Shipper khi hoàn tất đổi trả</strong>.
                             </p>
-                            <c:if test="${stats.grossRevenue > 0 || stats.totalDiscount > 0 || stats.totalAcquisitionExpense > 0 || stats.returnShippingCost > 0 || stats.refundedAmount > 0}">
-                                <div class="d-flex flex-wrap gap-3 small mt-2 pt-2 border-top border-success-subtle text-muted">
-                                    <c:if test="${stats.grossRevenue > 0}">
-                                        <span><i class="fa-solid fa-store text-primary me-1"></i>Doanh số bán sách: <strong><fmt:formatNumber value="${stats.grossRevenue}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.totalDiscount > 0}">
-                                        <span><i class="fa-solid fa-tags text-danger me-1"></i>Khấu trừ khuyến mãi/voucher: <strong class="text-danger">-<fmt:formatNumber value="${stats.totalDiscount}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.bookAcquisitionCost > 0}">
-                                        <span><i class="fa-solid fa-book text-warning me-1"></i>Tiền trả khách mua sách: <strong class="text-danger">-<fmt:formatNumber value="${stats.bookAcquisitionCost}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.shippingAcquisitionCost > 0}">
-                                        <span><i class="fa-solid fa-motorcycle text-primary me-1"></i>Tiền trả Shipper thu gom: <strong class="text-danger">-<fmt:formatNumber value="${stats.shippingAcquisitionCost}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.totalAcquisitionExpense > 0}">
-                                        <span><i class="fa-solid fa-calculator text-dark me-1"></i>Tổng chi phí thu mua: <strong class="text-danger">-<fmt:formatNumber value="${stats.totalAcquisitionExpense}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.returnShippingCost > 0}">
-                                        <span><i class="fa-solid fa-truck-ramp-box text-danger me-1"></i>Phí trả Shipper hoàn trả: <strong class="text-danger">-<fmt:formatNumber value="${stats.returnShippingCost}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                    <c:if test="${stats.refundedAmount > 0}">
-                                        <span><i class="fa-solid fa-rotate-left text-secondary me-1"></i>Đã hoàn tiền cho khách: <strong class="text-muted"><fmt:formatNumber value="${stats.refundedAmount}" pattern="#,##0 ₫"/></strong></span>
-                                    </c:if>
-                                </div>
-                            </c:if>
+                            <div class="d-flex flex-wrap gap-3 small mt-2 pt-2 border-top border-success-subtle text-muted">
+                                <span><i class="fa-solid fa-store text-primary me-1"></i>Doanh số bán sách: <strong><fmt:formatNumber value="${stats.grossRevenue}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-tags text-danger me-1"></i>Khuyến mãi/voucher: <strong class="text-danger">-<fmt:formatNumber value="${stats.totalDiscount}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-chart-line text-success me-1"></i>Doanh thu sau giảm giá: <strong><fmt:formatNumber value="${stats.deliveredRevenue}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-hand-holding-dollar text-danger me-1"></i>Phí ứng dụng: <strong class="text-danger">-<fmt:formatNumber value="${stats.commission}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-book text-warning me-1"></i>Tiền trả khách mua sách: <strong class="text-danger">-<fmt:formatNumber value="${stats.bookAcquisitionCost}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-motorcycle text-primary me-1"></i>Tiền trả Shipper thu gom: <strong class="text-danger">-<fmt:formatNumber value="${stats.shippingAcquisitionCost}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-calculator text-dark me-1"></i>Tổng chi phí thu mua: <strong class="text-danger">-<fmt:formatNumber value="${stats.totalAcquisitionExpense}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-truck-ramp-box text-danger me-1"></i>Phí Shipper nhận hàng hoàn: <strong class="text-danger">-<fmt:formatNumber value="${stats.returnShippingCost}" pattern="#,##0 ₫"/></strong></span>
+                                <span><i class="fa-solid fa-rotate-left text-secondary me-1"></i>Đã hoàn tiền cho khách: <strong class="text-muted"><fmt:formatNumber value="${stats.refundedAmount}" pattern="#,##0 ₫"/></strong></span>
+                            </div>
+                            <div class="small text-muted mt-2">
+                                Khoản hoàn tiền được hiển thị riêng; đơn đã hoàn tiền không tính vào doanh thu đơn giao thành công. Số tiền 0 ₫ nghĩa là chưa phát sinh trong khoảng thời gian đã lọc.
+                            </div>
                         </div>
                         <div class="col-md-5 col-lg-4 text-md-end">
                             <div class="text-muted small">Thực nhận sau khi trừ mọi chi phí</div>

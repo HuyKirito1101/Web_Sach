@@ -143,8 +143,9 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
             order.setManagerArchived(false);
             order.setReturnReason(reason);
 
-            // Xóa phân công vận chuyển chiều giao trước đó (nếu có) để chuẩn bị cho quy trình hoàn trả
-            deliveryAssignmentRepository.findByOrderId(order.getId()).ifPresent(deliveryAssignmentRepository::delete);
+            // Giữ lại phân công giao ban đầu để khách và Vendor còn xem được
+            // nhà vận chuyển/Shipper đã giao đơn. Nhiệm vụ lấy hàng hoàn sẽ được
+            // phân công lại trên bản ghi này và được nhận diện bằng ghi chú hoàn trả.
 
             String method = (returnMethod != null && returnMethod.equalsIgnoreCase("SHIPPER")) ? "SHIPPER" : "STORE";
             order.setReturnMethod(method);

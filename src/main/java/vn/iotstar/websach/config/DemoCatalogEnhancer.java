@@ -22,9 +22,11 @@ import vn.iotstar.websach.repository.AuthorRepository;
 import vn.iotstar.websach.repository.BookCopyRepository;
 import vn.iotstar.websach.repository.BookRepository;
 import vn.iotstar.websach.repository.CategoryRepository;
+import vn.iotstar.websach.repository.DeliveryAssignmentRepository;
 import vn.iotstar.websach.repository.PublisherRepository;
 import vn.iotstar.websach.repository.OrderItemRepository;
 import vn.iotstar.websach.repository.OrderRepository;
+import vn.iotstar.websach.repository.ReviewRepository;
 import vn.iotstar.websach.repository.UserRepository;
 
 import java.util.List;
@@ -62,14 +64,19 @@ public class DemoCatalogEnhancer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ReviewRepository reviewRepository;
+    private final DeliveryAssignmentRepository deliveryAssignmentRepository;
 
     @Override
     @Transactional
     public void run(String... args) {
+        repairDoraemonAuthor();
+
         if (bookRepository.findFirstByIsbn(DEMO_MARKER_ISBN).isEmpty()) {
             return;
         }
 
+        removeInconsistentDemoOrder("DEMO-SOLD-001");
         LEGACY_COVERS.forEach(this::replaceGenericCover);
 
         Category literature = categoryRepository.findBySlug("van-hoc-viet-nam").orElse(null);
@@ -130,11 +137,25 @@ public class DemoCatalogEnhancer implements CommandLineRunner {
 
         // Dữ liệu lịch sử bán hàng có thật trong database để khu vực Guest
         // "đã bán trên 10 cuốn" luôn có nội dung minh họa đúng điều kiện.
-        ensureHistoricalSale("9786042078888", "DEMO-SOLD-001", 16);
         ensureHistoricalSale("9786047722222", "DEMO-SOLD-002", 14);
         ensureHistoricalSale("9786040007777", "DEMO-SOLD-003", 12);
 
         log.info("Đã đồng bộ ảnh bìa và bổ sung catalog sách mẫu phong phú.");
+    }
+
+    private void repairDoraemonAuthor() {
+        bookRepository.findFirstByIsbn("9786045544444").ifPresent(book -> {
+            Author author = authorRepository.findByName("Fujiko F. Fujio")
+                    .orElseGet(() -> authorRepository.save(Author.builder()
+                            .name("Fujiko F. Fujio")
+                            .bio("Bút danh của họa sĩ manga Hiroshi Fujimoto, đồng sáng tạo bộ truyện Doraemon.")
+                            .build()));
+            if (book.getAuthor() == null || !author.getId().equals(book.getAuthor().getId())) {
+                book.setAuthor(author);
+                bookRepository.save(book);
+                log.info("Đã sửa tác giả sách Doraemon thành Fujiko F. Fujio.");
+            }
+        });
     }
 
     private void replaceGenericCover(String isbn, String coverUrl) {
@@ -265,5 +286,21 @@ public class DemoCatalogEnhancer implements CommandLineRunner {
                 .quantity(historyQuantity)
                 .price(price)
                 .build());
+    }
+
+    /** Xóa đơn bán mẫu bị lệch giữa trạng thái giao hàng và phân công Shipper. */
+    private void removeInconsistentDemoOrder(String orderCode) {
+        vn.iotstar.websach.entity.Order order = orderRepository.findByOrderCode(orderCode).orElse(null);
+        if (order == null) {
+            return;
+        }
+
+        Long orderId = order.getId();
+        deliveryAssignmentRepository.findByOrderId(orderId).ifPresent(deliveryAssignmentRepository::delete);
+        reviewRepository.deleteAll(reviewRepository.findByOrderItemOrderId(orderId));
+        orderItemRepository.deleteAll(orderItemRepository.findByOrderId(orderId));
+        orderRepository.delete(order);
+        orderRepository.flush();
+        log.info("Đã xóa đơn demo {} vì trạng thái giao hàng không khớp phân công Shipper.", orderCode);
     }
 }

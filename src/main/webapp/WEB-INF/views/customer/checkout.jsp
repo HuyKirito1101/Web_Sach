@@ -97,7 +97,7 @@
                     <h5 class="fw-bold mb-3"><i class="fa-solid fa-truck text-primary me-2"></i>2. Phương Thức Vận Chuyển</h5>
                     <div class="alert alert-light border small text-dark mb-3">
                         <i class="fa-solid fa-circle-info text-info me-1"></i>
-                        Chỉ các dịch vụ có shipper thật đang hoạt động mới được hiển thị. Phí giao hàng lấy trực tiếp từ cấu hình nhà vận chuyển.
+                        SPX Express áp dụng cho đơn ngoại tỉnh; không cần Shipper nội bộ. Phí giao hàng lấy từ cấu hình nhà vận chuyển.
                     </div>
                     <c:forEach var="sp" items="${shippingProviders}" varStatus="loop">
                         <div class="form-check border rounded-3 p-3 mb-2 shipping-provider-card">

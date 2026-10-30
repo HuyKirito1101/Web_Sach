@@ -154,6 +154,10 @@ public class OrderServiceImpl implements OrderService {
             throw new IllegalArgumentException("Tài khoản được chọn không phải Shipper");
         }
         boolean isReturn = (order.getOrderStatus() == OrderStatus.RETURN_REQUESTED || order.getOrderStatus() == OrderStatus.RETURNED);
+        if (!isReturn && order.getShippingProvider() != null
+                && "SPX_EXPRESS".equalsIgnoreCase(order.getShippingProvider().getCode())) {
+            throw new IllegalStateException("SPX Express dành cho đơn ngoại tỉnh; không phân công Shipper nội bộ.");
+        }
         if (order.getOrderStatus() != OrderStatus.READY_FOR_PICKUP && !isReturn) {
             throw new IllegalStateException("Chỉ phân Shipper khi đơn READY_FOR_PICKUP");
         }

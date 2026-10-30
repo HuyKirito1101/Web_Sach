@@ -94,6 +94,10 @@ INSERT IGNORE INTO `authors` (`id`, `name`, `bio`) VALUES
 (11, 'Haruki Murakami', 'Tiểu thuyết gia đương đại nổi tiếng của Nhật Bản'),
 (12, 'Nguyên Phong', 'Tác giả và dịch giả các tác phẩm văn hóa, tâm linh phương Đông');
 
+INSERT INTO `authors` (`name`, `bio`)
+SELECT 'Fujiko F. Fujio', 'Bút danh của họa sĩ manga Hiroshi Fujimoto, đồng sáng tạo bộ truyện Doraemon.'
+WHERE NOT EXISTS (SELECT 1 FROM `authors` WHERE `name` = 'Fujiko F. Fujio');
+
 -- 5. BẢNG SHIPPING_PROVIDERS (Đơn vị vận chuyển)
 CREATE TABLE IF NOT EXISTS `shipping_providers` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -177,6 +181,14 @@ INSERT IGNORE INTO `users` (`id`, `full_name`, `email`, `password`, `phone`, `ro
 -- Khách hàng
 (9, 'Khách Hàng Mẫu', 'user@websachcu.vn', '$2a$10$8.UnVuG9HHgffUDAlk8qfOUVGkqRzgVym5pE6tqE/m/m14wU50y/.', '0955555555', 5, NULL, NULL, NULL, 'ACTIVE');
 
+INSERT IGNORE INTO `users` (`full_name`, `email`, `password`, `phone`, `role_id`, `branch_id`, `shipping_provider_id`, `specialized_category_id`, `status`)
+SELECT 'Quản Lý Chi Nhánh Phú Nhuận', 'manager.phunhuan@websachcu.vn',
+       '$2a$10$8.UnVuG9HHgffUDAlk8qfOUVGkqRzgVym5pE6tqE/m/m14wU50y/.', '0978888888', r.`id`, b.`id`, NULL, NULL, 'ACTIVE'
+FROM `roles` r
+JOIN `branches` b ON b.`email` = 'phunhuan@websachcu.vn'
+WHERE r.`name` = 'ROLE_MANAGER'
+  AND NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'manager.phunhuan@websachcu.vn');
+
 -- 8. BẢNG BOOKS (Danh mục đầu sách)
 CREATE TABLE IF NOT EXISTS `books` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
@@ -213,6 +225,10 @@ INSERT IGNORE INTO `books` (`id`, `isbn`, `title`, `description`, `category_id`,
 (13, '9786049988773', 'Atomic Habits - Thay Đổi Tí Hon, Hiệu Quả Bất Ngờ', 'Phương pháp thực tế giúp xây dựng thói quen tốt bằng những thay đổi nhỏ nhưng bền vững.', 3, 7, 10, 2023, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/i/m/image_195509_1_43387.jpg'),
 (14, '9786047766550', 'Rừng Na Uy', 'Tiểu thuyết sâu lắng về tình yêu, tuổi trẻ, ký ức và mất mát của Haruki Murakami.', 1, 6, 11, 2024, 'Tiếng Việt', 'https://cdn1.fahasa.com/media/catalog/product/8/9/8935235245815.jpg'),
 (15, '9786044455665', 'Muôn Kiếp Nhân Sinh - Tập 1', 'Những câu chuyện và chiêm nghiệm về nhân quả, luân hồi cùng cách con người lựa chọn lối sống thiện lành.', 3, 8, 12, 2020, 'Tiếng Việt', 'https://nxbhcm.com.vn/Image/Biasach/muonkiepnhansinh.png');
+
+UPDATE `books`
+SET `author_id` = (SELECT `id` FROM `authors` WHERE `name` = 'Fujiko F. Fujio' LIMIT 1)
+WHERE `id` = 6 AND `isbn` = '9786045544444';
 
 -- 9. BẢNG BOOK_COPIES (Bản sao cuốn sách thực tế trong kho chi nhánh)
 CREATE TABLE IF NOT EXISTS `book_copies` (
@@ -716,20 +732,19 @@ CALL `sync_web_sach_entity_schema`();
 DROP PROCEDURE `sync_web_sach_entity_schema`;
 
 -- 29. DOANH SỐ MẪU CHO TRANG GUEST
--- Ba đơn đã giao này giúp phần "Sách đã bán trên 10 cuốn" luôn có dữ liệu
--- ngay sau khi import SQL. Các câu lệnh đều idempotent, chạy lại không nhân đôi.
-INSERT INTO `orders` (
-  `order_code`, `customer_id`, `branch_id`, `receiver_name`, `receiver_phone`,
-  `shipping_address`, `total_amount`, `shipping_fee`, `discount_amount`,
-  `app_commission_amount`, `final_amount`, `payment_method`, `payment_status`,
-  `order_status`, `note`, `created_at`, `updated_at`
-)
-SELECT 'DEMO-SOLD-001', 9, 1, 'Khách Hàng Mẫu', '0955555555',
-       '01 Võ Văn Ngân, TP. Thủ Đức, TP.HCM', 1040000, 0, 0,
-       104000, 1040000, 'COD', 'PAID', 'DELIVERED',
-       'Đơn lịch sử mẫu dùng minh họa doanh số trên trang Guest.',
-       DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_SUB(NOW(), INTERVAL 28 DAY)
-WHERE NOT EXISTS (SELECT 1 FROM `orders` WHERE `order_code` = 'DEMO-SOLD-001');
+-- Đơn DEMO-SOLD-001 trước đây vừa ghi DELIVERED vừa chưa có phân công Shipper.
+-- Xóa đơn mẫu và các dữ liệu phụ thuộc để không làm sai danh sách đơn hàng.
+DELETE r FROM `reviews` r
+JOIN `order_items` oi ON oi.`id` = r.`order_item_id`
+JOIN `orders` o ON o.`id` = oi.`order_id`
+WHERE o.`order_code` = 'DEMO-SOLD-001';
+DELETE da FROM `delivery_assignments` da
+JOIN `orders` o ON o.`id` = da.`order_id`
+WHERE o.`order_code` = 'DEMO-SOLD-001';
+DELETE oi FROM `order_items` oi
+JOIN `orders` o ON o.`id` = oi.`order_id`
+WHERE o.`order_code` = 'DEMO-SOLD-001';
+DELETE FROM `orders` WHERE `order_code` = 'DEMO-SOLD-001';
 
 INSERT INTO `orders` (
   `order_code`, `customer_id`, `branch_id`, `receiver_name`, `receiver_phone`,
@@ -756,15 +771,6 @@ SELECT 'DEMO-SOLD-003', 9, 1, 'Khách Hàng Mẫu', '0955555555',
        'Đơn lịch sử mẫu dùng minh họa doanh số trên trang Guest.',
        DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 18 DAY)
 WHERE NOT EXISTS (SELECT 1 FROM `orders` WHERE `order_code` = 'DEMO-SOLD-003');
-
-INSERT INTO `order_items` (`order_id`, `book_copy_id`, `quantity`, `price`)
-SELECT o.`id`, 1, 16, 65000
-FROM `orders` o
-WHERE o.`order_code` = 'DEMO-SOLD-001'
-  AND NOT EXISTS (
-    SELECT 1 FROM `order_items` oi
-    WHERE oi.`order_id` = o.`id` AND oi.`book_copy_id` = 1
-  );
 
 INSERT INTO `order_items` (`order_id`, `book_copy_id`, `quantity`, `price`)
 SELECT o.`id`, 4, 14, 75000
