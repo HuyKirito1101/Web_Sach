@@ -20,6 +20,7 @@ import vn.iotstar.websach.dto.RegisterRequest;
 import vn.iotstar.websach.dto.ResetPasswordRequest;
 import vn.iotstar.websach.entity.User;
 import vn.iotstar.websach.security.AuthRateLimiter;
+import vn.iotstar.websach.service.ManagerActivityLogService;
 import vn.iotstar.websach.service.UserService;
 
 import java.time.Duration;
@@ -33,6 +34,7 @@ public class AuthController {
 
     private final UserService userService;
     private final AuthRateLimiter authRateLimiter;
+    private final ManagerActivityLogService activityLogService;
 
     @GetMapping("/login")
     public String showLoginForm(Model model) {
@@ -47,6 +49,8 @@ public class AuthController {
                               HttpServletResponse response,
                               Model model) {
         if (bindingResult.hasErrors()) {
+            recordLoginAttempt(request.getEmail(), false, servletRequest,
+                    "Thông tin đăng nhập thiếu hoặc sai định dạng.");
             return "auth/login";
         }
 
@@ -54,6 +58,8 @@ public class AuthController {
         try {
             authRateLimiter.checkAndRecord("login", limitKey, 5, Duration.ofMinutes(15));
             String token = userService.login(request);
+
+            recordLoginAttempt(request.getEmail(), true, servletRequest, null);
 
             ResponseCookie cookie = ResponseCookie.from("JWT_TOKEN", token)
                     .httpOnly(true)
@@ -67,8 +73,11 @@ public class AuthController {
 
             return "redirect:" + userService.getLandingPage(request.getEmail());
         } catch (Exception e) {
-            log.warn("Đăng nhập thất bại cho {} từ {}", request.getEmail(), servletRequest.getRemoteAddr());
             String message = ExceptionMessages.userMessage(e);
+            String failureReason = loginFailureReason(e, message);
+            log.warn("Đăng nhập thất bại cho {} từ {} | User-Agent: {} | Lý do: {}",
+                    request.getEmail(), servletRequest.getRemoteAddr(), safeUserAgent(servletRequest), failureReason);
+            recordLoginAttempt(request.getEmail(), false, servletRequest, failureReason);
             if (ExceptionMessages.isDatabaseFailure(e)) {
                 model.addAttribute("errorMessage", message);
                 return "auth/login";
@@ -81,6 +90,41 @@ public class AuthController {
                     : "Email hoặc mật khẩu không đúng.");
             return "auth/login";
         }
+    }
+
+    private void recordLoginAttempt(String email,
+                                    boolean success,
+                                    HttpServletRequest request,
+                                    String failureReason) {
+        try {
+            activityLogService.recordLoginAttempt(
+                    email, success, request.getRemoteAddr(), safeUserAgent(request), failureReason);
+        } catch (RuntimeException auditFailure) {
+            // Lỗi ghi nhật ký không được làm thay đổi kết quả đăng nhập.
+            log.error("Không ghi được nhật ký đăng nhập cho {} từ {}",
+                    email, request.getRemoteAddr(), auditFailure);
+        }
+    }
+
+    private String safeUserAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent == null) return "Không xác định";
+        String sanitized = userAgent.replaceAll("[\\r\\n\\t]", " ").trim();
+        return sanitized.length() <= 180 ? sanitized : sanitized.substring(0, 180);
+    }
+
+    private String loginFailureReason(Exception exception, String message) {
+        if (ExceptionMessages.isDatabaseFailure(exception)) {
+            return "Lỗi truy cập cơ sở dữ liệu; xem log máy chủ để biết chi tiết.";
+        }
+        if (exception instanceof IllegalStateException && message != null
+                && message.startsWith("Bạn đã thử quá nhiều")) {
+            return "Bị chặn do vượt giới hạn số lần thử đăng nhập.";
+        }
+        if (exception instanceof org.springframework.security.authentication.DisabledException) {
+            return "Tài khoản chưa được kích hoạt hoặc đã bị khóa.";
+        }
+        return "Thông tin xác thực không hợp lệ hoặc tài khoản không hoạt động.";
     }
 
     @GetMapping("/register")

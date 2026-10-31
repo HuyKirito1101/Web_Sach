@@ -55,6 +55,11 @@
                     <i class="fa-solid fa-boxes-packing"></i> Tất Cả Đơn Hàng
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/admin/activity" class="nav-link ${pageContext.request.requestURI.contains('/admin/activity') ? 'active' : ''}">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Nhật Ký Hệ Thống
+                </a>
+            </li>
         </c:if>
 
         <c:if test="${pageContext.request.isUserInRole('ROLE_MANAGER') || pageContext.request.isUserInRole('MANAGER')}">
@@ -88,7 +93,7 @@
             </li>
             <li class="nav-item">
                 <a href="/manager/staff" class="nav-link ${pageContext.request.requestURI.contains('/manager/staff') ? 'active' : ''}">
-                    <i class="fa-solid fa-user-group"></i> Người Dùng Chi Nhánh
+                    <i class="fa-solid fa-user-group"></i> Vendor &amp; Shipper Chi Nhánh
                 </a>
             </li>
             <li class="nav-item"><a href="/manager/categories" class="nav-link ${pageContext.request.requestURI.contains('/manager/categories') ? 'active' : ''}"><i class="fa-solid fa-list-check"></i> Quản Lý Danh Mục</a></li>

@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
     private static final String FORGOT_PASSWORD_OTP_TYPE = "FORGOT_PASSWORD";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final List<RoleName> BRANCH_MANAGEABLE_ROLES = List.of(
-            RoleName.ROLE_USER, RoleName.ROLE_VENDOR, RoleName.ROLE_SHIPPER);
+            RoleName.ROLE_VENDOR, RoleName.ROLE_SHIPPER);
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;

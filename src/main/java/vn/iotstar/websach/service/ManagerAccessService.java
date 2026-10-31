@@ -39,11 +39,11 @@ public class ManagerAccessService {
                 .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại."));
         boolean assignedToBranch = user.getBranch() != null
                 && Objects.equals(user.getBranch().getId(), branch.getId());
-        boolean purchasedAtBranch = user.getRole() != null
-                && user.getRole().getName() == RoleName.ROLE_USER
-                && orderRepository.existsByBranchIdAndCustomerId(branch.getId(), userId);
-        if (!assignedToBranch && !purchasedAtBranch) {
-            throw new SecurityException("Không được quản lý người dùng của chi nhánh khác.");
+        boolean branchStaff = user.getRole() != null
+                && (user.getRole().getName() == RoleName.ROLE_VENDOR
+                || user.getRole().getName() == RoleName.ROLE_SHIPPER);
+        if (!assignedToBranch || !branchStaff) {
+            throw new SecurityException("Manager chỉ được quản lý Vendor và Shipper thuộc chi nhánh mình.");
         }
         return user;
     }

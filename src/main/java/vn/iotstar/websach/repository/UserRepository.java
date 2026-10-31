@@ -25,10 +25,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
             SELECT DISTINCT u FROM User u
             WHERE u.role.name IN :roles
-              AND (u.branch.id = :branchId OR EXISTS (
-                    SELECT o.id FROM Order o
-                    WHERE o.customer.id = u.id AND o.branch.id = :branchId
-              ))
+              AND u.branch.id = :branchId
               AND (:keyword = ''
                    OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
                    OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))

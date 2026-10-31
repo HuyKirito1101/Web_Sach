@@ -631,12 +631,42 @@ CREATE TABLE IF NOT EXISTS `viewed_products` (
   CONSTRAINT `fk_viewed_products_book` FOREIGN KEY (`book_id`) REFERENCES `books` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 29. NHẬT KÝ HOẠT ĐỘNG MANAGER THEO CHI NHÁNH
+CREATE TABLE IF NOT EXISTS `manager_activity_logs` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `branch_id` BIGINT NOT NULL,
+  `branch_name` VARCHAR(150) NOT NULL,
+  `manager_email` VARCHAR(150) NOT NULL,
+  `manager_name` VARCHAR(100) NOT NULL,
+  `event_type` VARCHAR(30) NOT NULL,
+  `description` VARCHAR(255) NOT NULL,
+  `ip_address` VARCHAR(45) DEFAULT NULL,
+  `user_agent` VARCHAR(255) DEFAULT NULL,
+  `failure_reason` VARCHAR(180) DEFAULT NULL,
+  `created_at` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  KEY `idx_manager_activity_branch_created` (`branch_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Đồng bộ an toàn các database đã import phiên bản SQL cũ.
 -- Các câu lệnh chỉ thêm cột còn thiếu hoặc mở rộng kiểu dữ liệu; không xóa bảng/dữ liệu.
 DELIMITER $$
 DROP PROCEDURE IF EXISTS `sync_web_sach_entity_schema`$$
 CREATE PROCEDURE `sync_web_sach_entity_schema`()
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'manager_activity_logs' AND COLUMN_NAME = 'ip_address') THEN
+    ALTER TABLE `manager_activity_logs` ADD COLUMN `ip_address` VARCHAR(45) DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'manager_activity_logs' AND COLUMN_NAME = 'user_agent') THEN
+    ALTER TABLE `manager_activity_logs` ADD COLUMN `user_agent` VARCHAR(255) DEFAULT NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'manager_activity_logs' AND COLUMN_NAME = 'failure_reason') THEN
+    ALTER TABLE `manager_activity_logs` ADD COLUMN `failure_reason` VARCHAR(180) DEFAULT NULL;
+  END IF;
+
   IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'authors' AND COLUMN_NAME = 'birth_year') THEN
     ALTER TABLE `authors` ADD COLUMN `birth_year` INT DEFAULT NULL;

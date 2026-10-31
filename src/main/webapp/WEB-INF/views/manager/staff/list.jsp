@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<c:set var="title" value="Quản Lý Người Dùng Chi Nhánh - Manager" scope="request" />
+<c:set var="title" value="Quản Lý Nhân Viên Chi Nhánh - Manager" scope="request" />
 <jsp:include page="../../common/header.jsp" />
 
 <div class="d-flex">
@@ -13,8 +13,8 @@
         <div class="main-content container-fluid">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold mb-0"><i class="fa-solid fa-users-gear text-primary me-2"></i>Quản Lý Người Dùng Chi Nhánh</h3>
-                    <small class="text-muted"><c:out value="${branch.name}"/> — gồm User, Vendor và Shipper thuộc hoặc đã mua hàng tại chi nhánh</small>
+                    <h3 class="fw-bold mb-0"><i class="fa-solid fa-users-gear text-primary me-2"></i>Quản Lý Nhân Viên Chi Nhánh</h3>
+                    <small class="text-muted"><c:out value="${branch.name}"/> — chỉ gồm Vendor và Shipper được phân công tại chi nhánh</small>
                 </div>
                 <form action="/manager/staff" method="get" class="d-flex gap-2">
                     <input name="keyword" value="<c:out value='${keyword}'/>" class="form-control" placeholder="Tên, email, số điện thoại">
@@ -73,7 +73,7 @@
                                     </tr>
 
                                 </c:forEach>
-                                <c:if test="${empty staffList}"><tr><td colspan="7" class="text-center text-muted py-5">Không tìm thấy người dùng trong chi nhánh.</td></tr></c:if>
+                                <c:if test="${empty staffList}"><tr><td colspan="7" class="text-center text-muted py-5">Chưa có Vendor hoặc Shipper thuộc chi nhánh này.</td></tr></c:if>
                             </tbody>
                         </table>
                     </div>
